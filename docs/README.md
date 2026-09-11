@@ -25,12 +25,24 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`security.md`](rules/security.md): controles de seguridad y protección de datos.
 - [`bds.md`](rules/bds.md): propósito, formato y mantenimiento de los BDS.
 
+### [`roadmap/`](roadmap/README.md)
+
+Planificación trazable por feature. Organiza inventarios de casos de uso,
+modelado de dominio, entregas verticales, diseño de datos e implementación sin
+sustituir los BDS ni las reglas técnicas.
+
+- [`modules/`](roadmap/modules/README.md): fase inicial del catálogo de módulos,
+  capacidades y control operativo.
+- [`plans/`](roadmap/plans/README.md): siguiente vertical y primer consumidor
+  inter-feature de Modules.
+
 ## Jerarquía de autoridad
 
 1. BDS vigente para semántica e invariantes de negocio.
 2. Reglas técnicas de `docs/rules/` para arquitectura e implementación.
-3. Contratos de integración versionados, cuando sean creados.
-4. Código, migraciones y pruebas como evidencia de implementación.
+3. Roadmap para secuencia, estado y decisiones pendientes de ejecución.
+4. Contratos de integración versionados, cuando sean creados.
+5. Código, migraciones y pruebas como evidencia de implementación.
 
 Si el código contradice un BDS vigente, la contradicción debe reportarse; no debe reinterpretarse silenciosamente el dominio a partir del código.
 
@@ -38,5 +50,7 @@ Si el código contradice un BDS vigente, la contradicción debe reportarse; no d
 
 - Toda decisión nueva de negocio debe actualizar el BDS afectado antes o junto con su implementación.
 - Toda regla técnica transversal debe registrarse en `docs/rules/`.
+- El estado y la secuencia de una feature deben mantenerse en
+  `docs/roadmap/`, sin elevar hipótesis a reglas confirmadas.
 - Al crear, renombrar o retirar documentación, deben actualizarse este índice y el índice de la sección correspondiente.
 - Las decisiones pendientes deben permanecer explícitamente marcadas; no deben presentarse como invariantes confirmadas.

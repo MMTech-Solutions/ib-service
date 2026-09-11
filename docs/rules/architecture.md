@@ -102,10 +102,13 @@ Features/Modules/
 └── HedgeFund/
 ```
 
-- `Catalog` persiste la identidad, código estable, estado y capacidades declaradas de cada módulo.
+- `Catalog` persiste la identidad, código estable, `is_active`,
+  `processing_status` y las capacidades implementadas por cada módulo.
 - `Sources` centraliza el acceso a cada sistema externo y evita duplicar SDKs, clientes HTTP, repositories o mapeos entre módulos.
 - Los planes y programas referencian módulos registrados; no copian ni redefinen su identidad.
-- Cada subfeature de módulo implementa únicamente las capacidades que realmente puede proporcionar.
+- Cada subfeature de módulo implementa únicamente las capacidades que realmente
+  puede proporcionar. Una capacidad es vocabulario respaldado por una
+  implementación y no puede concederse administrativamente.
 - Se prefieren puertos tipados por capacidad, como actividad de trading, depósitos o challenges, frente a una interfaz universal con campos o métodos opcionales.
 - Se prefieren Data especializados por actividad frente a un `ModuleActivityData` genérico lleno de propiedades opcionales.
 - `Modules` obtiene, valida y normaliza actividad. `Programs`, `Rules`, `Progression` y `Rewards` deciden cómo configurarla, interpretarla o pagarla.
@@ -116,14 +119,57 @@ Features/Modules/
 
 El catálogo de módulos no se versiona como un agregado completo. La configuración publicada del programa conserva un snapshot inmutable de la semántica y capacidades utilizadas, mientras mantiene una relación directa con el registro del módulo para consultar su control operativo actual.
 
-El estado operativo no forma parte del snapshot ni crea una nueva versión. Actúa como overlay en tiempo real y puede detener cálculos de progresión, rewards o settlement para todo el módulo o una capacidad concreta. La ingestión debe permanecer activa cuando sea seguro hacerlo para conservar actividad diferida y permitir replay idempotente al reanudar.
+La disponibilidad y el estado de procesamiento no forman parte del snapshot ni
+crean una nueva versión. Se modelan por separado:
 
-El estado de catálogo y el control operativo tienen semánticas diferentes:
+- `is_active` indica si el módulo participa en el sistema. Un módulo inactivo no
+  puede seleccionarse, ingerir eventos, consultar actividad externa, calcular
+  ni pagar.
+- `processing_status` es un estado explícito, inicialmente `running` o
+  `paused`. En `paused` se detienen cálculos y pagos, pero continúan la ingesta y
+  las consultas de actividad necesarias para preservar el período configurado.
+- Un módulo activo con procesamiento pausado continúa siendo seleccionable.
+- Desactivar el módulo no reescribe `processing_status`; al reactivarlo conserva
+  la condición operativa previa y no se reanuda accidentalmente.
 
-- El estado de catálogo determina si el módulo puede seleccionarse en configuraciones nuevas.
-- El control operativo determina si los flujos existentes pueden ejecutarse ahora.
-- Retirar un módulo del catálogo no detiene silenciosamente programas publicados.
-- Pausar el control operativo sí funciona como kill switch sobre el alcance configurado.
+La condición que se presenta al consumidor se deriva de ambos campos: inactivo,
+activo procesando o activo con procesamiento pausado. No se persiste un tercer
+estado redundante.
+
+La disponibilidad y el control de procesamiento tienen semánticas diferentes:
+
+- `is_active` es el apagado total y prevalece también sobre programas
+  publicados.
+- `processing_status = paused` es el botón de pánico para cálculos y pagos del
+  módulo completo, sin perder la captura de actividad.
+- El control no se configura por capacidad o etapa en esta fase.
+- Los eventos recibidos para un módulo inactivo se confirman en el transporte,
+  no generan actividad de dominio ni replay automático y dejan evidencia
+  técnica y métricas de rechazo.
+
+### Registro técnico y sincronización del catálogo
+
+Los módulos y capacidades disponibles se definen mediante un registro cerrado
+controlado por código. El registro utiliza claves estables y puede apoyarse en
+Enums u objetos tipados; nunca persiste ni permite seleccionar nombres de
+clases PHP. `ModulesServiceProvider` relaciona esas claves con implementaciones
+concretas mediante mapas cerrados.
+
+El comando idempotente `modules:sync` reconcilia ese registro con el catálogo
+persistido:
+
+- crea identidades nuevas y actualiza únicamente datos gobernados por código;
+- sincroniza las capacidades respaldadas por implementaciones existentes;
+- preserva `is_active`, `processing_status` y demás valores gobernados por
+  administración;
+- desactiva y reporta un módulo persistido cuya implementación dejó de existir;
+- nunca reactiva automáticamente un módulo que vuelva a aparecer en el
+  registro.
+
+La opción explícita `--prune` puede eliminar solo registros que nunca hayan
+sido referenciados. Debe rechazar y reportar cualquier eliminación que rompa
+relaciones o auditoría; esos registros permanecen inactivos. El sync ordinario
+es conservador y no elimina registros.
 
 ## Features compuestos y subfeatures
 
@@ -170,6 +216,18 @@ Si Feature A necesita una capacidad expuesta por Feature B:
 5. B no conoce a A ni crea contratos nombrados por el consumidor.
 
 Los puertos se diseñan por necesidad o capacidad cohesiva, no por consumidor. No se crea una interfaz universal que acumule operaciones no relacionadas. Un adaptador puede colaborar con varios puertos cuando todos pertenecen a la misma integración técnica, sin convertirlos en un contrato único.
+
+Un puerto público no se crea anticipando consumidores hipotéticos. Se diseña
+cuando aparece el primer caso de uso real que cruza la frontera, como parte de
+la entrega vertical de ese consumidor. El feature proveedor conserva la
+propiedad del puerto y de su implementación, mientras la necesidad observada
+determina el contrato mínimo. Los adapters HTTP o Console internos no justifican
+por sí solos publicar un contrato inter-feature.
+
+Para la jerarquía inicial, `Plans` es el primer consumidor de `Modules` al
+seleccionar módulos para un plan. `Programs` se diseña después y parte de los
+módulos habilitados por su plan; no consulta el catálogo global ignorando al
+Plan IB como raíz funcional.
 
 Un UseCase no importa ni ejecuta directamente otro UseCase. Sí puede consumir el puerto de entrada de otro feature aunque la implementación resuelta por Laravel sea un UseCase del feature proveedor.
 
@@ -345,7 +403,8 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 ## Decisiones pendientes
 
 - Mapa definitivo de los features restantes y sus subfeatures; `Modules` ya está aprobado como feature compuesto.
-- Granularidad definitiva del control operativo por módulo, capacidad y etapa, incluidos ingestión, progresión, rewards y settlement.
+- Comportamiento exacto de trabajos que ya estaban ejecutándose cuando un
+  módulo se desactiva o se pausa.
 - Organización futura de `ModulesServiceProvider` si el volumen real de bindings justifica dividirlo.
 - Forma de registrar implementaciones y estrategias dentro de las factories.
 - Contrato común de consulta y paginación de actividad por módulo.

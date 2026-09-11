@@ -32,6 +32,7 @@ El índice canónico está en [`docs/README.md`](docs/README.md):
 
 - [`docs/bds/`](docs/bds/README.md): especificaciones y reglas del dominio.
 - [`docs/rules/`](docs/rules/README.md): decisiones técnicas y normas de implementación.
+- [`docs/roadmap/`](docs/roadmap/README.md): estado y entregas planificadas por feature.
 - [`AGENTS.md`](AGENTS.md): instrucciones obligatorias para agentes de IA.
 
 Antes de implementar comportamiento de negocio, debe consultarse el BDS correspondiente. Antes de modificar código, deben consultarse las reglas técnicas aplicables y utilizarse Graphify según `AGENTS.md`.

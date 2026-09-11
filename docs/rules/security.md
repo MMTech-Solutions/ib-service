@@ -38,6 +38,13 @@
 ## Datos personales y auditoría
 
 - Persistir únicamente los identificadores y snapshots necesarios para justificar decisiones.
+- La auditoría transaccional de cambios operativos persiste el identificador
+  estable del actor de IAM, la acción, el motivo, el instante y los estados
+  anterior y posterior.
+- Nombre y correo del actor se consultan mediante
+  `mmt/laravel-iam-service-sdk` al construir reportes o se incluyen como
+  snapshot en un evento solo cuando el contrato de su audiencia lo requiera;
+  no forman parte del agregado operativo.
 - Separar datos operativos de información sensible de perfil.
 - Redactar tokens, secretos, contraseñas y datos personales de logs y errores.
 - Definir retención y acceso del historial antes de producción.

@@ -8,6 +8,7 @@ La documentación canónica comienza en [`docs/README.md`](docs/README.md):
 
 - [`docs/bds/`](docs/bds/README.md) define lenguaje, invariantes, cálculos, estados y eventos del negocio.
 - [`docs/rules/`](docs/rules/README.md) define arquitectura, estrategias, stack, estilo, buenas prácticas, seguridad y mantenimiento de BDS.
+- [`docs/roadmap/`](docs/roadmap/README.md) registra secuencia, estado y decisiones pendientes de implementación por feature; no sustituye BDS ni reglas.
 - El código y las pruebas demuestran implementación; no redefinen silenciosamente el negocio.
 
 Cuando una petición pueda cambiar semántica del dominio, leer primero el BDS del área y [`docs/rules/bds.md`](docs/rules/bds.md). Si la decisión no está cerrada, conservarla como pendiente y solicitar definición antes de implementarla como invariante.
@@ -28,6 +29,7 @@ Antes de actuar, leer los documentos que correspondan al alcance:
 | Dependencias o infraestructura | `docs/rules/technology-stack.md` |
 | Entradas, autorización, datos sensibles, reglas dinámicas o pagos | `docs/rules/security.md` |
 | Creación o modificación de BDS | `docs/rules/bds.md` |
+| Planificación o implementación de una feature incluida en el roadmap | `docs/roadmap/README.md`, el `README.md` de la feature y el documento de su etapa actual |
 
 Si existen reglas generadas en `.ai/rules/`, leer primero `.ai/rules/index.md`, todos los archivos cuyos globs cubran el cambio y realizar la búsqueda por palabras clave exigida por Laravel Boost.
 
@@ -49,7 +51,9 @@ Después de modificar código, ejecutar `graphify update .`. Los cambios en `gra
 - Toda feature de negocio nueva crea o actualiza su BDS junto con el código.
 - Toda decisión transversal nueva actualiza el archivo correspondiente en `docs/rules/`.
 - Actualizar `docs/README.md` y el índice de sección al crear, renombrar o retirar documentos.
+- Actualizar el estado, la fecha de revisión y la evidencia del roadmap al avanzar una etapa o entrega.
 - No presentar una decisión pendiente como regla confirmada.
+- No usar el roadmap para contradecir o reemplazar un BDS o una regla técnica vigente.
 - No incluir detalles técnicos en BDS ni reglas de negocio en documentos técnicos como sustituto del BDS.
 
 ## Precedencia e interpretación de Laravel Boost
