@@ -10,6 +10,17 @@
 
 ## APIs e integraciones
 
+- No añadir `rbac.trusted.internal` ni variantes de autorización que omitan la
+  identidad de usuario salvo petición explícita y existencia de un consumidor
+  S2S real. Por defecto, las rutas protegidas exigen usuario gateway y permiso
+  sobre la surface resuelta por su path.
+- La autorización de cada operación se expresa en su `FormRequest` mediante
+  `UserContext::can(...)` y una `UserSurface` explícita. El middleware autentica
+  y prepara el contexto, pero no sustituye la decisión de autorización de la
+  operación.
+- Los features de negocio no acceden directamente a `auth()`, `Auth`,
+  `request()->user()` ni `$request->user()`, ni dependen del tipo `GatewayUser`.
+  La identidad actual se consume exclusivamente mediante `UserContext`.
 - Los endpoints internos también requieren identidad S2S y autorización por capacidad.
 - Aplicar límites de tamaño, paginación, timeouts y rate limiting.
 - Rechazar eventos de productores o versiones no reconocidas.

@@ -1,6 +1,6 @@
 # Modules: roadmap por entregas verticales
 
-Estado: **En descubrimiento**  
+Estado: **M1a completado; M1b pendiente**
 Dependencia para aprobación: etapas 1 y 2
 
 ## Principio de corte
@@ -11,22 +11,30 @@ aislada no constituye una entrega.
 
 ## Secuencia propuesta
 
-### M1 — Catálogo y control operativo
+### M1a — Sincronización y listado del catálogo
 
-Permite sincronizar módulos y capacidades respaldados por código, consultarlos
-y administrarlos, y pausar o reanudar su procesamiento con trazabilidad.
+Entrega el registro cerrado inicial de Broker, persistencia PostgreSQL,
+repositorio en memoria, `modules:sync` y el listado administrativo paginado.
+Incluye capacidades activas e inactivas y autorización RBAC.
 
-Incluye provisionalmente:
+Criterio de aceptación: un despliegue sincroniza Broker con `deposits` y
+`closed_trading_volume`; una repetición no produce cambios y un operador con
+`ib.modules.manage` consulta el catálogo mediante la API versionada.
+
+### M1b — Catálogo y control operativo
+
+Completa la consulta y administración del catálogo y permite pausar o reanudar
+su procesamiento con trazabilidad.
+
+Completa M1 con:
 
 - API administrativa versionada con autorización.
-- comando idempotente `modules:sync` y pruning explícito y protegido;
-- lista y detalle con capacidades embebidas, sin endpoint exclusivo;
+- detalle con capacidades embebidas, sin endpoint exclusivo;
 - edición de datos administrativos permitidos y endpoints dedicados para
   activar, desactivar, pausar y reanudar;
 - objetos `Data`/Commands de entrada y respuestas normalizadas;
 - casos de uso internos invocados por los adapters HTTP y Console de M1;
 - modelo de dominio acordado para catálogo y control;
-- persistencia PostgreSQL y repositorio en memoria;
 - historial auditable de cambios operativos;
 - contract tests ejecutados contra ambas implementaciones de repositorio;
 - pruebas del recorrido HTTP principal.

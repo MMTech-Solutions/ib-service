@@ -1,6 +1,6 @@
 # Modules: agregados, estados y transacciones
 
-Estado: **En descubrimiento**  
+Estado: **Completado para M1a**
 Dependencia satisfecha: `01-use-case-inventory.md` completado
 
 ## Decisiones de dominio ya confirmadas
@@ -43,26 +43,31 @@ La activación y desactivación no modifican `processing_status`. Reactivar un
 módulo previamente pausado lo devuelve a la condición activa y pausada hasta
 que exista una reanudación explícita.
 
-## Decisiones pendientes de esta etapa
+## Decisiones cerradas para M1a
 
-- Confirmar si `Module` es el único agregado de M1 o si el historial operativo
-  requiere una frontera propia.
-- Definir el comportamiento exacto de trabajos en curso ante desactivación o
-  pausa y los puntos obligatorios de comprobación.
-- Elegir la estrategia de concurrencia para cambios administrativos y sync.
-- Definir si un módulo nuevo queda activo o inactivo tras el primer sync.
-- Delimitar qué datos descriptivos son gobernados por código y cuáles por
-  administración.
-- Decidir si la auditoría y los eventos de cambio requieren outbox en M1.
+- `Module` es el único agregado; capacidades e historial operativo pertenecen
+  a su límite transaccional.
+- Los trabajos validan el estado al comenzar y no se cancelan si este cambia
+  después.
+- La concurrencia es optimista mediante `lock_version` técnico.
+- Un módulo nuevo nace activo y en `running`.
+- Nombre y descripción del módulo son administrativos después de crearse; los
+  descriptivos de capacidades son gobernados por código.
+- Una capacidad ausente queda inactiva y se reactiva al reaparecer.
+- M1a no publica eventos ni incorpora outbox.
 
-## Límites transaccionales por validar
+La forma concreta del historial operativo se implementará en M1b como hijo
+inmutable del agregado.
 
-- Sincronizar la identidad del módulo y sus capacidades implementadas.
-- Cambiar el catálogo sin modificar configuraciones publicadas.
-- Aplicar un cambio operativo y registrar su auditoría de forma atómica.
-- Evitar que dos cambios operativos concurrentes pierdan información.
-- Publicar eventos solo después de confirmar la transacción local, si M1 los
-  requiere.
+## Límites transaccionales confirmados para M1a
+
+- La sincronización completa de identidades y capacidades es atómica.
+- Una escritura compara `lock_version`; un valor obsoleto aborta la
+  transacción.
+- El sync no modifica configuraciones publicadas ni datos administrativos.
+- M1a no publica eventos.
+
+La atomicidad del cambio operativo y su auditoría se implementará en M1b.
 
 El snapshot de programa pertenece al feature que publica la configuración del
 programa y no a una transacción del catálogo de `Modules`.

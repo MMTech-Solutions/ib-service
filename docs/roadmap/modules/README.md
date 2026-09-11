@@ -12,10 +12,10 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 | Etapa | Documento | Estado |
 | --- | --- | --- |
 | 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado |
-| 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | En descubrimiento |
-| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | En descubrimiento |
-| 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Bloqueado |
-| 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | Bloqueado |
+| 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para M1a |
+| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1a completado; M1b pendiente |
+| 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1a |
+| 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1a completado |
 
 Última revisión: 2026-09-11.
 
@@ -49,6 +49,11 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
   adaptadores estrechos; ese reemplazo no debe cambiar a los consumidores.
 - M1 no diseña una frontera pública para consumidores hipotéticos. La primera
   surgirá en `Plans P1`, cuando un caso de uso real necesite consultar módulos.
+- M1a entrega la sincronización y el listado administrativo; M1b incorporará
+  detalle, edición, control operativo e historial.
+- Los módulos nuevos nacen activos y en `running`.
+- La concurrencia usa `lock_version` técnico sin versionar funcionalmente el
+  catálogo.
 
 ## Alcance inicial
 
@@ -77,7 +82,6 @@ posterga hasta que esos contratos y el modelo base estén estables.
 
 ## Próximo paso
 
-Cerrar en [`02-domain-model.md`](02-domain-model.md) los límites del agregado,
-la concurrencia, el comportamiento de trabajos en curso y la activación inicial
-de módulos nuevos. Después podrá aprobarse el modelo de datos de M1. La frontera
-pública se pospone deliberadamente hasta [`Plans P1`](../plans/README.md).
+Inventariar y cerrar los contratos de detalle, edición, control operativo e
+historial de M1b. La frontera pública inter-feature se mantiene pospuesta hasta
+[`Plans P1`](../plans/README.md).

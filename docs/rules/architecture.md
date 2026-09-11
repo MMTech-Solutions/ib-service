@@ -28,6 +28,7 @@ app/
 ├── Features/
 │   ├── SharedKernel/
 │   └── <Feature>/
+│       ├── Console/
 │       ├── Http/
 │       │   └── V1/
 │       │       ├── Controllers/
@@ -58,10 +59,31 @@ app/
 │       ├── Listeners/
 │       ├── Jobs/
 │       └── Support/
+├── SharedFeatures/
+│   └── User/
+│       ├── Context/
+│       │   └── Contracts/
+│       └── UserServiceProvider.php
 └── Support/
 ```
 
 No se crean todos esos directorios por anticipado. Cada feature incorpora únicamente los artefactos que necesita y conserva esos nombres cuando aparezca la responsabilidad correspondiente.
+
+La infraestructura de Laravel que ejecuta responsabilidades de negocio pertenece
+al feature o subfeature propietario. Sus comandos Artisan viven directamente en
+`Console`, sus trabajos en `Jobs`, sus listeners en `Listeners` y sus
+eventos internos en `Events`, todos dentro de ese límite. No se ubican comandos,
+jobs, listeners ni eventos propios de un feature en directorios globales bajo
+`app/`.
+
+`Console` no introduce una subdivisión `Commands`: todas sus clases son comandos
+Artisan y se nombran con el sufijo `Command`.
+
+Cada service provider de feature registra explícitamente sus comandos de consola
+y cualquier listener que no sea descubierto mediante la convención vigente de
+Laravel. Los archivos globales de `routes/console.php` y la configuración de
+bootstrap se reservan para composición transversal o tareas que no pertenecen a
+un feature de negocio; no son una ubicación alternativa para sus clases.
 
 La lista inicial de features de primer nivel es orientativa y puede cambiar al cerrar el modelo de cada capacidad:
 
@@ -166,6 +188,17 @@ persistido:
 - nunca reactiva automáticamente un módulo que vuelva a aparecer en el
   registro.
 
+Los módulos nuevos nacen activos y con procesamiento `running`. El nombre y la
+descripción iniciales del módulo proceden del registro, pero pasan a ser datos
+administrativos y no se sobrescriben en sincronizaciones posteriores. Las
+capacidades retiradas se conservan inactivas; sus datos descriptivos siguen
+gobernados por código y se reactivan cuando reaparece su implementación.
+
+La concurrencia del catálogo es optimista mediante `lock_version`, un detalle
+de persistencia que no representa una versión funcional ni se expone como tal.
+No existen revisiones históricas del catálogo ni una tabla de versiones de
+módulos.
+
 La opción explícita `--prune` puede eliminar solo registros que nunca hayan
 sido referenciados. Debe rechazar y reportar cualquier eliminación que rompa
 relaciones o auditoría; esos registros permanecen inactivos. El sync ordinario
@@ -202,6 +235,32 @@ Features/Plans/
 Puede contener objetos de valor estables como `Money`, `PositiveMoney`, `Number`, `Currency`, cantidades, identificadores base y sus contratos estrictamente necesarios. No contiene UseCases, Actions, controllers, repositories, modelos Eloquent, clientes HTTP, SDKs ni reglas pertenecientes a un feature concreto.
 
 Incorporar un concepto al Shared Kernel requiere que tenga la misma semántica e invariantes para todos sus consumidores. La mera repetición de una clase no basta para promoverla.
+
+## Shared Features de la aplicación
+
+`app/SharedFeatures` contiene fronteras de aplicación transversales que necesitan
+adaptar infraestructura o servicios externos y, por ello, no pertenecen al
+`SharedKernel`. No es una ubicación genérica para reutilización: cada shared
+feature debe tener una responsabilidad transversal estable, al menos un
+consumidor real y estar diseñada para servir a más de un feature de negocio.
+
+`SharedFeatures/User` es la frontera única para la identidad autenticada y sus
+capacidades dentro de la aplicación:
+
+- `UserContext` es la API consumida por Requests, UseCases, Actions y Services.
+- `UserConnectorInterface` desacopla esa API del mecanismo de autenticación.
+- `GatewayUserConnector` encapsula `Mmtech\Rbac\Auth\GatewayUser` y
+  `PermissionCheckerInterface`; esos tipos no se propagan a features de negocio.
+- `UserServiceProvider` es el único punto que obtiene el usuario desde el guard
+  de Laravel y construye el connector con alcance de request.
+- Toda comprobación de capacidad recibe una `UserSurface` explícita; no infiere
+  silenciosamente la surface desde el path fuera del middleware de transporte.
+
+El código de aplicación no utiliza `auth()`, la facade `Auth`,
+`request()->user()` ni `$request->user()` para obtener la identidad actual.
+Requests y demás consumidores inyectan `UserContext`. El acceso al guard queda
+confinado a `UserServiceProvider` y al middleware de autenticación; el connector
+recibe ya construido el `GatewayUser` que debe adaptar.
 
 ## Contratos y comunicación entre features
 
@@ -403,8 +462,6 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 ## Decisiones pendientes
 
 - Mapa definitivo de los features restantes y sus subfeatures; `Modules` ya está aprobado como feature compuesto.
-- Comportamiento exacto de trabajos que ya estaban ejecutándose cuando un
-  módulo se desactiva o se pausa.
 - Organización futura de `ModulesServiceProvider` si el volumen real de bindings justifica dividirlo.
 - Forma de registrar implementaciones y estrategias dentro de las factories.
 - Contrato común de consulta y paginación de actividad por módulo.

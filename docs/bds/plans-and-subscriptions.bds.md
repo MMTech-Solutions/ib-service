@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.4
+- **Versión:** 0.5
 - **Estado:** base inicial
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -66,6 +66,9 @@ erDiagram
 | BR-MODULE-013 | Un módulo que haya sido referenciado permanece en el catálogo y conserva sus relaciones e historial cuando se desactiva; no se elimina física ni lógicamente. |
 | BR-MODULE-014 | Una capacidad solo puede declararse para un módulo cuando existe una implementación que la respalda; una acción administrativa no puede conceder capacidades. |
 | BR-MODULE-015 | Todo evento rechazado por inactividad del módulo deja evidencia auditable, aunque no se incorpore como actividad del dominio. |
+| BR-MODULE-016 | Un módulo incorporado por primera vez al catálogo nace activo y con procesamiento en ejecución. Una sincronización posterior nunca reactiva automáticamente un módulo desactivado. |
+| BR-MODULE-017 | Una capacidad retirada de su implementación permanece en el catálogo como inactiva para conservar trazabilidad. Si vuelve a estar respaldada por una implementación, se reactiva automáticamente. |
+| BR-MODULE-018 | Un cambio de disponibilidad o procesamiento afecta a los trabajos que comiencen después del cambio. Los trabajos que ya habían comenzado pueden completar sus efectos conforme al estado que validaron al iniciar. |
 | BR-PROGRAM-001 | Todo placement pertenece a una suscripción y señala un programa del mismo plan de esa suscripción. |
 | BR-PROGRAM-002 | La progresión automática solo cambia el programa del usuario dentro del plan al que está suscrito. |
 | BR-PROGRAM-003 | Los programas del plan mantienen un orden y umbrales no ambiguos para determinar el placement. |

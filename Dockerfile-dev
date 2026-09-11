@@ -1,0 +1,31 @@
+FROM mmt-php-nginx-base:latest
+
+LABEL authors="dvd + codex"
+
+ENV LOG_CHANNEL=stack \
+    LOG_STACK=stderr \
+    LOG_LEVEL=info \
+    MMTECH_SERVICE=ib
+
+WORKDIR /var/www
+
+COPY ib-service/composer.json ib-service/composer.lock ./
+RUN composer install --no-scripts --no-autoloader --prefer-dist
+
+COPY ib-service/ .
+
+RUN find bootstrap/cache -type f -name '*.php' -delete 2>/dev/null || true \
+    && composer dump-autoload --optimize --no-scripts
+
+COPY ib-service/docker/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY ib-service/docker/supervisord.conf /etc/supervisord.conf
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 80
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

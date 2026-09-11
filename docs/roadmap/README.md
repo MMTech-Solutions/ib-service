@@ -12,7 +12,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | En descubrimiento | 2. Agregados, estados y transacciones | 2026-09-11 |
+| [`Modules`](modules/README.md) | En curso | M1a completado; próximo M1b | 2026-09-11 |
 | [`Plans`](plans/README.md) | No iniciado | Espera la entrega M1 de Modules | 2026-09-11 |
 | Programs | Bloqueado | Requiere la primera entrega vertical de Plans | 2026-09-11 |
 

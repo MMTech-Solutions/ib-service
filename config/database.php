@@ -99,6 +99,21 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        'pgsql_testing' => [
+            'driver' => 'pgsql',
+            'url' => env('IB_TEST_DB_URL'),
+            'host' => env('IB_TEST_DB_HOST', '127.0.0.1'),
+            'port' => env('IB_TEST_DB_PORT', '5437'),
+            'database' => env('IB_TEST_DB_DATABASE', 'mmt_ib_service_testing'),
+            'username' => env('IB_TEST_DB_USERNAME', 'mmt_ib'),
+            'password' => env('IB_TEST_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('IB_TEST_DB_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

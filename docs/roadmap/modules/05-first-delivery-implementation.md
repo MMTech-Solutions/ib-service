@@ -1,8 +1,8 @@
 # Modules: implementación de la primera entrega
 
-Estado: **Bloqueado**  
-Dependencia: cierre de las etapas 2 a 4  
-Entrega objetivo: M1 — Catálogo y control operativo
+Estado: **M1a completado**
+Dependencia: decisiones y datos de M1a cerrados
+Entrega objetivo: M1a — Sincronización y listado
 
 ## Orden de implementación propuesto
 
@@ -64,3 +64,12 @@ de métodos.
 
 Al completar M1, este documento debe enlazar migraciones, contratos, casos de
 uso, pruebas ejecutadas y cualquier decisión nueva incorporada a BDS o reglas.
+
+### Evidencia de M1a
+
+- Migraciones PostgreSQL de `modules`, `module_capabilities` y RBAC.
+- Registro técnico inicial de Broker y caso de uso `SyncModulesUseCase`.
+- Repositorios en memoria y PostgreSQL bajo la misma suite contractual.
+- Comando `modules:sync` y ruta `GET /api/ib/v1/admin/modules` verificados.
+- Suite: 29 pruebas y 92 aserciones sobre PostgreSQL real, incluidas las reglas
+  automáticas de arquitectura para el acceso al usuario autenticado.

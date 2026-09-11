@@ -22,6 +22,8 @@
 - Normalizar respuestas HTTP desde el controller con `mmt/api-response-normalizer`.
 - Utilizar API Resources solo cuando exista una transformación específica de presentación que un Result Data no deba asumir.
 - Mantener controllers delgados y sin reglas de negocio.
+- Inyectar `UserContext` para identidad y capacidades. No obtener el usuario
+  actual directamente mediante helpers, facades o Requests de Laravel.
 - No acceder al entorno mediante `env()` fuera de archivos de configuración.
 - Los API Resources son transformadores puros: no resuelven ni reciben repositories, factories, Services o UseCases.
 - No ejecutar consultas, cargar relaciones ni ocultar accesos a datos dentro de accessors o Resources.

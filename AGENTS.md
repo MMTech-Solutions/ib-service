@@ -56,6 +56,34 @@ Después de modificar código, ejecutar `graphify update .`. Los cambios en `gra
 - No usar el roadmap para contradecir o reemplazar un BDS o una regla técnica vigente.
 - No incluir detalles técnicos en BDS ni reglas de negocio en documentos técnicos como sustituto del BDS.
 
+## Colección Postman obligatoria
+
+La colección [`ib-service.postman_collection.json`](ib-service.postman_collection.json)
+en la raíz del repositorio forma parte del contrato operativo del servicio y debe
+mantenerse sincronizada con sus rutas HTTP.
+
+- Agregar una ruta, eliminarla o modificar su método, path, parámetros, payload,
+  headers o autenticación exige actualizar la colección en el mismo cambio.
+- La colección debe incluir todas las rutas HTTP propiedad de la aplicación y los
+  endpoints operativos configurados en `bootstrap/app.php`; no incluye rutas
+  internas aportadas exclusivamente por dependencias vendor.
+- Cada request debe declarar los parámetros de path, query y body aplicables, así
+  como los headers y el mecanismo de autorización necesarios. Los valores
+  sensibles se representan mediante variables sin secretos reales versionados.
+- Las rutas se organizan en carpetas `Administration` y `Customers`; los
+  endpoints operativos no asociados a una surface permanecen en `Service`.
+  Las requests gateway administrativas usan `ADMIN_USERINFO` y las de cliente
+  usan `CUSTOMER_USERINFO`, de modo que el path resuelva respectivamente las
+  surfaces `admin_panel` y `customer_app`.
+- Las variables de la colección se nombran en mayúsculas. Las identidades locales
+  registradas en Postman deben corresponder con los snapshots reproducibles de
+  `LocalRbacSnapshotSeeder`; si una identidad, surface, rol o permiso cambia, se
+  actualizan juntos el seeder y la colección.
+- Antes de finalizar un cambio de rutas, contrastar la colección con
+  `php artisan route:list --except-vendor` y con los endpoints operativos del
+  bootstrap, y validar que el archivo continúe siendo JSON válido e importable
+  como colección Postman v2.1.
+
 ## Precedencia e interpretación de Laravel Boost
 
 Laravel Boost proporciona convenciones predeterminadas del framework. No define por sí solo la arquitectura ni las reglas de dominio de IB Service.
