@@ -195,9 +195,10 @@ capacidades retiradas se conservan inactivas; sus datos descriptivos siguen
 gobernados por código y se reactivan cuando reaparece su implementación.
 
 La concurrencia del catálogo es optimista mediante `lock_version`, un detalle
-de persistencia que no representa una versión funcional ni se expone como tal.
-No existen revisiones históricas del catálogo ni una tabla de versiones de
-módulos.
+de persistencia que no representa una versión funcional. El listado no lo
+expone; el detalle y las respuestas de mutación lo entregan únicamente como
+token de concurrencia. No existen revisiones históricas del catálogo ni una
+tabla de versiones de módulos.
 
 La opción explícita `--prune` puede eliminar solo registros que nunca hayan
 sido referenciados. Debe rechazar y reportar cualquier eliminación que rompa
@@ -430,6 +431,7 @@ FormRequest → Http/V1/Command → UseCase → Result Data → Controller → A
 - Después de construirse, el Command no conserva referencias a `Request`, usuarios Eloquent ni otros objetos del framework.
 - Los controllers son delgados y normalizan la respuesta mediante `mmt/api-response-normalizer`.
 - El envelope HTTP pertenece al normalizador; el payload tipado pertenece a `spatie/laravel-data`.
+- Las excepciones de aplicación que representan errores esperados para la API extienden `App\Support\Exceptions\ApiException`. Laravel las convierte automáticamente al envelope normalizado y no las reporta; las excepciones técnicas inesperadas conservan el manejo y reporte predeterminados del framework.
 - Un API Resource es opcional y solo se utiliza cuando la representación HTTP difiere del resultado de aplicación por audiencia, permisos, enlaces o campos condicionales.
 - Un Resource es un transformador puro: no inyecta ni resuelve factories, repositories, Services o UseCases.
 - Un Resource no ejecuta queries, no carga relaciones y no accede a modelos de otro feature.
@@ -439,9 +441,9 @@ Las implementaciones de Resources en `broker-service` no constituyen precedente 
 
 ## Support
 
-`app/Support` es el alias semántico de utilidades técnicas transversales. Solo contiene capacidades puras y sin lenguaje de negocio. El `Support` de un feature sigue la misma regla dentro de su alcance.
+`app/Support` contiene utilidades y primitivas técnicas transversales, sin lenguaje ni reglas de negocio. Puede alojar abstracciones acopladas al framework cuando representan una política técnica común a toda la aplicación y no constituyen por sí mismas una frontera de aplicación o integración. El `Support` de un feature sigue la misma regla dentro de su alcance.
 
-Son candidatos válidos clocks, serialización técnica, paginación, identificadores base y utilidades de testing. No pertenecen a `Support` calculadores de rewards, reglas de elegibilidad, DTOs compartidos ni helpers nombrados por conceptos de negocio.
+Son candidatos válidos clocks, serialización técnica, paginación, identificadores base, utilidades de testing y excepciones base de transporte como `App\Support\Exceptions\ApiException`. Las excepciones específicas permanecen en el feature propietario y solo heredan de esa base cuando representan un error esperado de la API. No pertenecen a `Support` calculadores de rewards, reglas de elegibilidad, DTOs compartidos ni helpers nombrados por conceptos de negocio.
 
 ## Integración
 

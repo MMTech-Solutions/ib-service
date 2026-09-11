@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "792ab2bab3374c582b4b01e9ec2d7a01",
+    "content-hash": "b9a02548c89ca63a047b2be85af28da8",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -2499,6 +2499,49 @@
                 "source": "https://github.com/TitanDvd/api-response-normalizer/tree/v1.1.2"
             },
             "time": "2026-03-24T10:21:58+00:00"
+        },
+        {
+            "name": "mmt/laravel-feature-scaffold",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TitanDvd/laravel-feature-scaffold.git",
+                "reference": "91882ed88047cd20b29d87acc1acc644b0a164e1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TitanDvd/laravel-feature-scaffold/zipball/91882ed88047cd20b29d87acc1acc644b0a164e1",
+                "reference": "91882ed88047cd20b29d87acc1acc644b0a164e1",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^11.0|^12.0|^13.0",
+                "mmt/api-response-normalizer": "^1.1",
+                "php": "^8.2"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "MMT\\LaravelFeatureScaffold\\LaravelFeatureScaffoldServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "MMT\\LaravelFeatureScaffold\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Artisan commands to scaffold Laravel feature structure (make:feature, make:feature-model, make:feature-job, etc.)",
+            "support": {
+                "issues": "https://github.com/TitanDvd/laravel-feature-scaffold/issues",
+                "source": "https://github.com/TitanDvd/laravel-feature-scaffold/tree/v1.2.0"
+            },
+            "time": "2026-03-24T10:25:44+00:00"
         },
         {
             "name": "mmt/laravel-iam-service-sdk",
