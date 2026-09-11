@@ -1,16 +1,16 @@
-# Graph Report - ib-service  (2026-09-11)
+# Graph Report - ib-service  (2026-09-10)
 
 ## Corpus Check
-- 58 files · ~27,035 words
+- 49 files · ~16,820 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 399 nodes · 421 edges · 48 communities (43 shown, 5 thin omitted)
+- 317 nodes · 328 edges · 39 communities (34 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `46a5903a`
+- Built from commit: `d255bf69`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -45,27 +45,18 @@
 - Instrucciones del repositorio
 - Laravel Boost
 - Estilo de código
-- Modules: roadmap por entregas verticales
-- Modules: agregados, estados y transacciones
-- Roadmap del feature Modules
-- Modules: modelo de datos de la primera entrega
-- Roadmap de IB Service
-- Modules: inventario de casos de uso
-- Modules: implementación de la primera entrega
-- Roadmap del feature Plans
-- IB Service
 
 ## God Nodes (most connected - your core abstractions)
-1. `Arquitectura` - 18 edges
-2. `User` - 9 edges
-3. `require-dev` - 9 edges
-4. `scripts` - 9 edges
+1. `User` - 9 edges
+2. `require-dev` - 9 edges
+3. `scripts` - 9 edges
+4. `Laravel Boost Guidelines` - 8 edges
 5. `Laravel Boost Guidelines` - 8 edges
 6. `Planes, programas y suscripciones IB — BDS` - 8 edges
 7. `Progresión multi-módulo por puntos — BDS` - 8 edges
 8. `Reglas y recompensas IB — BDS` - 8 edges
-9. `Modules: agregados, estados y transacciones` - 8 edges
-10. `Roadmap del feature Modules` - 8 edges
+9. `Arquitectura` - 8 edges
+10. `setup` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `ExampleTest` --inherits--> `TestCase`  [EXTRACTED]
@@ -74,7 +65,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (48 total, 5 thin omitted)
+## Communities (39 total, 5 thin omitted)
 
 ### Community 0 - "composer.json"
 Cohesion: 0.06
@@ -117,8 +108,8 @@ Cohesion: 0.25
 Nodes (8): Contexto, Decisiones pendientes, Ejemplo de reutilización CPA, Eventos de negocio, Glosario, Reglas de dominio, Reglas y recompensas IB — BDS, Relaciones
 
 ### Community 10 - "docs/README.md"
-Cohesion: 0.11
-Nodes (13): Deployment, graphify, Laravel Pint Code Formatter, PHP, PHPUnit, Running Tests, Business Domain Specifications, Convenciones (+5 more)
+Cohesion: 0.10
+Nodes (17): Deployment, graphify, Laravel Pint Code Formatter, PHP, PHPUnit, Running Tests, Business Domain Specifications, Convenciones (+9 more)
 
 ### Community 11 - "config"
 Cohesion: 0.29
@@ -137,8 +128,8 @@ Cohesion: 0.40
 Nodes (4): Monolog\Handler\NullHandler, Monolog\Handler\StreamHandler, Monolog\Handler\SyslogUdpHandler, Monolog\Processor\PsrLogMessageProcessor
 
 ### Community 29 - "Arquitectura"
-Cohesion: 0.08
-Nodes (25): Actions, Actividad externa, Arquitectura, Composición con Laravel, Contratos y comunicación entre features, Decisiones pendientes, Estado, Estructura de un feature (+17 more)
+Cohesion: 0.25
+Nodes (8): Arquitectura, Decisiones pendientes, Dependencias, Estado, Integración, Organización interna prevista, Persistencia y auditoría, Principios obligatorios
 
 ### Community 30 - "Seguridad"
 Cohesion: 0.29
@@ -153,8 +144,8 @@ Cohesion: 0.33
 Nodes (6): APIs & Eloquent Resources, Do Things the Laravel Way, Model Creation, Testing, URL Generation, Vite Error
 
 ### Community 33 - "Documentación de IB Service"
-Cohesion: 0.29
-Nodes (7): [`bds/`](bds/README.md), Documentación de IB Service, Jerarquía de autoridad, Mantenimiento, [`roadmap/`](roadmap/README.md), [`rules/`](rules/README.md), Secciones
+Cohesion: 0.33
+Nodes (6): [`bds/`](bds/README.md), Documentación de IB Service, Jerarquía de autoridad, Mantenimiento, [`rules/`](rules/README.md), Secciones
 
 ### Community 34 - "Propósito y mantenimiento de los BDS"
 Cohesion: 0.33
@@ -165,8 +156,8 @@ Cohesion: 0.33
 Nodes (6): Confiabilidad, Datos y cálculos, Diseño, Mejores prácticas de programación, Observabilidad, Pruebas
 
 ### Community 36 - "Instrucciones del repositorio"
-Cohesion: 0.33
-Nodes (6): Fuentes de verdad, Instrucciones del repositorio, Mantenimiento documental, Precedencia e interpretación de Laravel Boost, Routing documental obligatorio, Uso obligatorio de Graphify
+Cohesion: 0.40
+Nodes (5): Fuentes de verdad, Instrucciones del repositorio, Mantenimiento documental, Routing documental obligatorio, Uso obligatorio de Graphify
 
 ### Community 37 - "Laravel Boost"
 Cohesion: 0.50
@@ -176,58 +167,22 @@ Nodes (4): Artisan, Laravel Boost, Project Rules, Tinker
 Cohesion: 0.50
 Nodes (4): Estilo de código, Formato, Laravel, PHP
 
-### Community 39 - "Modules: roadmap por entregas verticales"
-Cohesion: 0.20
-Nodes (10): Dependencias, M1 — Catálogo y control operativo, M2 — Catálogo externo de instrumentos, M3 — Fuentes de actividad, M4 — Sustitución y endurecimiento operativo, Modules: roadmap por entregas verticales, Primera entrega consumidora: Plans P1, Principio de corte (+2 more)
-
-### Community 40 - "Modules: agregados, estados y transacciones"
-Cohesion: 0.22
-Nodes (8): Decisiones de dominio ya confirmadas, Decisiones pendientes de esta etapa, Estados confirmados, Hipótesis de agregados, Invariantes que deberá expresar el modelo, Límites transaccionales por validar, Modules: agregados, estados y transacciones, Resultado esperado de esta etapa
-
-### Community 41 - "Roadmap del feature Modules"
-Cohesion: 0.25
-Nodes (8): Alcance inicial, Decisiones confirmadas, Estado, Fuera del primer incremento, Objetivo, Próximo paso, Referencias canónicas, Roadmap del feature Modules
-
-### Community 42 - "Modules: modelo de datos de la primera entrega"
-Cohesion: 0.29
-Nodes (6): Criterios de salida, Decisiones obligatorias antes de migrar, Modules: modelo de datos de la primera entrega, Necesidades de persistencia conocidas, Propósito, Tablas candidatas, no aprobadas
-
-### Community 43 - "Roadmap de IB Service"
-Cohesion: 0.29
-Nodes (7): Criterios de avance, Estados, Iteración estándar por feature, Mantenimiento, Roadmap de IB Service, Secuencia entre features, Índice por feature
-
-### Community 44 - "Modules: inventario de casos de uso"
-Cohesion: 0.33
-Nodes (6): Actores, Criterios de salida, Decisiones cerradas, Inventario inicial, Modules: inventario de casos de uso, Propósito
-
-### Community 45 - "Modules: implementación de la primera entrega"
-Cohesion: 0.33
-Nodes (5): Definition of Done de M1, Evidencia de cierre, Matriz mínima de contract tests, Modules: implementación de la primera entrega, Orden de implementación propuesto
-
-### Community 46 - "Roadmap del feature Plans"
-Cohesion: 0.40
-Nodes (5): Posición en la secuencia, Primera entrega candidata: P1, Próximo paso, Relación con Programs, Roadmap del feature Plans
-
-### Community 47 - "IB Service"
-Cohesion: 0.50
-Nodes (4): Documentación, Estado, IB Service, Stack inicial
-
 ## Knowledge Gaps
-- **227 isolated node(s):** `Fuentes de verdad`, `Routing documental obligatorio`, `Uso obligatorio de Graphify`, `Mantenimiento documental`, `Precedencia e interpretación de Laravel Boost` (+222 more)
+- **166 isolated node(s):** `Controller`, `$schema`, `name`, `type`, `description` (+161 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Arquitectura` connect `Arquitectura` to `docs/README.md`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
-- **Why does `Modules: roadmap por entregas verticales` connect `Modules: roadmap por entregas verticales` to `docs/README.md`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `scripts` connect `scripts` to `composer.json`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `Laravel Boost Guidelines` connect `Laravel Boost Guidelines` to `docs/README.md`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **What connects `Fuentes de verdad`, `Routing documental obligatorio`, `Uso obligatorio de Graphify` to the rest of the system?**
-  _227 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `Planes, programas y suscripciones IB — BDS` connect `Planes, programas y suscripciones IB — BDS` to `docs/README.md`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **What connects `Controller`, `$schema`, `name` to the rest of the system?**
+  _166 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `composer.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
 - **Should `scripts` be split into smaller, more focused modules?**
