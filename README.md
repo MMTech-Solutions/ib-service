@@ -10,13 +10,21 @@ El repositorio se encuentra en fase de fundación. En esta etapa se establecen e
 
 ## Stack inicial
 
-- PHP 8.4.
-- Laravel 13.
-- PostgreSQL como base de datos configurada.
-- PHPUnit para pruebas.
-- Laravel Pint para formato.
-- Laravel Boost para asistencia de desarrollo.
-- Graphify para navegación e impacto sobre el código.
+| Tecnología | Uso inicial |
+| --- | --- |
+| PHP 8.4 | Runtime del servicio. |
+| Laravel 13 | Framework de aplicación. |
+| PostgreSQL | Persistencia relacional. |
+| `spatie/laravel-data` | Commands, objetos Data y contratos tipados. |
+| `mmt/api-response-normalizer` | Normalización de respuestas HTTP. |
+| `mmt/laravel-iam-service-sdk` | Interacción operativa con `auth-service`. |
+| `mmtech/iam-rbac` | Autorización distribuida y transporte Kafka. |
+| PHPUnit | Pruebas automatizadas. |
+| Laravel Pint | Formato de PHP. |
+| Laravel Boost | Guías para desarrollo asistido. |
+| Graphify | Navegación del código y análisis de impacto. |
+
+Las versiones exactas y las decisiones pendientes se mantienen en [`docs/rules/technology-stack.md`](docs/rules/technology-stack.md).
 
 ## Documentación
 

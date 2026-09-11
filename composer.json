@@ -12,8 +12,10 @@
         "php": "^8.3",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
+        "mmt/api-response-normalizer": "^1.1",
         "mmt/laravel-iam-service-sdk": "^1.2",
-        "mmtech/iam-rbac": "^1.13"
+        "mmtech/iam-rbac": "^1.13",
+        "spatie/laravel-data": "^4.23"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
