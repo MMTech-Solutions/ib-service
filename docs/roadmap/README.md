@@ -12,8 +12,8 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | En curso | M1a completado; próximo M1b | 2026-09-11 |
-| [`Plans`](plans/README.md) | No iniciado | Espera la entrega M1 de Modules | 2026-09-11 |
+| [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
+| [`Plans`](plans/README.md) | No iniciado | Próxima entrega: P1 | 2026-09-11 |
 | Programs | Bloqueado | Requiere la primera entrega vertical de Plans | 2026-09-11 |
 
 ## Secuencia entre features
@@ -30,9 +30,12 @@ Programs: configuración dentro de los módulos habilitados por el plan
 Rules / Progression / Rewards
 ```
 
-- `Modules M1` no publica contratos inter-feature especulativos.
+- `Modules M1` no publica contratos inter-feature especulativos. Sus objetos
+  tipados viven como DTOs internos hasta que un consumidor real exija un
+  `Contracts/Data/V1`.
 - `Plans P1` es el primer consumidor real de `Modules`; su necesidad concreta
-  origina el primer puerto de entrada público de `Modules`.
+  origina el primer puerto de entrada público de `Modules` y, con él, el
+  primer `Contracts/Data` versionado.
 - `Programs` no consume libremente el catálogo de módulos: primero debe obtener
   el contexto y los módulos habilitados por el plan propietario.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,

@@ -1,6 +1,6 @@
 # Modules: roadmap por entregas verticales
 
-Estado: **M1a completado; M1b pendiente**
+Estado: **M1 completado**
 Dependencia para aprobación: etapas 1 y 2
 
 ## Principio de corte
@@ -39,10 +39,16 @@ Completa M1 con:
 - contract tests ejecutados contra ambas implementaciones de repositorio;
 - pruebas del recorrido HTTP principal.
 
-Criterio de aceptación preliminar: el despliegue sincroniza un módulo con sus
+Criterio de aceptación: el despliegue sincroniza un módulo con sus
 capacidades; un operador autorizado lo consulta, lo pausa indicando un motivo y
-observa la condición y el historial. Al desactivarlo, toda actividad posterior
-se rechaza con evidencia sin afectar módulos independientes.
+observa la condición y el historial. Al desactivarlo, el módulo queda inactivo
+con evidencia operativa y los módulos independientes no cambian.
+
+BR-MODULE-015 permanece vigente. La evidencia de actividad rechazada se
+verifica en M3, cuando exista un consumidor real de actividad.
+
+Evidencia de cierre: migraciones, rutas y suites ejecutadas se registran en
+[`05-first-delivery-implementation.md`](05-first-delivery-implementation.md).
 
 M1 no publica puertos inter-feature anticipando consumidores futuros. Sus
 endpoints y el comando son adapters de entrada del propio feature, no evidencia

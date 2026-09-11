@@ -36,7 +36,7 @@ un endpoint o una transacción con el mismo nombre.
 | Operación | Pausar el procesamiento de un módulo | Se detienen cálculos y pagos mientras continúan ingesta y consultas de actividad. | M1 | Aceptado |
 | Operación | Reanudar el procesamiento | Los cálculos y pagos futuros vuelven a admitirse de forma auditable. | M1 | Aceptado |
 | Operación | Consultar historial de control | Se conoce quién cambió qué, cuándo y por qué. | M1 | Aceptado |
-| Operación | Rechazar actividad de un módulo inactivo | No se ingiere actividad de dominio y queda evidencia técnica del rechazo. | M1 | Aceptado |
+| Operación | Rechazar actividad de un módulo inactivo | No se ingiere actividad de dominio y queda evidencia técnica del rechazo. | M3 | Diferido: BR-MODULE-015 vigente; verificación ejecutable con el primer consumidor de actividad |
 | Consumo | Obtener módulos seleccionables para un plan | `Plans` recibe solo los objetos contractuales exigidos por su primer caso de uso. | Plans P1 | Pospuesto al consumidor |
 | Consumo | Verificar la condición de un módulo | El consumidor real obtiene la condición necesaria antes de actuar. | Entrega del consumidor | Pospuesto al consumidor |
 | Fuentes | Consultar símbolos admitidos por una fuente | Se obtienen instrumentos normalizados sin revelar el proveedor. | M2 | Pendiente de consumidor |

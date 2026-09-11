@@ -13,8 +13,7 @@
 | Graphify | CLI local | Grafo de conocimiento y análisis de impacto. |
 | Composer | 2.10.0 | Gestión de dependencias PHP. |
 | `spatie/laravel-data` | 4.23.0 | Commands, DTOs, resultados y payloads tipados. |
-| `mmt/api-response-normalizer` | 1.1.2 | Envelope y respuestas HTTP normalizadas desde controllers. |
-| `mmt/laravel-feature-scaffold` | 1.2.0 | Excepción base `MmtException` para errores HTTP normalizados. |
+| `mmt/laravel-feature-scaffold` | 1.2.0 | Scaffold feature-first, excepción base `MmtException` y dependencia transitiva de `mmt/api-response-normalizer` para el envelope HTTP. |
 | `mmt/laravel-iam-service-sdk` | 1.2.0 | Interacción operativa con `auth-service` mediante su SDK. |
 | `mmtech/iam-rbac` | 1.13 | Autorización distribuida y transporte Kafka disponible para publicación y consumo. |
 

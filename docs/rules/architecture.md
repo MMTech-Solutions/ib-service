@@ -196,10 +196,10 @@ capacidades retiradas se conservan inactivas; sus datos descriptivos siguen
 gobernados por código y se reactivan cuando reaparece su implementación.
 
 La concurrencia del catálogo es optimista mediante `lock_version`, un detalle
-de persistencia que no representa una versión funcional. El listado no lo
-expone; el detalle y las respuestas de mutación lo entregan únicamente como
-token de concurrencia. No existen revisiones históricas del catálogo ni una
-tabla de versiones de módulos.
+de persistencia que no representa una versión funcional. El listado, el detalle
+y las respuestas de mutación lo entregan como token de concurrencia para que el
+cliente pueda mutar sin una lectura previa obligatoria de show. No existen
+revisiones históricas del catálogo ni una tabla de versiones de módulos.
 
 La opción explícita `--prune` puede eliminar solo registros que nunca hayan
 sido referenciados. Debe rechazar y reportar cualquier eliminación que rompa
@@ -463,9 +463,9 @@ FormRequest → Http/V1/Command → UseCase → Result Data → Controller → A
 - `Command::fromRequest()` construye el objeto desde `$request->validated()` y añade explícitamente parámetros de ruta o contexto autorizado.
 - `$request->all()` no se usa como fuente general de Commands porque incluye campos no validados. Solo puede considerarse si `laravel-data` sustituye deliberadamente al FormRequest y realiza toda la validación mediante una convención futura documentada.
 - Después de construirse, el Command no conserva referencias a `Request`, usuarios Eloquent ni otros objetos del framework.
-- Los controllers son delgados y normalizan la respuesta mediante `mmt/api-response-normalizer`.
+- Los controllers son delgados y normalizan la respuesta mediante el trait `MMT\ApiResponseNormalizer\ApiResponse`, aportado transitivamente por `mmt/laravel-feature-scaffold`.
 - El envelope HTTP pertenece al normalizador; el payload tipado pertenece a `spatie/laravel-data`.
-- Las excepciones de aplicación que representan errores esperados para la API extienden `App\Support\Exceptions\ApiException`. Laravel las convierte automáticamente al envelope normalizado y no las reporta; las excepciones técnicas inesperadas conservan el manejo y reporte predeterminados del framework.
+- Las excepciones de aplicación que representan errores esperados para la API extienden `App\Support\Exceptions\ApiException`, que a su vez extiende `MMT\LaravelFeatureScaffold\Exceptions\MmtException`. Laravel las convierte automáticamente al envelope normalizado y no las reporta; las excepciones técnicas inesperadas conservan el manejo y reporte predeterminados del framework.
 - Un API Resource es opcional y solo se utiliza cuando la representación HTTP difiere del resultado de aplicación por audiencia, permisos, enlaces o campos condicionales.
 - Un Resource es un transformador puro: no inyecta ni resuelve factories, repositories, Services o UseCases.
 - Un Resource no ejecuta queries, no carga relaciones y no accede a modelos de otro feature.

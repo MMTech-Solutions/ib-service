@@ -1,7 +1,7 @@
 # Roadmap del feature Plans
 
 Estado: **No iniciado**  
-Dependencia: completar `Modules M1`  
+Dependencia satisfecha: `Modules M1` completado
 Última revisión: 2026-09-11
 
 ## Posición en la secuencia
@@ -28,11 +28,13 @@ La entrega deberá cubrir verticalmente:
 - rechazo de módulos inexistentes o inactivos;
 - consulta del plan con sus módulos configurados;
 - primer puerto público de `Modules`, limitado a la necesidad demostrada por el
-  caso de uso de `Plans`.
+  caso de uso de `Plans`, con objetos tipados en `Contracts/Data/V1`.
 
 Los nombres del caso de uso y del puerto permanecen abiertos hasta realizar el
 inventario de Plans. No se asume todavía `ConfigurePlanModulesUseCase`,
-`ResolveSelectableModulesPort` ni otra firma concreta.
+`ResolveSelectableModulesPort` ni otra firma concreta. Los DTOs internos de
+`Plans` permanecerán en `DTOs/` hasta que otro feature necesite un contrato
+publicado.
 
 ## Relación con Programs
 

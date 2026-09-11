@@ -1,13 +1,13 @@
 # Modules: modelo de datos de la primera entrega
 
-Estado: **Completado para M1a**
-Dependencia: decisiones de M1a cerradas
-Entrega objetivo: M1a — Sincronización y listado
+Estado: **Completado para M1**
+Dependencia: decisiones de M1 cerradas
+Entrega objetivo: M1 — Sincronización, catálogo y control operativo
 
 ## Propósito
 
-Este documento registra el diseño persistente aprobado e implementado para
-M1a. M1b ampliará el modelo cuando se cierre el historial operativo.
+Este documento registra el diseño persistente aprobado para M1, incluyendo el
+historial operativo de M1b.
 
 ## Necesidades de persistencia conocidas
 
@@ -15,20 +15,22 @@ M1a. M1b ampliará el modelo cuando se cierre el historial operativo.
 - Disponibilidad mediante `is_active`.
 - Capacidades implementadas y su semántica configurable.
 - `processing_status`, inicialmente `running` o `paused`.
-- Actor, instante y detalle de cada cambio operativo.
+- Actor, instante, motivo y estados anterior y posterior de cada cambio
+  operativo.
 - Protección contra actualizaciones concurrentes cuando corresponda.
 
-## Tablas aprobadas para M1a
+## Tablas aprobadas para M1
 
-| Hipótesis | Posible responsabilidad |
+| Tabla | Responsabilidad |
 | --- | --- |
 | `modules` | UUIDv7, código único, datos administrativos, estados, `lock_version` técnico y timestamps UTC. |
 | `module_capabilities` | UUIDv7, módulo, código único por módulo, datos gobernados por código, `is_active` y timestamps UTC. |
+| `module_operational_changes` | Hijo inmutable del agregado: acción, actor IAM, motivo, instante y snapshots de estado. |
 
 `processing_status` admite únicamente `running` y `paused`. Los módulos nuevos
 nacen activos y en ejecución. `lock_version` soporta concurrencia optimista y
-no constituye versionado funcional. El historial operativo y los snapshots de
-programas quedan fuera de M1a.
+no constituye versionado funcional. Los snapshots de programas quedan fuera de
+M1.
 
 ### Columnas
 
@@ -40,16 +42,26 @@ programas quedan fuera de M1a.
   eliminar un huérfano autorizado; `code varchar(64)`; `name varchar(120)`;
   `description text` nullable; `is_active boolean` default `true`; timestamps
   con zona horaria.
+- `module_operational_changes`: `id uuid` PK; `module_id uuid` FK con cascade
+  al eliminar un huérfano autorizado; `action varchar(16)` con valores
+  `activate`, `deactivate`, `pause` y `resume`; `actor_iam_id uuid`;
+  `reason varchar(500)`; `previous_is_active boolean`;
+  `previous_processing_status varchar(16)`; `next_is_active boolean`;
+  `next_processing_status varchar(16)`; `occurred_at` con zona horaria.
 
 ## Restricciones confirmadas
 
-- UUIDv7 identifica módulos y capacidades; `modules.code` es único e inmutable.
+- UUIDv7 identifica módulos, capacidades y cambios operativos; `modules.code`
+  es único e inmutable.
 - Las capacidades son únicas por `(module_id, code)` y conservan `is_active`.
-- PostgreSQL aplica checks para `processing_status` y `lock_version > 0`.
+- PostgreSQL aplica checks para `processing_status`, `action` y
+  `lock_version > 0`.
 - `modules:sync --prune` consulta un guard de referencias antes de borrar.
 - El índice compuesto de módulos cubre estados y orden por código; las
-  capacidades se indexan por módulo, actividad y código.
-- M1a no necesita outbox ni tabla de historial operativo.
+  capacidades se indexan por módulo, actividad y código; el historial se
+  indexa por `(module_id, occurred_at)`.
+- M1 no necesita outbox. El historial operativo no se versiona ni se edita.
+- La retención del historial queda pendiente hasta producción.
 
 ## Criterios de salida
 

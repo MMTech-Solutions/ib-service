@@ -1,8 +1,8 @@
 # Modules: implementación de la primera entrega
 
-Estado: **M1a completado**
-Dependencia: decisiones y datos de M1a cerrados
-Entrega objetivo: M1a — Sincronización y listado
+Estado: **M1 completado**
+Dependencia: decisiones y datos de M1 cerrados
+Entrega objetivo: M1 — Sincronización, catálogo y control operativo
 
 ## Orden de implementación propuesto
 
@@ -55,9 +55,12 @@ de métodos.
 - Las reglas de autorización y la auditoría tienen pruebas negativas y
   positivas.
 - Las operaciones mutables son transaccionales e idempotentes donde aplique.
-- Las respuestas HTTP usan `mmt/api-response-normalizer`.
-- Commands y objetos contractuales usan `spatie/laravel-data` cuando
-  corresponda.
+- Las respuestas HTTP usan el trait `ApiResponse` aportado por `mmt/laravel-feature-scaffold`.
+- Los errores HTTP esperados se expresan con `ApiException` / `MmtException`.
+- Commands y DTOs internos usan `spatie/laravel-data` y viven en
+  `Http/V1/Commands` o `DTOs/`. M1 no publica objetos en `Contracts/Data`
+  sin un consumidor inter-feature real; el versionado por directorio aplica
+  solo a `Contracts/Data` y `Contracts/Events`.
 - El BDS, las reglas técnicas, el roadmap y Graphify reflejan el resultado.
 
 ## Evidencia de cierre
@@ -73,3 +76,23 @@ uso, pruebas ejecutadas y cualquier decisión nueva incorporada a BDS o reglas.
 - Comando `modules:sync` y ruta `GET /api/ib/v1/admin/modules` verificados.
 - Suite: 29 pruebas y 92 aserciones sobre PostgreSQL real, incluidas las reglas
   automáticas de arquitectura para el acceso al usuario autenticado.
+
+### Evidencia de M1b y cierre de M1
+
+- Migración PostgreSQL de `module_operational_changes` con acción, actor IAM,
+  motivo, instante y snapshots anterior/posterior.
+- Entidad inmutable `OperationalControlChange`, estados ortogonales e
+  idempotentes y persistencia atómica junto con `Module`.
+- Repositorios InMemory y PostgreSQL validados por el mismo contrato para
+  búsqueda por UUID, edición, estados, historial, aislamiento, concurrencia y
+  rollback.
+- API administrativa verificada para detalle, edición,
+  activación/desactivación, pausa/reanudación e historial paginado.
+- Las ocho rutas de Modules están sincronizadas con
+  `ib-service.postman_collection.json`.
+- Suite completa: 62 pruebas y 272 aserciones sobre PostgreSQL real.
+- Pruebas positivas y negativas de autorización, concurrencia, idempotencia,
+  auditoría, validación y recorrido HTTP principal.
+- BR-MODULE-015 continúa vigente; su evidencia ejecutable se trasladó a M3,
+  junto al primer consumidor real de actividad.
+- No se publicaron puertos inter-feature; el siguiente vertical es `Plans P1`.
