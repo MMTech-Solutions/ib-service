@@ -32,7 +32,8 @@
 ## Nombres arquitectónicos
 
 - Usar los sufijos `UseCase`, `Action`, `Repository`, `RepositoryInterface`, `RepositoryFactory`, `Adapter`, `Strategy` y `Data` de acuerdo con la responsabilidad definida en `architecture.md`.
-- Los DTOs implementados con `spatie/laravel-data` usan el sufijo `Data` cuando forman parte de un contrato nuevo. No renombrar mecánicamente precedentes externos que utilicen `DTO`.
+- Los objetos tipados con `spatie/laravel-data` usan el sufijo `Data`. La ubicación distingue el rol: internos en `DTOs/`; públicos en `Contracts/Data/V1/` (u otra versión mayor). No renombrar mecánicamente precedentes externos que utilicen `DTO`.
+- No versionar por directorio los DTOs internos. Solo versionar `Contracts/Data` y `Contracts/Events`.
 - Los objetos de valor se nombran por el concepto que representan y no necesitan el sufijo `ValueObject`.
 - Evitar nombres genéricos como `Manager`, `Helper`, `Processor` o `CommonService` cuando exista un nombre de negocio más preciso.
 

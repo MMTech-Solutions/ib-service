@@ -45,6 +45,7 @@ app/
 │       │   ├── Repositories/
 │       │   ├── Strategies/
 │       │   ├── Data/
+│       │   │   └── V1/
 │       │   └── Events/
 │       ├── DTOs/
 │       ├── ValueObjects/
@@ -327,8 +328,41 @@ Solo los artefactos deliberadamente publicados en `Contracts` pueden cruzar una 
 - UseCases ni Actions.
 - Services internos.
 - Builders, queries Eloquent o tipos pertenecientes a un SDK.
+- Clases de `DTOs/` del feature.
 
-Los DTOs de contrato son inmutables, completamente tipados y estables para sus consumidores. Un DTO interno vive en `DTOs`; uno que forme parte de un puerto público puede vivir en `Contracts/Data`. De igual forma, un evento interno vive en `Events` y un evento publicado y versionado vive en `Contracts/Events`.
+### DTOs internos frente a `Contracts/Data`
+
+`DTOs/` y `Contracts/Data` no son alias. Distinguen visibilidad y estabilidad:
+
+| Ubicación | Rol | Consumidores |
+| --- | --- | --- |
+| `DTOs/` | Objetos de transferencia internos del feature: queries, resultados de UseCase, read models HTTP y payloads de aplicación no publicados | Solo el feature o subfeature dueño |
+| `Contracts/Data/` | Objetos contractuales de un puerto público entre features | El feature proveedor y features consumidores vía puerto |
+
+Reglas de ubicación:
+
+- Si el tipo solo lo usan UseCases, Actions, Repositories, Controllers o Services del mismo feature, vive en `DTOs/`.
+- Si el tipo aparece en la firma de un puerto de entrada o salida publicado, vive en `Contracts/Data`.
+- No se publica un objeto en `Contracts/Data` “por si acaso”. Se promueve cuando aparece el primer consumidor real entre features.
+- Los Commands HTTP permanecen en `Http/V1/Commands` y no sustituyen a `DTOs/` ni a `Contracts/Data`.
+- El mismo criterio aplica a eventos: internos en `Events/`; publicados y versionados en `Contracts/Events`.
+
+Ambas familias usan `spatie/laravel-data` y el sufijo `Data`. La carpeta, no el sufijo, declara si el objeto es interno o contractual.
+
+#### Versionado
+
+Solo se versionan los contratos públicos. Los DTOs internos no se versionan por directorio; se refactorizan dentro de `DTOs/` cuando cambian.
+
+Los objetos de `Contracts/Data` se organizan por versión mayor:
+
+```text
+Features/<Feature>/Contracts/Data/V1/ModuleSummaryData.php
+```
+
+- La primera publicación de un contrato público usa `V1`.
+- Un cambio incompatible crea `V2` y deja `V1` intacto mientras existan consumidores.
+- No se muta en silencio un contrato ya publicado.
+- Los eventos publicados en `Contracts/Events` siguen la misma política de versionado por directorio.
 
 ## UseCases, Actions y Services
 
@@ -387,12 +421,12 @@ Un repository remoto es apropiado cuando la integración se presenta al dominio 
 
 - Los modelos Eloquent son detalles de persistencia y no salen del repository propietario.
 - Ningún modelo se lee ni se modifica desde un UseCase, Action, Resource u otro feature.
-- El repository devuelve entidades, objetos de valor, DTOs o read models tipados según el caso.
+- El repository devuelve entidades, objetos de valor, DTOs internos o read models tipados según el caso.
 - Una respuesta de SDK se mapea en el adapter o repository; los tipos del SDK no se propagan al resto del feature.
 - Solo se crea una entidad cuando IB gobierna su identidad y ciclo de vida.
 - Solo se crea un modelo para datos persistidos localmente; una actividad externa no requiere un modelo salvo que exista un snapshot, caché o proyección local explícita.
 
-`spatie/laravel-data` es la tecnología obligatoria para Commands, DTOs, resultados, filtros y payloads serializables. Los objetos de valor dedicados se conservan para conceptos con invariantes, igualdad por valor u operaciones propias, como dinero, puntos, períodos, cantidades ponderadas o referencias de símbolo. Un `Data` puede contener objetos de valor; una misma clase no debe asumir ambiguamente ambos roles.
+`spatie/laravel-data` es la tecnología obligatoria para Commands, DTOs internos, contratos públicos, resultados, filtros y payloads serializables. Los objetos de valor dedicados se conservan para conceptos con invariantes, igualdad por valor u operaciones propias, como dinero, puntos, períodos, cantidades ponderadas o referencias de símbolo. Un `Data` puede contener objetos de valor; una misma clase no debe asumir ambiguamente ambos roles.
 
 ## Actividad externa
 
@@ -467,7 +501,6 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 - Organización futura de `ModulesServiceProvider` si el volumen real de bindings justifica dividirlo.
 - Forma de registrar implementaciones y estrategias dentro de las factories.
 - Contrato común de consulta y paginación de actividad por módulo.
-- Política de DTOs públicos y versionado de contratos internos.
 - Manejo tipado de errores entre features y desde integraciones externas.
 - Formato definitivo del envelope y catálogo inicial de eventos.
 - Límites transaccionales, Unit of Work y coordinación con outbox.
