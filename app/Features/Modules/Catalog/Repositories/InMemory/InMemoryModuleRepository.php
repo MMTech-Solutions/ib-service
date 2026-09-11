@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Repositories\InMemory;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleListQueryData;
-use App\Features\Modules\Catalog\Contracts\Data\ModulesPageData;
 use App\Features\Modules\Catalog\Contracts\Repositories\ModuleReferenceGuardInterface;
 use App\Features\Modules\Catalog\Contracts\Repositories\ModuleRepositoryInterface;
+use App\Features\Modules\Catalog\DTOs\ModuleListQueryData;
+use App\Features\Modules\Catalog\DTOs\ModuleOperationalHistoryPageData;
+use App\Features\Modules\Catalog\DTOs\ModuleOperationalHistoryQueryData;
+use App\Features\Modules\Catalog\DTOs\ModulesPageData;
 use App\Features\Modules\Catalog\Exceptions\DuplicateModuleCodeException;
 use App\Features\Modules\Catalog\Exceptions\ModuleConcurrencyException;
 use App\Features\Modules\Catalog\Models\Module;
+use App\Features\Modules\Catalog\Models\OperationalControlChange;
 use Closure;
 use Throwable;
 
@@ -19,16 +22,21 @@ final class InMemoryModuleRepository implements ModuleRepositoryInterface
     /** @var array<string, Module> */
     private array $modules = [];
 
+    /** @var list<OperationalControlChange> */
+    private array $changes = [];
+
     public function __construct(private readonly ModuleReferenceGuardInterface $referenceGuard) {}
 
     public function transaction(Closure $callback): mixed
     {
-        $snapshot = unserialize(serialize($this->modules), ['allowed_classes' => true]);
+        $moduleSnapshot = unserialize(serialize($this->modules), ['allowed_classes' => true]);
+        $changeSnapshot = unserialize(serialize($this->changes), ['allowed_classes' => true]);
 
         try {
             return $callback();
         } catch (Throwable $throwable) {
-            $this->modules = $snapshot;
+            $this->modules = $moduleSnapshot;
+            $this->changes = $changeSnapshot;
             throw $throwable;
         }
     }
@@ -39,6 +47,17 @@ final class InMemoryModuleRepository implements ModuleRepositoryInterface
         usort($modules, static fn (Module $a, Module $b): int => $a->code <=> $b->code);
 
         return array_map(fn (Module $module): Module => $this->copy($module), $modules);
+    }
+
+    public function findById(string $id): ?Module
+    {
+        foreach ($this->modules as $module) {
+            if ($module->id === $id) {
+                return $this->copy($module);
+            }
+        }
+
+        return null;
     }
 
     public function findByCode(string $code): ?Module
@@ -73,8 +92,46 @@ final class InMemoryModuleRepository implements ModuleRepositoryInterface
         }
 
         unset($this->modules[$module->code]);
+        $this->changes = array_values(array_filter(
+            $this->changes,
+            static fn (OperationalControlChange $change): bool => $change->moduleId !== $module->id,
+        ));
 
         return true;
+    }
+
+    public function appendOperationalChange(OperationalControlChange $change): void
+    {
+        $this->changes[] = unserialize(serialize($change), ['allowed_classes' => true]);
+    }
+
+    public function paginateOperationalHistory(ModuleOperationalHistoryQueryData $query): ModuleOperationalHistoryPageData
+    {
+        $filtered = array_values(array_filter(
+            $this->changes,
+            static fn (OperationalControlChange $change): bool => $change->moduleId === $query->moduleId,
+        ));
+
+        usort($filtered, static function (OperationalControlChange $a, OperationalControlChange $b): int {
+            $comparison = $b->occurredAt <=> $a->occurredAt;
+
+            return $comparison !== 0 ? $comparison : $b->id <=> $a->id;
+        });
+
+        $total = count($filtered);
+        $offset = ($query->page - 1) * $query->perPage;
+        $entries = array_map(
+            static fn (OperationalControlChange $change) => $change->toData(),
+            array_slice($filtered, $offset, $query->perPage),
+        );
+
+        return new ModuleOperationalHistoryPageData(
+            entries: $entries,
+            currentPage: $query->page,
+            perPage: $query->perPage,
+            total: $total,
+            lastPage: max(1, (int) ceil($total / max(1, $query->perPage))),
+        );
     }
 
     public function paginate(ModuleListQueryData $query): ModulesPageData

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Models;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityDefinitionData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityData;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleData;
+use App\Features\Modules\Catalog\DTOs\ModuleDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleDetailData;
 use App\Features\Modules\Catalog\ValueObjects\ProcessingStatus;
 use Closure;
 
@@ -119,6 +120,31 @@ final class Module
         return compact('changed', 'activated', 'deactivated');
     }
 
+    public function updateAdministrativeFields(string $name, ?string $description, string $now): bool
+    {
+        if ($this->name === $name && $this->description === $description) {
+            return false;
+        }
+
+        $this->name = $name;
+        $this->description = $description;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
+    public function activate(string $now): bool
+    {
+        if ($this->isActive) {
+            return false;
+        }
+
+        $this->isActive = true;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
     public function deactivate(string $now): bool
     {
         if (! $this->isActive) {
@@ -126,6 +152,30 @@ final class Module
         }
 
         $this->isActive = false;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
+    public function pause(string $now): bool
+    {
+        if ($this->processingStatus === ProcessingStatus::Paused) {
+            return false;
+        }
+
+        $this->processingStatus = ProcessingStatus::Paused;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
+    public function resume(string $now): bool
+    {
+        if ($this->processingStatus === ProcessingStatus::Running) {
+            return false;
+        }
+
+        $this->processingStatus = ProcessingStatus::Running;
         $this->updatedAt = $now;
 
         return true;
@@ -142,12 +192,31 @@ final class Module
             description: $this->description,
             is_active: $this->isActive,
             processing_status: $this->processingStatus->value,
+            lock_version: $this->lockVersion,
             capabilities: array_map(
                 static fn (ModuleCapability $capability): ModuleCapabilityData => $capability->toData(),
                 $this->capabilities,
             ),
             created_at: $this->createdAt,
             updated_at: $this->updatedAt,
+        );
+    }
+
+    public function toDetailData(): ModuleDetailData
+    {
+        $list = $this->toData();
+
+        return new ModuleDetailData(
+            id: $list->id,
+            code: $list->code,
+            name: $list->name,
+            description: $list->description,
+            is_active: $list->is_active,
+            processing_status: $list->processing_status,
+            lock_version: $list->lock_version,
+            capabilities: $list->capabilities,
+            created_at: $list->created_at,
+            updated_at: $list->updated_at,
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Features\Modules\Catalog\Exceptions\ModuleConcurrencyException;
 use App\Features\Modules\Catalog\Exceptions\ModuleNotFoundException;
 use App\Support\Exceptions\ApiException;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -30,6 +31,23 @@ final class ApiExceptionHandlingTest extends TestCase
         $payload = json_decode((string) $response->getContent(), true, flags: JSON_THROW_ON_ERROR);
 
         $this->assertSame('MODULE_NOT_FOUND', $payload['error']['code']);
+    }
+
+    public function test_concurrency_conflicts_render_as_normalized_http_409(): void
+    {
+        $handler = $this->app->make(ExceptionHandler::class);
+        $exception = ModuleConcurrencyException::forModule('stale-module');
+
+        $response = $handler->render(
+            Request::create('/api/ib/v1/admin/modules/stale-module/activate', 'POST'),
+            $exception,
+        );
+
+        $this->assertSame(409, $response->getStatusCode());
+        $payload = json_decode((string) $response->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertFalse($payload['success']);
+        $this->assertSame('MODULE_CONCURRENCY_CONFLICT', $payload['error']['code']);
     }
 
     public function test_only_api_exceptions_are_excluded_from_reporting(): void

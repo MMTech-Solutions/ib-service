@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Repositories\PostgreSql;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleListQueryData;
-use App\Features\Modules\Catalog\Contracts\Data\ModulesPageData;
 use App\Features\Modules\Catalog\Contracts\Repositories\ModuleReferenceGuardInterface;
 use App\Features\Modules\Catalog\Contracts\Repositories\ModuleRepositoryInterface;
+use App\Features\Modules\Catalog\DTOs\ModuleListQueryData;
+use App\Features\Modules\Catalog\DTOs\ModuleOperationalChangeData;
+use App\Features\Modules\Catalog\DTOs\ModuleOperationalHistoryPageData;
+use App\Features\Modules\Catalog\DTOs\ModuleOperationalHistoryQueryData;
+use App\Features\Modules\Catalog\DTOs\ModulesPageData;
+use App\Features\Modules\Catalog\Enums\OperationalControlAction;
 use App\Features\Modules\Catalog\Exceptions\DuplicateModuleCodeException;
 use App\Features\Modules\Catalog\Exceptions\ModuleConcurrencyException;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Models\ModuleCapability;
+use App\Features\Modules\Catalog\Models\OperationalControlChange;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleCapabilityRecord;
+use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleOperationalChangeRecord;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
 use App\Features\Modules\Catalog\ValueObjects\ProcessingStatus;
 use Closure;
@@ -39,6 +45,13 @@ final class PostgreSqlModuleRepository implements ModuleRepositoryInterface
             ->get()
             ->map(fn (ModuleRecord $record): Module => $this->hydrate($record))
             ->all();
+    }
+
+    public function findById(string $id): ?Module
+    {
+        $record = ModuleRecord::query()->with('capabilities')->whereKey($id)->first();
+
+        return $record === null ? null : $this->hydrate($record);
     }
 
     public function findByCode(string $code): ?Module
@@ -101,6 +114,43 @@ final class PostgreSqlModuleRepository implements ModuleRepositoryInterface
         return ModuleRecord::query()->whereKey($module->id)->delete() === 1;
     }
 
+    public function appendOperationalChange(OperationalControlChange $change): void
+    {
+        ModuleOperationalChangeRecord::query()->create([
+            'id' => $change->id,
+            'module_id' => $change->moduleId,
+            'action' => $change->action->value,
+            'actor_iam_id' => $change->actorIamId,
+            'reason' => $change->reason,
+            'previous_is_active' => $change->previousIsActive,
+            'previous_processing_status' => $change->previousProcessingStatus->value,
+            'next_is_active' => $change->nextIsActive,
+            'next_processing_status' => $change->nextProcessingStatus->value,
+            'occurred_at' => $change->occurredAt,
+        ]);
+    }
+
+    public function paginateOperationalHistory(ModuleOperationalHistoryQueryData $query): ModuleOperationalHistoryPageData
+    {
+        $paginator = ModuleOperationalChangeRecord::query()
+            ->where('module_id', $query->moduleId)
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id')
+            ->paginate($query->perPage, ['*'], 'page', $query->page);
+
+        $entries = collect($paginator->items())
+            ->map(fn (ModuleOperationalChangeRecord $record): ModuleOperationalChangeData => $this->hydrateChange($record)->toData())
+            ->all();
+
+        return new ModuleOperationalHistoryPageData(
+            entries: $entries,
+            currentPage: $paginator->currentPage(),
+            perPage: $paginator->perPage(),
+            total: $paginator->total(),
+            lastPage: $paginator->lastPage(),
+        );
+    }
+
     public function paginate(ModuleListQueryData $query): ModulesPageData
     {
         $builder = ModuleRecord::query()
@@ -127,6 +177,22 @@ final class PostgreSqlModuleRepository implements ModuleRepositoryInterface
             perPage: $paginator->perPage(),
             total: $paginator->total(),
             lastPage: $paginator->lastPage(),
+        );
+    }
+
+    private function hydrateChange(ModuleOperationalChangeRecord $record): OperationalControlChange
+    {
+        return new OperationalControlChange(
+            id: (string) $record->id,
+            moduleId: (string) $record->module_id,
+            action: OperationalControlAction::from((string) $record->action),
+            actorIamId: (string) $record->actor_iam_id,
+            reason: (string) $record->reason,
+            previousIsActive: (bool) $record->previous_is_active,
+            previousProcessingStatus: ProcessingStatus::from((string) $record->previous_processing_status),
+            nextIsActive: (bool) $record->next_is_active,
+            nextProcessingStatus: ProcessingStatus::from((string) $record->next_processing_status),
+            occurredAt: $record->occurred_at->utc()->toISOString(),
         );
     }
 

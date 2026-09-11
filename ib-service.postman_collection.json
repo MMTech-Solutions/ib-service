@@ -13,11 +13,20 @@
                     "name": "Welcome",
                     "request": {
                         "method": "GET",
-                        "header": [{"key": "Accept", "value": "text/html"}],
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "text/html"
+                            }
+                        ],
                         "url": {
                             "raw": "{{BASE_URL}}/",
-                            "host": ["{{BASE_URL}}"],
-                            "path": [""]
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
                         },
                         "description": "Default application landing route."
                     },
@@ -27,11 +36,20 @@
                     "name": "Health check",
                     "request": {
                         "method": "GET",
-                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
                         "url": {
                             "raw": "{{BASE_URL}}/up",
-                            "host": ["{{BASE_URL}}"],
-                            "path": ["up"]
+                            "host": [
+                                "{{BASE_URL}}"
+                            ],
+                            "path": [
+                                "up"
+                            ]
                         },
                         "description": "Laravel operational health endpoint configured in bootstrap/app.php."
                     },
@@ -51,23 +69,466 @@
                             "request": {
                                 "method": "GET",
                                 "header": [
-                                    {"key": "Accept", "value": "application/json"},
-                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
-                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
                                 ],
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/modules?page=1&per_page=100&search=broker&is_active=true&processing_status=running",
-                                    "host": ["{{BASE_URL}}"],
-                                    "path": ["api", "ib", "v1", "admin", "modules"],
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules"
+                                    ],
                                     "query": [
-                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
-                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
-                                        {"key": "search", "value": "broker", "description": "Case-insensitive search by module code or name.", "disabled": true},
-                                        {"key": "is_active", "value": "true", "description": "Filter by active state: true or false.", "disabled": true},
-                                        {"key": "processing_status", "value": "running", "description": "Filter by processing status: running or paused.", "disabled": true}
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Positive page number. Defaults to 1.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Results per page from 1 to 100. Defaults to 100.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "search",
+                                            "value": "broker",
+                                            "description": "Case-insensitive search by module code or name.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "is_active",
+                                            "value": "true",
+                                            "description": "Filter by active state: true or false.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "processing_status",
+                                            "value": "running",
+                                            "description": "Filter by processing status: running or paused.",
+                                            "disabled": true
+                                        }
                                     ]
                                 },
-                                "description": "Requires ib.modules.manage on the admin_panel surface. Returns modules ordered by code, including active and inactive capabilities."
+                                "description": "Requires ib.modules.manage on the admin_panel surface. Returns modules ordered by code, including active and inactive capabilities and lock_version for optimistic concurrency."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show module",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Requires ib.modules.manage. Returns module details, embedded capabilities and lock_version."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update module",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Broker\",\n    \"description\": \"Broker activity module.\",\n    \"lock_version\": \"{{LOCK_VERSION}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Updates only administrative name and description using optimistic concurrency."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Activate module",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"Module is ready for operation.\",\n    \"lock_version\": \"{{LOCK_VERSION}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/activate",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}",
+                                        "activate"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Activates a module without changing its processing status. Idempotent."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Deactivate module",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"Module source is unavailable.\",\n    \"lock_version\": \"{{LOCK_VERSION}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/deactivate",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}",
+                                        "deactivate"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Deactivates a module without deleting its history. Idempotent."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Pause module processing",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"Operational risk review.\",\n    \"lock_version\": \"{{LOCK_VERSION}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/pause",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}",
+                                        "pause"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Pauses calculations and payments while preserving activity capture. Idempotent."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Resume module processing",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"Operational review completed.\",\n    \"lock_version\": \"{{LOCK_VERSION}}\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/resume",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}",
+                                        "resume"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ]
+                                },
+                                "description": "Resumes module processing without changing availability. Idempotent."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List module operational history",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/operational-history?page=1&per_page=100",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "modules",
+                                        "{{MODULE_ID}}",
+                                        "operational-history"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "MODULE_ID",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "UUIDv7 of the module."
+                                        }
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Positive page number. Defaults to 1.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Results per page from 1 to 100. Defaults to 100.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Returns immutable operational changes in reverse chronological order."
                             },
                             "response": []
                         }
@@ -82,13 +543,55 @@
         }
     ],
     "variable": [
-        {"key": "BASE_URL", "value": "http://localhost:8084", "type": "string"},
-        {"key": "GATEWAY_INTERNAL_SECRET", "value": "apisix", "type": "string"},
-        {"key": "ADMIN_USER_SUB", "value": "08e7cde8-54ad-423d-ae40-200fad11b157", "type": "string"},
-        {"key": "ADMIN_USER_EMAIL", "value": "admin@mmtech-solutions.com", "type": "string"},
-        {"key": "ADMIN_USERINFO", "value": "eyJzdWIiOiIwOGU3Y2RlOC01NGFkLTQyM2QtYWU0MC0yMDBmYWQxMWIxNTcifQ", "type": "string"},
-        {"key": "CUSTOMER_USER_SUB", "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0", "type": "string"},
-        {"key": "CUSTOMER_USER_EMAIL", "value": "ib.root@local.test", "type": "string"},
-        {"key": "CUSTOMER_USERINFO", "value": "eyJzdWIiOiJhYWFhYWFhYS1hYWFhLWFhYWEtYWFhYS1hYWFhYWFhYWFhYTAifQ", "type": "string"}
+        {
+            "key": "BASE_URL",
+            "value": "http://localhost:8084",
+            "type": "string"
+        },
+        {
+            "key": "GATEWAY_INTERNAL_SECRET",
+            "value": "apisix",
+            "type": "string"
+        },
+        {
+            "key": "ADMIN_USER_SUB",
+            "value": "08e7cde8-54ad-423d-ae40-200fad11b157",
+            "type": "string"
+        },
+        {
+            "key": "ADMIN_USER_EMAIL",
+            "value": "admin@mmtech-solutions.com",
+            "type": "string"
+        },
+        {
+            "key": "ADMIN_USERINFO",
+            "value": "eyJzdWIiOiIwOGU3Y2RlOC01NGFkLTQyM2QtYWU0MC0yMDBmYWQxMWIxNTcifQ",
+            "type": "string"
+        },
+        {
+            "key": "CUSTOMER_USER_SUB",
+            "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0",
+            "type": "string"
+        },
+        {
+            "key": "CUSTOMER_USER_EMAIL",
+            "value": "ib.root@local.test",
+            "type": "string"
+        },
+        {
+            "key": "CUSTOMER_USERINFO",
+            "value": "eyJzdWIiOiJhYWFhYWFhYS1hYWFhLWFhYWEtYWFhYS1hYWFhYWFhYWFhYTAifQ",
+            "type": "string"
+        },
+        {
+            "key": "MODULE_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "LOCK_VERSION",
+            "value": "1",
+            "type": "string"
+        }
     ]
 }

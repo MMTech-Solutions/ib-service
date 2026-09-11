@@ -37,4 +37,36 @@ final class UserContextArchitectureTest extends TestCase
 
         self::assertSame([], $violations, "Direct {$description} access found; inject UserContext instead.");
     }
+
+    public function test_http_presenters_do_not_depend_on_persistence(): void
+    {
+        $violations = [];
+        $paths = array_filter([
+            app_path('Features/Modules/Catalog/Http/V1/Controllers'),
+            app_path('Features/Modules/Catalog/Http/V1/Resources'),
+        ], static fn (string $path): bool => File::isDirectory($path));
+
+        foreach ($paths as $path) {
+            foreach (File::allFiles($path) as $file) {
+                $contents = File::get($file->getPathname());
+                if (str_contains($contents, '\\Contracts\\Repositories\\')
+                    || str_contains($contents, '\\Repositories\\')
+                    || str_contains($contents, '\\Factories\\')) {
+                    $violations[] = $file->getRelativePathname();
+                }
+            }
+        }
+
+        self::assertSame([], $violations, 'HTTP presenters must receive resolved application data.');
+    }
+
+    public function test_modules_m1_does_not_publish_internal_dtos_as_public_contracts(): void
+    {
+        $contractsDataPath = app_path('Features/Modules/Catalog/Contracts/Data');
+
+        self::assertFalse(
+            File::isDirectory($contractsDataPath),
+            'Modules M1 has no inter-feature consumer; its Data objects belong in DTOs.',
+        );
+    }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Services;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityDefinitionData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleDefinitionData;
 
 final class ModuleDefinitionRegistry
 {

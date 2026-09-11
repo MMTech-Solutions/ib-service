@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Features\Modules\Catalog\Http\V1\Controllers\ActivateModuleController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\DeactivateModuleController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\ListModuleOperationalHistoryController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ListModulesController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\PauseModuleProcessingController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\ResumeModuleProcessingController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\ShowModuleController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\UpdateModuleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -14,5 +21,13 @@ Route::prefix('ib/v1')
         Route::prefix('admin')
             ->group(function (): void {
                 Route::get('modules', ListModulesController::class)->name('ib.v1.admin.modules.index');
+                Route::get('modules/{module}', ShowModuleController::class)->name('ib.v1.admin.modules.show');
+                Route::patch('modules/{module}', UpdateModuleController::class)->name('ib.v1.admin.modules.update');
+                Route::post('modules/{module}/activate', ActivateModuleController::class)->name('ib.v1.admin.modules.activate');
+                Route::post('modules/{module}/deactivate', DeactivateModuleController::class)->name('ib.v1.admin.modules.deactivate');
+                Route::post('modules/{module}/pause', PauseModuleProcessingController::class)->name('ib.v1.admin.modules.pause');
+                Route::post('modules/{module}/resume', ResumeModuleProcessingController::class)->name('ib.v1.admin.modules.resume');
+                Route::get('modules/{module}/operational-history', ListModuleOperationalHistoryController::class)
+                    ->name('ib.v1.admin.modules.operational-history.index');
             });
     });

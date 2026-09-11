@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Models;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityData;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityDefinitionData;
 
 final class ModuleCapability
 {

@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.5
+- **Versión:** 0.6
 - **Estado:** base inicial
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -104,3 +104,4 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Reglas para publicar una nueva versión del plan y aplicarla a suscripciones existentes.
 - Política de anclaje administrativo de placements.
 - Tratamiento y reanudación de actividad acumulada mientras un cálculo permanece pausado.
+- Forma concreta de evidencia auditable de eventos rechazados por inactividad del módulo (BR-MODULE-015).

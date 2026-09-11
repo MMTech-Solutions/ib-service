@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Features\Modules\Catalog\Contracts\Data\ModuleCapabilityDefinitionData;
-use App\Features\Modules\Catalog\Contracts\Data\ModuleDefinitionData;
 use App\Features\Modules\Catalog\Contracts\Repositories\ModuleReferenceGuardInterface;
+use App\Features\Modules\Catalog\DTOs\ModuleCapabilityDefinitionData;
+use App\Features\Modules\Catalog\DTOs\ModuleDefinitionData;
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
 use App\Features\Modules\Catalog\Services\ModuleDefinitionRegistry;
@@ -87,9 +87,11 @@ final class ModulesSyncCommandTest extends TestCase
         $this->artisan('modules:sync')->assertExitCode(0);
         $this->syncWithRegistry(new ModuleDefinitionRegistry([]));
         $this->assertDatabaseHas('modules', ['code' => 'broker', 'is_active' => false]);
+        $this->assertDatabaseCount('module_operational_changes', 0);
 
         $this->syncWithRegistry(new ModuleDefinitionRegistry);
         $this->assertDatabaseHas('modules', ['code' => 'broker', 'is_active' => false]);
+        $this->assertDatabaseCount('module_operational_changes', 0);
     }
 
     public function test_prune_requires_force_in_production(): void

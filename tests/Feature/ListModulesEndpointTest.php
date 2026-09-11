@@ -43,11 +43,10 @@ final class ListModulesEndpointTest extends TestCase
             ->assertJsonPath('data.modules.0.code', 'broker')
             ->assertJsonPath('data.modules.0.is_active', true)
             ->assertJsonPath('data.modules.0.processing_status', 'running')
+            ->assertJsonPath('data.modules.0.lock_version', 1)
             ->assertJsonCount(2, 'data.modules.0.capabilities')
             ->assertJsonPath('meta.pagination.per_page', 100)
             ->assertJsonPath('meta.filters', []);
-
-        self::assertArrayNotHasKey('lock_version', $response->json('data.modules.0'));
     }
 
     public function test_it_filters_and_validates_the_list_query(): void

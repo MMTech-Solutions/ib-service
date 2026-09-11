@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\UseCases;
 
-use App\Features\Modules\Catalog\Contracts\Data\SyncModulesResultData;
+use App\Features\Modules\Catalog\DTOs\SyncModulesResultData;
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Services\ModuleDefinitionRegistry;
