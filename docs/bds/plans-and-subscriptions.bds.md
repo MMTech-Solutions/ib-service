@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.1
+- **Versión:** 0.3
 - **Estado:** base inicial
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -18,6 +18,10 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Plan mixto | Plan que combina de forma deliberada contribuciones y recompensas de varios módulos. |
 | Programa IB | Nivel de crecimiento dentro de un plan. |
 | Módulo | Dominio externo que produce actividad, por ejemplo Broker, Copy Trading, Prop Firm o Hedge Fund. |
+| Catálogo de módulos | Registro autoritativo de los módulos que IB reconoce y de las capacidades que declara cada uno. |
+| Capacidad de módulo | Tipo de actividad o comportamiento que un módulo puede suministrar, como trades, depósitos o compras de challenges. |
+| Snapshot de módulo del programa | Copia inmutable de la semántica y capacidades del módulo utilizadas por una configuración publicada del programa. |
+| Control operativo | Estado actual que habilita o pausa la ejecución de un módulo, capacidad o etapa sin cambiar el snapshot publicado. |
 | Vinculación de módulo | Configuración que habilita un módulo para un plan y permite identificar su fuente de actividad. |
 | Suscripción | Relación del usuario IB con un plan. |
 | Placement | Programa actual del usuario dentro del plan suscrito. |
@@ -26,8 +30,11 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 
 ```mermaid
 erDiagram
+    MODULE_CATALOG ||--o{ MODULE_BINDING : referenced_by
     PLAN ||--|{ PROGRAM : contains
     PLAN ||--|{ MODULE_BINDING : enables
+    PROGRAM ||--o{ MODULE_CONFIG_SNAPSHOT : freezes
+    MODULE_CATALOG ||--o{ MODULE_CONFIG_SNAPSHOT : described_at_publication
     PLAN ||--o{ SUBSCRIPTION : receives
     SUBSCRIPTION ||--|| PLACEMENT : has
     PLACEMENT }o--|| PROGRAM : current_level
@@ -43,6 +50,17 @@ erDiagram
 | BR-PLAN-004 | Un plan puede ser dedicado a un módulo o combinar varios módulos; ambos utilizan el mismo modelo de dominio. |
 | BR-PLAN-005 | La participación de Copy Trading, Prop Firm o cualquier módulo futuro no depende de que Broker esté habilitado o disponible. |
 | BR-PLAN-006 | Un módulo no habilitado por el plan no puede generar contribuciones ni recompensas para sus suscripciones. |
+| BR-MODULE-001 | IB mantiene un catálogo duradero y autoritativo de los módulos que reconoce. |
+| BR-MODULE-002 | Cada módulo tiene una identidad estable, un estado operativo y un conjunto explícito de capacidades declaradas. |
+| BR-MODULE-003 | Una vinculación de plan solo puede referenciar un módulo reconocido por el catálogo. |
+| BR-MODULE-004 | Un programa solo puede configurar actividad compatible con las capacidades declaradas por el módulo correspondiente. |
+| BR-MODULE-005 | El catálogo describe capacidades del módulo; no define ponderaciones, progresión ni reglas económicas del programa. |
+| BR-MODULE-006 | El catálogo de módulos no se versiona como un agregado completo. |
+| BR-MODULE-007 | Al publicar una configuración de programa se conserva un snapshot de la semántica y capacidades de módulo que justifican su ejecución. |
+| BR-MODULE-008 | La configuración del programa mantiene además una relación directa con el registro del módulo para consultar su control operativo actual. |
+| BR-MODULE-009 | El control operativo no forma parte del snapshot y cambiarlo no crea una nueva versión de catálogo ni de programa. |
+| BR-MODULE-010 | Un control operativo pausado prevalece sobre configuraciones publicadas y funciona como kill switch para el alcance afectado. |
+| BR-MODULE-011 | Retirar un módulo del catálogo impide seleccionarlo en configuraciones nuevas, pero no equivale por sí solo a pausar programas publicados. |
 | BR-PROGRAM-001 | Todo placement pertenece a una suscripción y señala un programa del mismo plan de esa suscripción. |
 | BR-PROGRAM-002 | La progresión automática solo cambia el programa del usuario dentro del plan al que está suscrito. |
 | BR-PROGRAM-003 | Los programas del plan mantienen un orden y umbrales no ambiguos para determinar el placement. |
@@ -61,6 +79,9 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 ## Eventos de negocio
 
 - Plan publicado.
+- Módulo registrado en el catálogo.
+- Capacidades o estado de un módulo modificados.
+- Control operativo de un módulo o capacidad pausado o reanudado.
 - Módulo habilitado o retirado de un plan.
 - Usuario suscrito a un plan.
 - Placement inicial asignado.
@@ -73,3 +94,5 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Política al retirar un módulo de un plan con suscripciones activas.
 - Reglas para publicar una nueva versión del plan y aplicarla a suscripciones existentes.
 - Política de anclaje administrativo de placements.
+- Granularidad definitiva del control operativo por módulo, capacidad y etapa de procesamiento.
+- Tratamiento y reanudación de actividad acumulada mientras un cálculo permanece pausado.

@@ -22,6 +22,7 @@ Antes de actuar, leer los documentos que correspondan al alcance:
 | Puntos, ponderaciones, contribuciones o runs | `docs/bds/progression.bds.md` |
 | Reglas de pago, versiones, asignaciones, rewards o CPA | `docs/bds/rewards.bds.md` |
 | Estructura, features, capas o integraciones | `docs/rules/architecture.md` |
+| Kafka, eventos, IAM, SDKs, clientes HTTP o notificaciones | `docs/rules/integrations.md` y `docs/rules/security.md` |
 | Strategy, connectors o configuración JSON | `docs/rules/strategies.md` |
 | PHP o Laravel | `docs/rules/code-style.md` y `docs/rules/programming-best-practices.md` |
 | Dependencias o infraestructura | `docs/rules/technology-stack.md` |
@@ -50,6 +51,23 @@ Después de modificar código, ejecutar `graphify update .`. Los cambios en `gra
 - Actualizar `docs/README.md` y el índice de sección al crear, renombrar o retirar documentos.
 - No presentar una decisión pendiente como regla confirmada.
 - No incluir detalles técnicos en BDS ni reglas de negocio en documentos técnicos como sustituto del BDS.
+
+## Precedencia e interpretación de Laravel Boost
+
+Laravel Boost proporciona convenciones predeterminadas del framework. No define por sí solo la arquitectura ni las reglas de dominio de IB Service.
+
+Ante conflicto o ambigüedad, aplicar este orden dentro del repositorio:
+
+1. Instrucción explícita del usuario para la tarea actual.
+2. BDS vigente del área afectada.
+3. Reglas específicas en `docs/rules/`.
+4. Reglas aplicables en `.ai/rules/`, cuando existan.
+5. Convenciones consolidadas en código propio comparable.
+6. Laravel Boost y convenciones generales de Laravel.
+
+La instrucción de seguir convenciones existentes exige buscar un precedente dentro del mismo feature y responsabilidad. El scaffold inicial, el código de ejemplo y `broker-service` no constituyen por sí solos una decisión arquitectónica de este proyecto. Si no existe precedente, seguir `docs/rules/architecture.md` y `docs/rules/code-style.md`; solicitar definición cuando la decisión afecte un punto que esos documentos mantienen pendiente.
+
+En la regla de Boost sobre nuevos directorios, **base folder** significa una nueva raíz arquitectónica directamente bajo la raíz del repositorio o bajo `app/`. Los directorios autorizados por `docs/rules/architecture.md` pueden crearse cuando una implementación real los necesite, sin aprobación individual para cada subdivisión. Introducir otra raíz o categoría base sí requiere aprobación.
 
 <laravel-boost-guidelines>
 === foundation rules ===

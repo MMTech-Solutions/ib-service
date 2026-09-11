@@ -4,13 +4,16 @@
 
 Permitir que CPA, volumen, PnL, puntos de progresión y futuras modalidades reutilicen una misma orquestación sin codificar un pipeline independiente por módulo.
 
-## Separación obligatoria
+## Ubicación y separación obligatoria
 
-- Un **connector** obtiene o normaliza hechos de un módulo.
+- Los contratos viven en `Contracts/Strategies` y las implementaciones en `Services/Strategies`.
+- Un **repository** obtiene hechos de una fuente persistente, remota o en memoria.
+- Un **adapter** en `Services/Adapters` traduce los tipos de un SDK o API hacia DTOs propios.
 - Una **strategy** interpreta inputs normalizados y una configuración validada.
 - Una **rule version** conserva el tipo de strategy y su configuración inmutable.
 - Una **assignment** determina plan, programa, módulo, vigencia y scope.
 - El **pipeline** resuelve contexto, elegibilidad, idempotencia, auditoría y salida.
+- La selección del repository y la selección de la strategy son decisiones independientes y utilizan factories separadas.
 
 ## Registry
 
@@ -25,6 +28,8 @@ Cada tipo registrado debe declarar:
 - Tipo y unidad de cada input.
 - Resultado posible.
 - Reglas de idempotencia.
+
+El registry o factory recibe contexto tipado. No inspecciona silenciosamente el entorno ni acepta nombres de clases provenientes de configuración de usuario.
 
 ## Configuración
 
@@ -57,3 +62,10 @@ Las cantidades decimales se transportan como strings canónicos. Una configuraci
 - Una evaluación inválida produce un resultado tipado o una excepción de dominio, no un reward parcial.
 - Los conectores distinguen errores recuperables, datos no elegibles y contratos inválidos.
 - Los reintentos pertenecen al pipeline y no deben duplicar resultados.
+
+## Pruebas
+
+- Cada strategy se prueba contra una matriz de entradas, bordes, precisión y configuraciones inválidas.
+- Los repositories en memoria implementan los mismos contratos que los persistentes o remotos.
+- Los tests de una strategy usan DTOs normalizados y no dependen de respuestas de SDK.
+- Los contract tests verifican que cada implementación de repository respeta la misma semántica observable.

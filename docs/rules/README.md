@@ -5,6 +5,7 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 | Documento | Propósito |
 | --- | --- |
 | [`architecture.md`](architecture.md) | Fronteras, dependencias y estructura del servicio. |
+| [`integrations.md`](integrations.md) | Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia. |
 | [`strategies.md`](strategies.md) | Contrato para estrategias y configuración JSON versionada. |
 | [`code-style.md`](code-style.md) | Convenciones de PHP y Laravel. |
 | [`technology-stack.md`](technology-stack.md) | Tecnologías confirmadas y pendientes. |

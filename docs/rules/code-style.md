@@ -16,10 +16,23 @@
 
 - Crear artefactos del framework mediante comandos `php artisan make:* --no-interaction`.
 - Versionar las APIs desde el comienzo.
-- Utilizar Form Requests para validar entrada HTTP y API Resources para salida.
+- Utilizar Form Requests para validar entrada HTTP y `spatie/laravel-data` para Commands, DTOs y resultados tipados.
+- Ubicar cada Command HTTP en `Http/V1/Commands` y construirlo mediante `Command::fromRequest()` a partir de `$request->validated()`.
+- No construir Commands con `$request->all()` salvo que una convención documentada reemplace por completo la validación del FormRequest con validación de `laravel-data`.
+- Normalizar respuestas HTTP desde el controller con `mmt/api-response-normalizer`.
+- Utilizar API Resources solo cuando exista una transformación específica de presentación que un Result Data no deba asumir.
 - Mantener controllers delgados y sin reglas de negocio.
 - No acceder al entorno mediante `env()` fuera de archivos de configuración.
-- No ocultar consultas costosas dentro de accessors o resources.
+- Los API Resources son transformadores puros: no resuelven ni reciben repositories, factories, Services o UseCases.
+- No ejecutar consultas, cargar relaciones ni ocultar accesos a datos dentro de accessors o Resources.
+- No propagar tipos pertenecientes a SDKs fuera de su adapter o repository.
+
+## Nombres arquitectónicos
+
+- Usar los sufijos `UseCase`, `Action`, `Repository`, `RepositoryInterface`, `RepositoryFactory`, `Adapter`, `Strategy` y `Data` de acuerdo con la responsabilidad definida en `architecture.md`.
+- Los DTOs implementados con `spatie/laravel-data` usan el sufijo `Data` cuando forman parte de un contrato nuevo. No renombrar mecánicamente precedentes externos que utilicen `DTO`.
+- Los objetos de valor se nombran por el concepto que representan y no necesitan el sufijo `ValueObject`.
+- Evitar nombres genéricos como `Manager`, `Helper`, `Processor` o `CommonService` cuando exista un nombre de negocio más preciso.
 
 ## Formato
 

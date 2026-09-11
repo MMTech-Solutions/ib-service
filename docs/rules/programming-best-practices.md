@@ -7,6 +7,13 @@
 - Favorecer composición y contratos explícitos sobre herencia profunda.
 - Evitar abstracciones genéricas antes de contar con dos usos reales y compatibles.
 - No convertir detalles de un módulo en conceptos obligatorios del núcleo IB.
+- No usar implementaciones existentes de `broker-service` como precedente cuando contradigan las reglas de este repositorio.
+- Mantener separadas la obtención de actividad, su normalización y su interpretación económica.
+- No permitir que un UseCase invoque otro UseCase ni que una Action cruce su feature o subfeature.
+- Acceder a repositories exclusivamente mediante factories.
+- Mantener modelos Eloquent dentro de su repository propietario.
+- Mantener Commands junto a su adaptador de entrada y no reutilizar Commands HTTP para eventos Kafka, Jobs o CLI.
+- Separar eventos internos de dominio, eventos de integración y mensajes dirigidos a una audiencia externa.
 
 ## Datos y cálculos
 
@@ -23,6 +30,9 @@
 - Cubrir duplicados, redelivery, límites temporales, precisión y reversas.
 - Reproducir un defecto con una prueba antes de corregirlo cuando sea viable.
 - Ejecutar la suite más estrecha que demuestre el cambio y ampliar según el riesgo.
+- Proveer repositories en memoria o test doubles mediante factories, sin introducir ramas por entorno en la lógica productiva.
+- Ejecutar contract tests compartidos contra las implementaciones en memoria, persistentes y remotas de un mismo repository.
+- Incorporar tests de arquitectura cuando se elija la herramienta, especialmente para impedir imports entre features y dependencias desde Resources hacia acceso a datos.
 
 ## Confiabilidad
 

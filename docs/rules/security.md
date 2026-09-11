@@ -15,6 +15,10 @@
 - Rechazar eventos de productores o versiones no reconocidas.
 - Verificar que referencias externas pertenezcan al tenant o contexto autorizado.
 - Proteger replay y endpoints de reconciliación contra ventanas ilimitadas.
+- Mapear respuestas de SDK o APIs externas a DTOs propios antes de entregarlas a UseCases o strategies.
+- No propagar tokens, errores técnicos, URLs internas ni objetos de respuesta de un SDK a contratos del dominio o respuestas HTTP.
+- Preferir `$request->validated()` para construir Commands. No trasladar masivamente `$request->all()` a objetos de aplicación.
+- El acceso operativo a IAM usa `mmt/laravel-iam-service-sdk`; `mmtech/iam-rbac` no sustituye ese SDK.
 
 ## Configuración dinámica
 

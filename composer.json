@@ -11,7 +11,9 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.17",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "mmt/laravel-iam-service-sdk": "^1.2",
+        "mmtech/iam-rbac": "^1.13"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
