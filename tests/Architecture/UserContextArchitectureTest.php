@@ -44,6 +44,8 @@ final class UserContextArchitectureTest extends TestCase
         $paths = array_filter([
             app_path('Features/Modules/Catalog/Http/V1/Controllers'),
             app_path('Features/Modules/Catalog/Http/V1/Resources'),
+            app_path('Features/Plans/Catalog/Http/V1/Controllers'),
+            app_path('Features/Plans/Catalog/Http/V1/Resources'),
         ], static fn (string $path): bool => File::isDirectory($path));
 
         foreach ($paths as $path) {
@@ -60,13 +62,19 @@ final class UserContextArchitectureTest extends TestCase
         self::assertSame([], $violations, 'HTTP presenters must receive resolved application data.');
     }
 
-    public function test_modules_m1_does_not_publish_internal_dtos_as_public_contracts(): void
+    public function test_modules_catalog_does_not_publish_internal_dtos_as_public_contracts(): void
     {
-        $contractsDataPath = app_path('Features/Modules/Catalog/Contracts/Data');
-
         self::assertFalse(
-            File::isDirectory($contractsDataPath),
-            'Modules M1 has no inter-feature consumer; its Data objects belong in DTOs.',
+            File::isDirectory(app_path('Features/Modules/Catalog/Contracts/Data')),
+            'Internal Catalog Data objects belong in DTOs, not Catalog/Contracts/Data.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Modules/Contracts/Data/V1/ModuleSummaryData.php')),
+            'P1 publishes ModuleSummaryData in Modules/Contracts/Data/V1.',
+        );
+        self::assertFalse(
+            File::isDirectory(app_path('Features/Plans/Catalog/Contracts/Data')),
+            'Plans P1 has no inter-feature consumer; its Data objects belong in DTOs.',
         );
     }
 }

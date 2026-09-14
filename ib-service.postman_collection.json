@@ -533,6 +533,168 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Plans",
+                    "item": [
+                        {
+                            "name": "List plans",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans?page=1&per_page=100&search=mix&is_active=false",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans"],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "search", "value": "mix", "description": "Case-insensitive search by plan code or name.", "disabled": true},
+                                        {"key": "is_active", "value": "false", "description": "Filter by active state: true or false.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Requires ib.plans.manage on the admin_panel surface. Returns non-archived plans ordered by code."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create plan",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"code\": \"mix\",\n  \"name\": \"Mix\",\n  \"description\": \"Mixed activity\",\n  \"module_ids\": [\"{{MODULE_ID}}\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans"]
+                                },
+                                "description": "Creates an inactive plan. module_ids is optional and must reference operational modules."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show plan",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}"]
+                                },
+                                "description": "Returns a non-archived plan with configured modules and lock_version."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update plan",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"Mix\",\n  \"description\": \"Updated description\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}"]
+                                },
+                                "description": "Partial update. module_ids replaces the complete binding set when present. Active plans cannot keep an empty set."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Activate plan",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"Ready for use\",\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/activate",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "activate"]
+                                },
+                                "description": "Activates a plan that has at least one operational module. Requires reason and lock_version."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Deactivate plan",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"Pause offering\",\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/deactivate",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "deactivate"]
+                                },
+                                "description": "Deactivates a plan. Requires reason and lock_version. Idempotent when already inactive."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Archive plan",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"Retired\",\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}"]
+                                },
+                                "description": "Logically archives an inactive plan. Bindings are preserved and the code remains reserved. Not restored in P1."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
@@ -584,7 +746,7 @@
             "type": "string"
         },
         {
-            "key": "MODULE_ID",
+            "key": "PLAN_ID",
             "value": "",
             "type": "string"
         },

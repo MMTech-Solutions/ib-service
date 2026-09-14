@@ -1,55 +1,33 @@
 # Roadmap del feature Plans
 
-Estado: **No iniciado**  
+Estado: **Completado**
 Dependencia satisfecha: `Modules M1` completado
-Última revisión: 2026-09-11
+Última revisión: 2026-09-14
 
 ## Posición en la secuencia
 
-`Plans` será el primer consumidor inter-feature de `Modules`. No se diseñará su
-frontera antes de inventariar el caso de uso concreto que configura los módulos
-de un plan.
+`Plans` es el primer consumidor inter-feature de `Modules`. El puerto público
+mínimo de `Modules` se originó en los casos de uso de P1.
 
-```text
-Caso de uso de Plans
-    ↓ necesidad contractual concreta
-Puerto de entrada propiedad de Modules
-    ↓ implementado por
-Caso de uso de Modules
-```
+## Primera entrega: P1
 
-## Primera entrega candidata: P1
+Catálogo administrativo de planes: identidad, módulos, activación,
+desactivación, archivo lógico y convergencia eventual cuando un plan activo
+queda sin módulos operativos.
 
-La entrega deberá cubrir verticalmente:
-
-- identidad y datos mínimos de un Plan IB;
-- selección de módulos activos reconocidos por `Modules`;
-- persistencia de la vinculación entre plan y módulo;
-- rechazo de módulos inexistentes o inactivos;
-- consulta del plan con sus módulos configurados;
-- primer puerto público de `Modules`, limitado a la necesidad demostrada por el
-  caso de uso de `Plans`, con objetos tipados en `Contracts/Data/V1`.
-
-Los nombres del caso de uso y del puerto permanecen abiertos hasta realizar el
-inventario de Plans. No se asume todavía `ConfigurePlanModulesUseCase`,
-`ResolveSelectableModulesPort` ni otra firma concreta. Los DTOs internos de
-`Plans` permanecerán en `DTOs/` hasta que otro feature necesite un contrato
-publicado.
+| Etapa | Documento | Estado |
+| --- | --- | --- |
+| 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado |
+| 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para P1 |
+| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | P1 completado |
+| 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para P1 |
+| 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | P1 completado |
 
 ## Relación con Programs
 
-`Programs` solo puede comenzar su frontera después de P1. Todo programa
-pertenece a un plan y únicamente podrá configurar módulos previamente
-habilitados por ese plan. Esta dependencia impide que `Programs` consulte el
-catálogo global como si el Plan IB no fuera la raíz funcional.
+`Programs` puede comenzar su frontera: todo programa pertenecerá a un plan y
+solo configurará módulos habilitados por ese plan.
 
 ## Próximo paso
 
-Después de completar `Modules M1`, crear la iteración completa de Plans:
-
-1. inventario de casos de uso;
-2. agregados, estados y transacciones;
-3. entregas verticales;
-4. modelo de datos de P1;
-5. implementación con repositorios en memoria y PostgreSQL mediante contract
-   tests.
+Inventariar Programs a partir de los módulos habilitados por un plan.

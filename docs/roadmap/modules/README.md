@@ -94,5 +94,5 @@ posterga hasta que esos contratos y el modelo base estén estables.
 
 ## Próximo paso
 
-Iniciar [`Plans P1`](../plans/README.md), cuyo primer caso de uso consumidor
-definirá la frontera pública mínima de `Modules`.
+[`Plans P1`](../plans/README.md) ya consume el puerto público mínimo. M2 sigue
+condicionado a un consumidor real de `EvaluateActivity`.

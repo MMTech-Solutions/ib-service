@@ -13,8 +13,8 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
-| [`Plans`](plans/README.md) | No iniciado | Próxima entrega: P1 | 2026-09-11 |
-| Programs | Bloqueado | Requiere la primera entrega vertical de Plans | 2026-09-11 |
+| [`Plans`](plans/README.md) | Completado | P1 completado; próximo Programs | 2026-09-14 |
+| Programs | No iniciado | Puede comenzar a partir de los módulos habilitados por un plan | 2026-09-14 |
 
 ## Secuencia entre features
 

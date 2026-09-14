@@ -11,6 +11,7 @@ use App\Features\Modules\Catalog\Exceptions\ModuleNotFoundException;
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Models\OperationalControlChange;
+use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -26,14 +27,18 @@ final class ApplyModuleOperationalChangeAction
         string $reason,
     ): ModuleDetailData {
         $repository = $this->repositoryFactory->make();
+        $changed = false;
+        $occurredAt = CarbonImmutable::now('UTC')->toISOString();
 
-        return $repository->transaction(function () use (
+        $detail = $repository->transaction(function () use (
             $repository,
             $moduleId,
             $expectedLockVersion,
             $action,
             $actorIamId,
             $reason,
+            &$changed,
+            &$occurredAt,
         ): ModuleDetailData {
             $module = $repository->findById($moduleId);
             if ($module === null) {
@@ -44,10 +49,10 @@ final class ApplyModuleOperationalChangeAction
                 throw ModuleConcurrencyException::forModule($moduleId);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $occurredAt = CarbonImmutable::now('UTC')->toISOString();
             $previousIsActive = $module->isActive;
             $previousProcessingStatus = $module->processingStatus;
-            $changed = $this->apply($module, $action, $now);
+            $changed = $this->apply($module, $action, $occurredAt);
 
             if (! $changed) {
                 return $module->toDetailData();
@@ -64,11 +69,22 @@ final class ApplyModuleOperationalChangeAction
                 previousProcessingStatus: $previousProcessingStatus,
                 nextIsActive: $module->isActive,
                 nextProcessingStatus: $module->processingStatus,
-                occurredAt: $now,
+                occurredAt: $occurredAt,
             ));
 
             return $module->toDetailData();
         });
+
+        if ($changed && $action === OperationalControlAction::Deactivate) {
+            event(new ModuleDeactivated(
+                eventId: (string) Str::uuid7(),
+                moduleId: $moduleId,
+                actorIamId: $actorIamId,
+                occurredAt: $occurredAt,
+            ));
+        }
+
+        return $detail;
     }
 
     private function apply(Module $module, OperationalControlAction $action, string $now): bool

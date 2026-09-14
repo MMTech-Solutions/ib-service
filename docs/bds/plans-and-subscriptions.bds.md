@@ -1,7 +1,7 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.6
-- **Estado:** base inicial
+- **Versión:** 0.7
+- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
 
@@ -23,7 +23,11 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Snapshot de módulo del programa | Copia inmutable de la semántica y capacidades del módulo utilizadas por una configuración publicada del programa. |
 | Disponibilidad de módulo | Condición activa o inactiva que determina si el módulo puede seleccionarse y participar en cualquier procesamiento. |
 | Estado de procesamiento | Condición `running` o `paused` que permite operar normalmente o suspender cálculos y pagos sin detener la captura de actividad. |
-| Vinculación de módulo | Configuración que habilita un módulo para un plan y permite identificar su fuente de actividad. |
+| Vinculación de módulo | Relación que habilita un módulo para un plan. Identifica el módulo reconocido por el catálogo; la fuente de actividad concreta permanece fuera de esta fase. |
+| Módulo operativo | Módulo activo en el catálogo, aunque su procesamiento esté pausado. |
+| Disponibilidad del plan | Condición activa o inactiva del plan. No equivale a publicación ni a una versión. |
+| Archivo del plan | Retiro lógico e irreversible en esta fase de un plan inactivo. Conserva identidad, código y vinculaciones. |
+| Desactivación automática del plan | Paso a inactivo cuando un plan activo queda sin módulos operativos porque el catálogo desactivó módulos. |
 | Suscripción | Relación del usuario IB con un plan. |
 | Placement | Programa actual del usuario dentro del plan suscrito. |
 
@@ -34,6 +38,7 @@ erDiagram
     MODULE_CATALOG ||--o{ MODULE_BINDING : referenced_by
     PLAN ||--|{ PROGRAM : contains
     PLAN ||--|{ MODULE_BINDING : enables
+    PLAN ||--o{ PLAN_OPERATIONAL_CHANGE : records
     PROGRAM ||--o{ MODULE_CONFIG_SNAPSHOT : freezes
     MODULE_CATALOG ||--o{ MODULE_CONFIG_SNAPSHOT : described_at_publication
     PLAN ||--o{ SUBSCRIPTION : receives
@@ -51,6 +56,16 @@ erDiagram
 | BR-PLAN-004 | Un plan puede ser dedicado a un módulo o combinar varios módulos; ambos utilizan el mismo modelo de dominio. |
 | BR-PLAN-005 | La participación de Copy Trading, Prop Firm o cualquier módulo futuro no depende de que Broker esté habilitado o disponible. |
 | BR-PLAN-006 | Un módulo no habilitado por el plan no puede generar contribuciones ni recompensas para sus suscripciones. |
+| BR-PLAN-007 | Un plan nace inactivo. Puede existir temporalmente sin vinculaciones. |
+| BR-PLAN-008 | El código del plan es una identidad de negocio estable, única e irreutilizable, también después de archivarse. |
+| BR-PLAN-009 | Activar un plan exige al menos una vinculación cuyo módulo esté operativo en ese momento. |
+| BR-PLAN-010 | Un plan activo puede editarse si conserva al menos una vinculación. Un conjunto vacío de vinculaciones solo es válido mientras el plan está inactivo. |
+| BR-PLAN-011 | Una vinculación nueva solo puede referenciar un módulo operativo. Las vinculaciones ya existentes se conservan aunque el módulo deje de estar operativo. |
+| BR-PLAN-012 | Un módulo pausado sigue siendo operativo para nuevas vinculaciones y para mantener un plan activo. |
+| BR-PLAN-013 | Si un plan activo queda sin módulos operativos porque el catálogo desactiva módulos, el plan se desactiva. La desactivación del módulo no espera a ese ajuste. |
+| BR-PLAN-014 | Reactivar un módulo no reactiva planes desactivados automática o administrativamente. |
+| BR-PLAN-015 | Solo un plan inactivo puede archivarse. El archivo conserva las vinculaciones y no se revierte en esta fase. |
+| BR-PLAN-016 | Un cambio de disponibilidad del plan es atribuible: actor administrativo, o actor de sistema con la causa que lo originó. |
 | BR-MODULE-001 | IB mantiene un catálogo duradero y autoritativo de los módulos que reconoce. |
 | BR-MODULE-002 | Cada módulo tiene una identidad estable, una disponibilidad, un estado de procesamiento y un conjunto explícito de capacidades implementadas. |
 | BR-MODULE-003 | Una nueva vinculación de plan solo puede referenciar un módulo activo y reconocido por el catálogo. |
@@ -75,6 +90,16 @@ erDiagram
 | BR-SUBSCRIPTION-001 | Una suscripción activa es requisito para tener placement y participar en progresión o recompensas. |
 | BR-SUBSCRIPTION-002 | Cambiar de programa no sustituye ni recrea la suscripción al plan. |
 
+## Estados del plan
+
+| Disponibilidad | Archivo | Condición efectiva |
+| --- | --- | --- |
+| inactivo | no | Editable; puede no tener módulos; no admite suscripción futura en esta fase. |
+| activo | no | Editable si conserva al menos una vinculación; requiere módulos operativos para permanecer coherente. |
+| inactivo | sí | Archivado: no se consulta en el catálogo vigente, conserva código y vinculaciones, no se restaura. |
+
+Un plan nunca está activo y archivado a la vez. Activar y desactivar no publican una versión.
+
 ## Ejemplos de producto
 
 Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo definitivo:
@@ -86,12 +111,16 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 
 ## Eventos de negocio
 
+- Plan creado.
+- Plan activado o desactivado administrativamente.
+- Plan desactivado automáticamente al quedar sin módulos operativos.
+- Módulo habilitado o retirado de un plan.
+- Plan archivado.
 - Plan publicado.
 - Módulo incorporado al catálogo.
 - Capacidades de un módulo modificadas.
 - Módulo activado o desactivado.
 - Procesamiento de un módulo pausado o reanudado.
-- Módulo habilitado o retirado de un plan.
 - Usuario suscrito a un plan.
 - Placement inicial asignado.
 - Usuario movido a otro programa por progresión.
@@ -105,3 +134,4 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Política de anclaje administrativo de placements.
 - Tratamiento y reanudación de actividad acumulada mientras un cálculo permanece pausado.
 - Forma concreta de evidencia auditable de eventos rechazados por inactividad del módulo (BR-MODULE-015).
+- Restauración de un plan archivado.

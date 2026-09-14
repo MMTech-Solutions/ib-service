@@ -86,12 +86,13 @@ Laravel. Los archivos globales de `routes/console.php` y la configuración de
 bootstrap se reservan para composición transversal o tareas que no pertenecen a
 un feature de negocio; no son una ubicación alternativa para sus clases.
 
-La lista inicial de features de primer nivel es orientativa y puede cambiar al cerrar el modelo de cada capacidad:
+La lista inicial de features de primer nivel es orientativa y puede cambiar al cerrar el modelo de cada capacidad. `Modules` y `Plans/Catalog` están aprobados:
 
 ```text
 app/Features/
 ├── Modules/
 ├── Plans/
+│   └── Catalog/
 ├── Programs/
 ├── Subscriptions/
 ├── Progression/
@@ -320,6 +321,19 @@ Los puertos de salida no exponen tipos del proveedor externo. Cuando varias part
 
 Los puertos aceptan objetos contractuales de `Contracts/Data`, Queries tipadas y objetos de valor del `SharedKernel`. No reciben entidades, modelos o DTOs internos del consumidor. Sus resultados siguen la misma regla y no exponen la implementación interna del proveedor.
 
+Los errores esperados de un puerto público se expresan con excepciones contractuales
+propiedad del feature proveedor. Viven junto a `Contracts` y pueden extender
+`ApiException` cuando el fallo es representable en HTTP. El consumidor no traduce
+esos fallos a un tipo interno para ocultar el contrato; tampoco publica excepciones
+nombradas por el consumidor.
+
+La colaboración asíncrona entre features usa eventos contractuales internos
+versionados en `Contracts/Events`. No son eventos Kafka ni mensajes hacia
+sistemas externos. El productor emite el hecho después de persistir su cambio;
+el consumidor reacciona de forma eventual, idempotente y reintentable. Una
+reconciliación periódica cubre pérdidas de despacho. Esta colaboración no
+sustituye a un outbox de integración.
+
 Solo los artefactos deliberadamente publicados en `Contracts` pueden cruzar una frontera entre features. No pueden cruzarla:
 
 - Modelos Eloquent.
@@ -395,7 +409,7 @@ Features/<Feature>/Contracts/Data/V1/ModuleSummaryData.php
 
 ## Composición con Laravel
 
-Inicialmente todos los bindings de `Modules`, sus puertos, adapters, repositories, factories y fuentes externas se registran explícitamente en `app/Providers/ModulesServiceProvider.php`.
+Inicialmente todos los bindings de `Modules`, sus puertos, adapters, repositories, factories y fuentes externas se registran explícitamente en `app/Providers/ModulesServiceProvider.php`. Los bindings de `Plans` se registran en `app/Providers/PlansServiceProvider.php`.
 
 - No se utilizará un patrón `Registrar` para los módulos.
 - Las clases concretas que Laravel puede construir automáticamente no requieren un binding manual.
@@ -497,13 +511,13 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 
 ## Decisiones pendientes
 
-- Mapa definitivo de los features restantes y sus subfeatures; `Modules` ya está aprobado como feature compuesto.
-- Organización futura de `ModulesServiceProvider` si el volumen real de bindings justifica dividirlo.
+- Mapa definitivo de los features restantes y sus subfeatures; `Modules` y `Plans/Catalog` ya están aprobados.
+- Organización futura de `ModulesServiceProvider` o `PlansServiceProvider` si el volumen real de bindings justifica dividirlos.
 - Forma de registrar implementaciones y estrategias dentro de las factories.
 - Contrato común de consulta y paginación de actividad por módulo.
-- Manejo tipado de errores entre features y desde integraciones externas.
-- Formato definitivo del envelope y catálogo inicial de eventos.
-- Límites transaccionales, Unit of Work y coordinación con outbox.
+- Manejo tipado de errores desde integraciones externas.
+- Formato definitivo del envelope y catálogo inicial de eventos Kafka.
+- Límites transaccionales, Unit of Work y coordinación con outbox de integración.
 - Estrategia de consistencia entre runs, actividad tardía y settlement.
 - Contratos S2S, autenticación, observabilidad y topología de despliegue.
 - Herramienta y reglas automáticas para tests de arquitectura.

@@ -8,6 +8,7 @@ use App\Features\Modules\Catalog\DTOs\SyncModulesResultData;
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Services\ModuleDefinitionRegistry;
+use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -22,7 +23,9 @@ final class SyncModulesUseCase
     {
         $repository = $this->repositoryFactory->make();
 
-        return $repository->transaction(function () use ($repository, $prune): SyncModulesResultData {
+        $deactivatedModules = [];
+
+        $result = $repository->transaction(function () use ($repository, $prune, &$deactivatedModules): SyncModulesResultData {
             $storedByCode = [];
             foreach ($repository->all() as $module) {
                 $storedByCode[$module->code] = $module;
@@ -80,10 +83,12 @@ final class SyncModulesUseCase
                 }
 
                 $expectedLockVersion = $module->lockVersion;
-                if ($module->deactivate(CarbonImmutable::now('UTC')->toISOString())) {
+                $now = CarbonImmutable::now('UTC')->toISOString();
+                if ($module->deactivate($now)) {
                     $repository->update($module, $expectedLockVersion);
                     $updated++;
                     $deactivated++;
+                    $deactivatedModules[] = ['id' => $module->id, 'occurredAt' => $now];
                 }
             }
 
@@ -97,5 +102,16 @@ final class SyncModulesUseCase
                 protected: $protected,
             );
         });
+
+        foreach ($deactivatedModules as $deactivatedModule) {
+            event(new ModuleDeactivated(
+                eventId: (string) Str::uuid7(),
+                moduleId: $deactivatedModule['id'],
+                actorIamId: null,
+                occurredAt: $deactivatedModule['occurredAt'],
+            ));
+        }
+
+        return $result;
     }
 }

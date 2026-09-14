@@ -10,6 +10,13 @@ use App\Features\Modules\Catalog\Http\V1\Controllers\PauseModuleProcessingContro
 use App\Features\Modules\Catalog\Http\V1\Controllers\ResumeModuleProcessingController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ShowModuleController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\UpdateModuleController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ActivatePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ArchivePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\DeactivatePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ListPlansController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ShowPlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\StorePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\UpdatePlanController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -29,5 +36,12 @@ Route::prefix('ib/v1')
                 Route::post('modules/{module}/resume', ResumeModuleProcessingController::class)->name('ib.v1.admin.modules.resume');
                 Route::get('modules/{module}/operational-history', ListModuleOperationalHistoryController::class)
                     ->name('ib.v1.admin.modules.operational-history.index');
+                Route::get('plans', ListPlansController::class)->name('ib.v1.admin.plans.index');
+                Route::post('plans', StorePlanController::class)->name('ib.v1.admin.plans.store');
+                Route::get('plans/{plan}', ShowPlanController::class)->name('ib.v1.admin.plans.show');
+                Route::patch('plans/{plan}', UpdatePlanController::class)->name('ib.v1.admin.plans.update');
+                Route::post('plans/{plan}/activate', ActivatePlanController::class)->name('ib.v1.admin.plans.activate');
+                Route::post('plans/{plan}/deactivate', DeactivatePlanController::class)->name('ib.v1.admin.plans.deactivate');
+                Route::delete('plans/{plan}', ArchivePlanController::class)->name('ib.v1.admin.plans.destroy');
             });
     });

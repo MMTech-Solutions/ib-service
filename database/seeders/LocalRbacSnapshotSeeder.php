@@ -24,7 +24,7 @@ final class LocalRbacSnapshotSeeder extends Seeder
                     'sub' => self::ADMIN_SUB,
                     'surface' => 'admin_panel',
                     'rev' => 1,
-                    'permissions' => json_encode(['ib.modules.manage'], JSON_THROW_ON_ERROR),
+                    'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage'], JSON_THROW_ON_ERROR),
                     'roles' => json_encode([
                         ['id' => '019f3802-74b2-713f-bbbb-0e4d3f5409e5', 'name' => 'super-admin'],
                     ], JSON_THROW_ON_ERROR),
