@@ -20,7 +20,7 @@ final class ShowModuleController
         $module = $useCase->execute($command);
 
         return $this->success(
-            data: ['module' => $module->toArray()],
+            data: $module->toArray(),
             message: 'Module retrieved successfully.',
         );
     }

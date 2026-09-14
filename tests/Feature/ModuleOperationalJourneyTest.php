@@ -28,30 +28,30 @@ final class ModuleOperationalJourneyTest extends TestCase
 
         $detail = $this->gatewayJson('GET', "/api/ib/v1/admin/modules/{$brokerId}")
             ->assertOk()
-            ->assertJsonCount(2, 'data.module.capabilities')
-            ->json('data.module');
+            ->assertJsonCount(2, 'data.capabilities')
+            ->json('data');
 
         $paused = $this->gatewayJson('POST', "/api/ib/v1/admin/modules/{$brokerId}/pause", [
             'reason' => 'Operational review',
             'lock_version' => $detail['lock_version'],
-        ])->assertOk()->assertJsonPath('data.module.processing_status', 'paused')->json('data.module');
+        ])->assertOk()->assertJsonPath('data.processing_status', 'paused')->json('data');
 
         $this->gatewayJson('GET', "/api/ib/v1/admin/modules/{$brokerId}/operational-history")
             ->assertOk()
-            ->assertJsonPath('data.entries.0.action', 'pause')
-            ->assertJsonPath('data.entries.0.reason', 'Operational review');
+            ->assertJsonPath('data.0.action', 'pause')
+            ->assertJsonPath('data.0.reason', 'Operational review');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/modules/{$brokerId}/deactivate", [
             'reason' => 'Source disabled',
             'lock_version' => $paused['lock_version'],
         ])->assertOk()
-            ->assertJsonPath('data.module.is_active', false)
-            ->assertJsonPath('data.module.processing_status', 'paused');
+            ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.processing_status', 'paused');
 
         $this->gatewayJson('GET', "/api/ib/v1/admin/modules/{$brokerId}")
             ->assertOk()
-            ->assertJsonPath('data.module.is_active', false)
-            ->assertJsonPath('data.module.processing_status', 'paused');
+            ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.processing_status', 'paused');
 
         $independentModule->refresh();
         self::assertTrue($independentModule->is_active);

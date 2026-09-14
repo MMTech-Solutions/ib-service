@@ -17,6 +17,7 @@ Business Domain Specifications. Describen conceptos, invariantes, cálculos, est
 Reglas de construcción y operación del software. Traducen las necesidades del dominio a límites técnicos sin sustituir los BDS.
 
 - [`architecture.md`](rules/architecture.md): estructura, fronteras y dependencias.
+- [`api-conventions.md`](rules/api-conventions.md): forma del envelope HTTP; `data` es el recurso o la colección.
 - [`integrations.md`](rules/integrations.md): Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia.
 - [`strategies.md`](rules/strategies.md): reglas configurables y patrón Strategy.
 - [`code-style.md`](rules/code-style.md): convenciones de PHP y Laravel.
@@ -35,6 +36,8 @@ sustituir los BDS ni las reglas técnicas.
   capacidades y control operativo.
 - [`plans/`](roadmap/plans/README.md): siguiente vertical y primer consumidor
   inter-feature de Modules.
+- [`programs/`](roadmap/programs/README.md): catálogo de programas dentro de
+  los módulos habilitados por un plan.
 
 ## Jerarquía de autoridad
 

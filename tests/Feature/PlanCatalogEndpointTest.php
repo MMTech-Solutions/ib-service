@@ -30,27 +30,27 @@ final class PlanCatalogEndpointTest extends TestCase
             'name' => 'Mix',
             'description' => 'Mixed activity',
         ])->assertCreated()
-            ->assertJsonPath('data.plan.is_active', false)
-            ->assertJsonPath('data.plan.modules', [])
-            ->json('data.plan');
+            ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.modules', [])
+            ->json('data');
 
         $this->gatewayJson('GET', '/api/ib/v1/admin/plans?search=mix')
             ->assertOk()
-            ->assertJsonPath('data.plans.0.code', 'mix');
+            ->assertJsonPath('data.0.code', 'mix');
 
         $updated = $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$created['id']}", [
             'module_ids' => [$brokerId],
             'lock_version' => $created['lock_version'],
         ])->assertOk()
-            ->assertJsonPath('data.plan.modules.0.module_id', $brokerId)
-            ->json('data.plan');
+            ->assertJsonPath('data.modules.0.module_id', $brokerId)
+            ->json('data');
 
         $activated = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
             'reason' => 'Ready for use',
             'lock_version' => $updated['lock_version'],
         ])->assertOk()
-            ->assertJsonPath('data.plan.is_active', true)
-            ->json('data.plan');
+            ->assertJsonPath('data.is_active', true)
+            ->json('data');
 
         $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$created['id']}", [
             'module_ids' => [],
@@ -62,8 +62,8 @@ final class PlanCatalogEndpointTest extends TestCase
             'reason' => 'Pause offering',
             'lock_version' => $activated['lock_version'],
         ])->assertOk()
-            ->assertJsonPath('data.plan.is_active', false)
-            ->json('data.plan');
+            ->assertJsonPath('data.is_active', false)
+            ->json('data');
 
         $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$created['id']}", [
             'reason' => 'Retired',
@@ -89,7 +89,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'broker-plan',
             'name' => 'Broker',
             'module_ids' => [$brokerId],
-        ])->assertCreated()->json('data.plan');
+        ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'invalid-plan',
@@ -107,8 +107,8 @@ final class PlanCatalogEndpointTest extends TestCase
         $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$created['id']}", [
             'name' => 'Broker kept',
             'lock_version' => $created['lock_version'],
-        ])->assertOk()->assertJsonPath('data.plan.modules.0.module_id', $brokerId)
-            ->assertJsonPath('data.plan.modules.0.is_active', false);
+        ])->assertOk()->assertJsonPath('data.modules.0.module_id', $brokerId)
+            ->assertJsonPath('data.modules.0.is_active', false);
     }
 
     public function test_deactivating_the_last_operational_module_deactivates_the_plan_and_does_not_reactivate_it(): void
@@ -118,12 +118,12 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'broker-plan',
             'name' => 'Broker',
             'module_ids' => [$brokerId],
-        ])->assertCreated()->json('data.plan');
+        ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
             'reason' => 'Launch',
             'lock_version' => $created['lock_version'],
-        ])->assertOk()->assertJsonPath('data.plan.is_active', true);
+        ])->assertOk()->assertJsonPath('data.is_active', true);
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/modules/{$brokerId}/deactivate", [
             'reason' => 'Panic button',
@@ -132,7 +132,7 @@ final class PlanCatalogEndpointTest extends TestCase
 
         $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$created['id']}")
             ->assertOk()
-            ->assertJsonPath('data.plan.is_active', false);
+            ->assertJsonPath('data.is_active', false);
 
         $this->assertDatabaseHas('plan_operational_changes', [
             'plan_id' => $created['id'],
@@ -148,7 +148,7 @@ final class PlanCatalogEndpointTest extends TestCase
 
         $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$created['id']}")
             ->assertOk()
-            ->assertJsonPath('data.plan.is_active', false);
+            ->assertJsonPath('data.is_active', false);
     }
 
     public function test_plan_routes_enforce_gateway_identity_and_permission(): void
@@ -165,7 +165,7 @@ final class PlanCatalogEndpointTest extends TestCase
         $created = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'empty',
             'name' => 'Empty',
-        ])->assertCreated()->json('data.plan');
+        ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
             'reason' => 'Too soon',
@@ -176,12 +176,12 @@ final class PlanCatalogEndpointTest extends TestCase
         $updated = $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$created['id']}", [
             'module_ids' => [$brokerId],
             'lock_version' => $created['lock_version'],
-        ])->assertOk()->json('data.plan');
+        ])->assertOk()->json('data');
 
         $activated = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
             'reason' => 'Launch',
             'lock_version' => $updated['lock_version'],
-        ])->assertOk()->json('data.plan');
+        ])->assertOk()->json('data');
 
         $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$created['id']}", [
             'reason' => 'Still active',
@@ -201,12 +201,12 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'paused-ok',
             'name' => 'Paused ok',
             'module_ids' => [$brokerId],
-        ])->assertCreated()->json('data.plan');
+        ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
             'reason' => 'Launch',
             'lock_version' => $created['lock_version'],
-        ])->assertOk()->assertJsonPath('data.plan.is_active', true);
+        ])->assertOk()->assertJsonPath('data.is_active', true);
     }
 
     public function test_archived_plan_bindings_protect_modules_from_prune(): void
@@ -216,7 +216,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'legacy-plan',
             'name' => 'Legacy',
             'module_ids' => [(string) $legacy->id],
-        ])->assertCreated()->json('data.plan');
+        ])->assertCreated()->json('data');
 
         $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$created['id']}", [
             'reason' => 'Archive with history',

@@ -7,7 +7,7 @@ Este repositorio contiene el microservicio IB. Antes de explorar, planificar o m
 La documentación canónica comienza en [`docs/README.md`](docs/README.md):
 
 - [`docs/bds/`](docs/bds/README.md) define lenguaje, invariantes, cálculos, estados y eventos del negocio.
-- [`docs/rules/`](docs/rules/README.md) define arquitectura, estrategias, stack, estilo, buenas prácticas, seguridad y mantenimiento de BDS.
+- [`docs/rules/`](docs/rules/README.md) define arquitectura, convenciones de API, estrategias, stack, estilo, buenas prácticas, seguridad y mantenimiento de BDS.
 - [`docs/roadmap/`](docs/roadmap/README.md) registra secuencia, estado y decisiones pendientes de implementación por feature; no sustituye BDS ni reglas.
 - El código y las pruebas demuestran implementación; no redefinen silenciosamente el negocio.
 
@@ -23,6 +23,7 @@ Antes de actuar, leer los documentos que correspondan al alcance:
 | Puntos, ponderaciones, contribuciones o runs | `docs/bds/progression.bds.md` |
 | Reglas de pago, versiones, asignaciones, rewards o CPA | `docs/bds/rewards.bds.md` |
 | Estructura, features, capas o integraciones | `docs/rules/architecture.md` |
+| Endpoints HTTP, envelope, forma de `data`, listados o Resources de salida | `docs/rules/api-conventions.md` (y `docs/rules/architecture.md` § HTTP y Resources) |
 | Kafka, eventos, IAM, SDKs, clientes HTTP o notificaciones | `docs/rules/integrations.md` y `docs/rules/security.md` |
 | Strategy, connectors o configuración JSON | `docs/rules/strategies.md` |
 | PHP o Laravel | `docs/rules/code-style.md` y `docs/rules/programming-best-practices.md` |
@@ -30,6 +31,18 @@ Antes de actuar, leer los documentos que correspondan al alcance:
 | Entradas, autorización, datos sensibles, reglas dinámicas o pagos | `docs/rules/security.md` |
 | Creación o modificación de BDS | `docs/rules/bds.md` |
 | Planificación o implementación de una feature incluida en el roadmap | `docs/roadmap/README.md`, el `README.md` de la feature y el documento de su etapa actual |
+
+## Decisión de salida HTTP (`data`)
+
+Cuando un agente o desarrollador deba decidir **cómo serializar la respuesta de éxito** de un endpoint:
+
+1. Leer primero [`docs/rules/api-conventions.md`](docs/rules/api-conventions.md).
+2. Aplicar sin excepción local: `data` **es** el payload.
+   - Listado / colección → `data` es el array de ítems (no `data.plans`, `data.modules`, `data.collection`, etc.).
+   - Show / store / update / acción que devuelve el recurso → `data` es el objeto del recurso (no `data.plan`, `data.module`, etc.).
+3. Paginación y filtros viven en `meta`, no en wrappers dentro de `data`.
+4. No tomar como precedente envelopes de `broker-service` ni ejemplos del README del normalizador que envuelvan por nombre de recurso.
+5. Actualizar tests y Postman al mismo shape en el mismo cambio.
 
 Si existen reglas generadas en `.ai/rules/`, leer primero `.ai/rules/index.md`, todos los archivos cuyos globs cubran el cambio y realizar la búsqueda por palabras clave exigida por Laravel Boost.
 
@@ -97,7 +110,7 @@ Ante conflicto o ambigüedad, aplicar este orden dentro del repositorio:
 5. Convenciones consolidadas en código propio comparable.
 6. Laravel Boost y convenciones generales de Laravel.
 
-La instrucción de seguir convenciones existentes exige buscar un precedente dentro del mismo feature y responsabilidad. El scaffold inicial, el código de ejemplo y `broker-service` no constituyen por sí solos una decisión arquitectónica de este proyecto. Si no existe precedente, seguir `docs/rules/architecture.md` y `docs/rules/code-style.md`; solicitar definición cuando la decisión afecte un punto que esos documentos mantienen pendiente.
+La instrucción de seguir convenciones existentes exige buscar un precedente dentro del mismo feature y responsabilidad. El scaffold inicial, el código de ejemplo y `broker-service` no constituyen por sí solos una decisión arquitectónica de este proyecto. Si no existe precedente, seguir `docs/rules/architecture.md`, `docs/rules/api-conventions.md` (salida HTTP) y `docs/rules/code-style.md`; solicitar definición cuando la decisión afecte un punto que esos documentos mantienen pendiente.
 
 En la regla de Boost sobre nuevos directorios, **base folder** significa una nueva raíz arquitectónica directamente bajo la raíz del repositorio o bajo `app/`. Los directorios autorizados por `docs/rules/architecture.md` pueden crearse cuando una implementación real los necesite, sin aprobación individual para cada subdivisión. Introducir otra raíz o categoría base sí requiere aprobación.
 

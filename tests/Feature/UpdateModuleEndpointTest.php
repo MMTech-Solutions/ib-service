@@ -29,9 +29,9 @@ final class UpdateModuleEndpointTest extends TestCase
             'description' => 'Administrative description',
             'lock_version' => 1,
         ])->assertOk()
-            ->assertJsonPath('data.module.name', 'Broker module')
-            ->assertJsonPath('data.module.description', 'Administrative description')
-            ->assertJsonPath('data.module.lock_version', 2);
+            ->assertJsonPath('data.name', 'Broker module')
+            ->assertJsonPath('data.description', 'Administrative description')
+            ->assertJsonPath('data.lock_version', 2);
 
         $this->assertDatabaseHas('modules', [
             'id' => $moduleId,
@@ -52,7 +52,7 @@ final class UpdateModuleEndpointTest extends TestCase
             'name' => (string) $module->name,
             'description' => $module->description,
             'lock_version' => 1,
-        ])->assertOk()->assertJsonPath('data.module.lock_version', 1);
+        ])->assertOk()->assertJsonPath('data.lock_version', 1);
     }
 
     public function test_update_supports_a_description_only_patch(): void
@@ -64,9 +64,9 @@ final class UpdateModuleEndpointTest extends TestCase
             'description' => 'Description only',
             'lock_version' => 1,
         ])->assertOk()
-            ->assertJsonPath('data.module.name', $name)
-            ->assertJsonPath('data.module.description', 'Description only')
-            ->assertJsonPath('data.module.lock_version', 2);
+            ->assertJsonPath('data.name', $name)
+            ->assertJsonPath('data.description', 'Description only')
+            ->assertJsonPath('data.lock_version', 2);
     }
 
     public function test_update_rejects_immutable_fields_and_stale_versions(): void

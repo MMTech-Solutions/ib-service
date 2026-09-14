@@ -34,7 +34,7 @@ final class ListPlansController
         );
 
         return $this->success(
-            data: ['plans' => $plans],
+            data: $plans,
             message: 'Plans retrieved successfully.',
             meta: ['filters' => (object) $filters],
             paginator: $paginator,

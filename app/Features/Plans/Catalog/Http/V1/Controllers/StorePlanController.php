@@ -19,7 +19,7 @@ final class StorePlanController
         $plan = $useCase->execute(StorePlanCommand::fromRequest($request));
 
         return $this->created(
-            ['plan' => $plan->toArray()],
+            $plan->toArray(),
             'Plan created successfully.',
         );
     }

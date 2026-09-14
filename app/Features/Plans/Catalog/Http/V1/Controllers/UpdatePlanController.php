@@ -19,7 +19,7 @@ final class UpdatePlanController
         $plan = $useCase->execute(UpdatePlanCommand::fromRequest($request));
 
         return $this->success(
-            data: ['plan' => $plan->toArray()],
+            data: $plan->toArray(),
             message: 'Plan updated successfully.',
         );
     }

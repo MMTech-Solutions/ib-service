@@ -20,7 +20,7 @@ final class UpdateModuleController
         $module = $useCase->execute($command);
 
         return $this->success(
-            data: ['module' => $module->toArray()],
+            data: $module->toArray(),
             message: 'Module updated successfully.',
         );
     }

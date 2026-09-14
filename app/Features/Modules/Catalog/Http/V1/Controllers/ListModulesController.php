@@ -34,7 +34,7 @@ final class ListModulesController
         );
 
         return $this->success(
-            data: ['modules' => $modules],
+            data: $modules,
             message: 'Modules retrieved successfully.',
             meta: ['filters' => (object) $filters],
             paginator: $paginator,

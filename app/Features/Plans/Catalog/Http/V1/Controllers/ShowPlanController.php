@@ -19,7 +19,7 @@ final class ShowPlanController
         $plan = $useCase->execute(ShowPlanCommand::fromRequest($request));
 
         return $this->success(
-            data: ['plan' => $plan->toArray()],
+            data: $plan->toArray(),
             message: 'Plan retrieved successfully.',
         );
     }

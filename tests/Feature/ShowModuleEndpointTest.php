@@ -27,10 +27,10 @@ final class ShowModuleEndpointTest extends TestCase
 
         $this->gatewayJson('GET', "/api/ib/v1/admin/modules/{$moduleId}")
             ->assertOk()
-            ->assertJsonPath('data.module.id', $moduleId)
-            ->assertJsonPath('data.module.code', 'broker')
-            ->assertJsonPath('data.module.lock_version', 1)
-            ->assertJsonCount(2, 'data.module.capabilities');
+            ->assertJsonPath('data.id', $moduleId)
+            ->assertJsonPath('data.code', 'broker')
+            ->assertJsonPath('data.lock_version', 1)
+            ->assertJsonCount(2, 'data.capabilities');
     }
 
     public function test_unknown_module_returns_a_normalized_not_found_error(): void

@@ -479,6 +479,7 @@ FormRequest → Http/V1/Command → UseCase → Result Data → Controller → A
 - Después de construirse, el Command no conserva referencias a `Request`, usuarios Eloquent ni otros objetos del framework.
 - Los controllers son delgados y normalizan la respuesta mediante el trait `MMT\ApiResponseNormalizer\ApiResponse`, aportado transitivamente por `mmt/laravel-feature-scaffold`.
 - El envelope HTTP pertenece al normalizador; el payload tipado pertenece a `spatie/laravel-data`.
+- La forma de `data` (colección o recurso sin clave envolvente por nombre) está definida de forma obligatoria en [`api-conventions.md`](api-conventions.md).
 - Las excepciones de aplicación que representan errores esperados para la API extienden `App\Support\Exceptions\ApiException`, que a su vez extiende `MMT\LaravelFeatureScaffold\Exceptions\MmtException`. Laravel las convierte automáticamente al envelope normalizado y no las reporta; las excepciones técnicas inesperadas conservan el manejo y reporte predeterminados del framework.
 - Un API Resource es opcional y solo se utiliza cuando la representación HTTP difiere del resultado de aplicación por audiencia, permisos, enlaces o campos condicionales.
 - Un Resource es un transformador puro: no inyecta ni resuelve factories, repositories, Services o UseCases.

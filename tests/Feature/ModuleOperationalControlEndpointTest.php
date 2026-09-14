@@ -28,27 +28,27 @@ final class ModuleOperationalControlEndpointTest extends TestCase
 
         $paused = $this->operate($moduleId, 'pause', 1, 'Risk review')
             ->assertOk()
-            ->assertJsonPath('data.module.processing_status', 'paused')
-            ->assertJsonPath('data.module.is_active', true)
-            ->json('data.module');
+            ->assertJsonPath('data.processing_status', 'paused')
+            ->assertJsonPath('data.is_active', true)
+            ->json('data');
 
         $deactivated = $this->operate($moduleId, 'deactivate', $paused['lock_version'], 'Disable source')
             ->assertOk()
-            ->assertJsonPath('data.module.processing_status', 'paused')
-            ->assertJsonPath('data.module.is_active', false)
-            ->json('data.module');
+            ->assertJsonPath('data.processing_status', 'paused')
+            ->assertJsonPath('data.is_active', false)
+            ->json('data');
 
         $resumed = $this->operate($moduleId, 'resume', $deactivated['lock_version'], 'Prepare recovery')
             ->assertOk()
-            ->assertJsonPath('data.module.processing_status', 'running')
-            ->assertJsonPath('data.module.is_active', false)
-            ->json('data.module');
+            ->assertJsonPath('data.processing_status', 'running')
+            ->assertJsonPath('data.is_active', false)
+            ->json('data');
 
         $this->operate($moduleId, 'activate', $resumed['lock_version'], 'Source recovered')
             ->assertOk()
-            ->assertJsonPath('data.module.processing_status', 'running')
-            ->assertJsonPath('data.module.is_active', true)
-            ->assertJsonPath('data.module.lock_version', 5);
+            ->assertJsonPath('data.processing_status', 'running')
+            ->assertJsonPath('data.is_active', true)
+            ->assertJsonPath('data.lock_version', 5);
 
         $this->assertDatabaseCount('module_operational_changes', 4);
         $this->assertDatabaseHas('module_operational_changes', [
@@ -67,7 +67,7 @@ final class ModuleOperationalControlEndpointTest extends TestCase
 
         $this->operate($moduleId, 'activate', 1, 'Already active')
             ->assertOk()
-            ->assertJsonPath('data.module.lock_version', 1);
+            ->assertJsonPath('data.lock_version', 1);
 
         $this->assertDatabaseCount('module_operational_changes', 0);
     }

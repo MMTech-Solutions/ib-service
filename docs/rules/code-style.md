@@ -20,6 +20,7 @@
 - Ubicar cada Command HTTP en `Http/V1/Commands` y construirlo mediante `Command::fromRequest()` a partir de `$request->validated()`.
 - No construir Commands con `$request->all()` salvo que una convención documentada reemplace por completo la validación del FormRequest con validación de `laravel-data`.
 - Normalizar respuestas HTTP desde el controller con el trait `ApiResponse` aportado por `mmt/laravel-feature-scaffold` (dependencia transitiva de `mmt/api-response-normalizer`).
+- La forma de `data` sigue [`api-conventions.md`](api-conventions.md): `data` es el array del listado o el objeto del recurso, sin wrapper por nombre.
 - Extender `App\Support\Exceptions\ApiException` (`MmtException`) para errores HTTP esperados.
 - Utilizar API Resources solo cuando exista una transformación específica de presentación que un Result Data no deba asumir.
 - Mantener controllers delgados y sin reglas de negocio.

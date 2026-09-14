@@ -23,7 +23,7 @@ final class ActivatePlanController
         $plan = $useCase->execute(ActivatePlanCommand::fromRequest($request, $userContext));
 
         return $this->success(
-            data: ['plan' => $plan->toArray()],
+            data: $plan->toArray(),
             message: 'Plan activated successfully.',
         );
     }

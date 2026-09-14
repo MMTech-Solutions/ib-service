@@ -23,7 +23,7 @@ final class DeactivatePlanController
         $plan = $useCase->execute(DeactivatePlanCommand::fromRequest($request, $userContext));
 
         return $this->success(
-            data: ['plan' => $plan->toArray()],
+            data: $plan->toArray(),
             message: 'Plan deactivated successfully.',
         );
     }

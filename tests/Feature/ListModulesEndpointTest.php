@@ -40,20 +40,20 @@ final class ListModulesEndpointTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.modules.0.code', 'broker')
-            ->assertJsonPath('data.modules.0.is_active', true)
-            ->assertJsonPath('data.modules.0.processing_status', 'running')
-            ->assertJsonPath('data.modules.0.lock_version', 1)
-            ->assertJsonCount(2, 'data.modules.0.capabilities')
+            ->assertJsonPath('data.0.code', 'broker')
+            ->assertJsonPath('data.0.is_active', true)
+            ->assertJsonPath('data.0.processing_status', 'running')
+            ->assertJsonPath('data.0.lock_version', 1)
+            ->assertJsonCount(2, 'data.0.capabilities')
             ->assertJsonPath('meta.pagination.per_page', 100)
             ->assertJsonPath('meta.filters', []);
     }
 
     public function test_it_filters_and_validates_the_list_query(): void
     {
-        $this->gatewayGet(self::AUTHORIZED_SUB, ['search' => 'missing'])->assertOk()->assertJsonCount(0, 'data.modules');
-        $this->gatewayGet(self::AUTHORIZED_SUB, ['is_active' => '0'])->assertOk()->assertJsonCount(0, 'data.modules');
-        $this->gatewayGet(self::AUTHORIZED_SUB, ['processing_status' => 'running'])->assertOk()->assertJsonCount(1, 'data.modules');
+        $this->gatewayGet(self::AUTHORIZED_SUB, ['search' => 'missing'])->assertOk()->assertJsonCount(0, 'data');
+        $this->gatewayGet(self::AUTHORIZED_SUB, ['is_active' => '0'])->assertOk()->assertJsonCount(0, 'data');
+        $this->gatewayGet(self::AUTHORIZED_SUB, ['processing_status' => 'running'])->assertOk()->assertJsonCount(1, 'data');
         $this->gatewayGet(self::AUTHORIZED_SUB, ['per_page' => 101])->assertUnprocessable();
     }
 
@@ -63,7 +63,7 @@ final class ListModulesEndpointTest extends TestCase
             ->where('code', 'deposits')
             ->update(['is_active' => false]);
 
-        $capabilities = collect($this->gatewayGet(self::AUTHORIZED_SUB)->assertOk()->json('data.modules.0.capabilities'))
+        $capabilities = collect($this->gatewayGet(self::AUTHORIZED_SUB)->assertOk()->json('data.0.capabilities'))
             ->keyBy('code');
 
         self::assertFalse($capabilities->get('deposits')['is_active']);

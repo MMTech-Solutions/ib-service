@@ -35,7 +35,7 @@ final class ListModuleOperationalHistoryController
         );
 
         return $this->success(
-            data: ['entries' => $entries],
+            data: $entries,
             message: 'Module operational history retrieved successfully.',
             paginator: $paginator,
         );
