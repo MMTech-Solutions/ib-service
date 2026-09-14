@@ -37,8 +37,8 @@ El usuario IB, las suscripciones y el placement no son actores de PR1.
 | Vinculación | Seleccionar módulos de un programa | El conjunto es un subconjunto de los módulos habilitados por el plan; puede quedar vacío. | PR1 | Aceptado |
 | Vinculación | Rechazar un módulo no habilitado | La selección se rechaza; el programa no queda asociado a ese módulo. | PR1 | Aceptado |
 | Consumo | Obtener contexto del plan propietario | Programs opera con el plan y sus módulos habilitados, no con el catálogo global. | PR1 | Aceptado |
-| Publicación | Publicar una configuración de programa | Queda un snapshot de semántica y capacidades del módulo. | Posterior | Diferido: mecánica de publicación fuera de PR1 |
-| Umbrales | Definir umbrales de progresión | Los umbrales permiten resolver el placement. | Posterior | Diferido: `BR-PROGRAM-003` exige umbrales; su estructura queda fuera de PR1 |
+| Publicación | Publicar una configuración de programa | Queda un snapshot de semántica y capacidades del módulo. | P2 | Aceptado en [`07-p2-use-case-inventory.md`](07-p2-use-case-inventory.md) |
+| Umbrales | Definir umbrales de progresión | Los umbrales permiten resolver el placement. | P2 | Aceptado: enteros de entrada; ver BDS `BR-PROGRAM-010`–`013` |
 | Configuración | Configurar actividad o scope de instrumentos | El programa declara actividad compatible con capacidades del módulo. | Posterior | Diferido: `BR-MODULE-004` vigente; sin payload en PR1 |
 | Suscripción | Asignar placement inicial | El usuario queda en un programa del plan suscrito. | Posterior | Diferido: suscripciones fuera de PR1 |
 | Operación | Modificar un placement administrativamente | Cambia el programa actual según una política de anclaje. | Posterior | Diferido: pendiente de BDS |
@@ -82,13 +82,13 @@ pertenecen a otros roadmaps o a decisiones de dominio aún abiertas.
 
 ## Fuera de PR1
 
-- Publicación y versionado de la configuración del programa.
-- Snapshot de módulo del programa (`BR-MODULE-007` a `BR-MODULE-009`).
-- Umbrales de placement, saltos de nivel y política de anclaje.
+- Publicación y versionado → documentado en P2.
+- Snapshot de módulo del programa → documentado en P2.
+- Umbrales de placement → documentado en P2 (`BR-PROGRAM-010`–`013`).
 - Suscripciones, placement inicial y cambios de programa.
 - Reglas de contribución, puntos, runs, rewards y CPA.
 - Restauración o archivo de programas, si llegaran a definirse.
-- Tablas, endpoints, clases y contratos públicos.
+- Tablas, endpoints, clases y contratos públicos de implementación P2.
 
 ## Criterios de salida
 

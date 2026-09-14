@@ -13,21 +13,38 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
-| [`Plans`](plans/README.md) | Completado | P1 completado; próximo Programs | 2026-09-14 |
-| [`Programs`](programs/README.md) | Completado | PR1 completado; próximo Rules / Progression / Rewards | 2026-09-14 |
+| [`Plans`](plans/README.md) | Completado | P1 completado | 2026-09-14 |
+| [`Programs`](programs/README.md) | PR1 completado; P2 Listo | P2 documentado; próximo implementación P2 | 2026-09-14 |
 
 ## Secuencia entre features
 
-La jerarquía del dominio determina el orden inicial:
+La jerarquía del dominio determina el orden inicial. Tras PR1, las
+dependencias dejan de ser una cadena única: P2 cierra publicación, snapshots
+y umbrales; Rules y Subscriptions pueden avanzar después; Progression y
+Rewards dependen de ambos.
 
 ```text
-Modules M1: catálogo interno y control operativo
+Modules M1
     ↓
-Plans P1: plan básico y selección de módulos
+Plans P1
     ↓
-Programs: configuración dentro de los módulos habilitados por el plan
+Programs PR1
     ↓
-Rules / Progression / Rewards
+Programs P2  (publicación, snapshots, umbrales)
+    ├──→ Rules R1 ──────────────┐
+    └──→ Subscriptions/placement ┤──→ Progression
+                                 └──→ Rewards
+```
+
+```mermaid
+flowchart LR
+    PR1["Programs PR1 completado"] --> P2["Programs P2: publicación, snapshots y umbrales"]
+    P2 --> Rules["Rules R1"]
+    P2 --> Subs["Subscriptions y placement"]
+    Rules --> Progression["Progression"]
+    Subs --> Progression
+    Rules --> Rewards["Rewards"]
+    Subs --> Rewards
 ```
 
 - `Modules M1` no publica contratos inter-feature especulativos. Sus objetos
@@ -38,6 +55,9 @@ Rules / Progression / Rewards
   primer `Contracts/Data` versionado.
 - `Programs` no consume libremente el catálogo de módulos: primero debe obtener
   el contexto y los módulos habilitados por el plan propietario.
+- `Programs P2` está documentado hasta Listo (publicación, snapshots y
+  umbrales). El próximo trabajo de Programs es la implementación vertical;
+  Rules y Subscriptions abren inventario tras ese prerrequisito.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

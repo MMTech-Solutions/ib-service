@@ -34,10 +34,11 @@ sustituir los BDS ni las reglas técnicas.
 
 - [`modules/`](roadmap/modules/README.md): fase inicial del catálogo de módulos,
   capacidades y control operativo.
-- [`plans/`](roadmap/plans/README.md): siguiente vertical y primer consumidor
-  inter-feature de Modules.
-- [`programs/`](roadmap/programs/README.md): catálogo de programas dentro de
-  los módulos habilitados por un plan.
+- [`plans/`](roadmap/plans/README.md): primer consumidor inter-feature de
+  Modules; P1 completado.
+- [`programs/`](roadmap/programs/README.md): PR1 completado (catálogo
+  administrativo); P2 Listo (publicación, snapshots y umbrales documentados).
+  Planificación: [`06-second-delivery-planning.md`](roadmap/programs/06-second-delivery-planning.md).
 
 ## Jerarquía de autoridad
 

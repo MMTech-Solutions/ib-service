@@ -25,9 +25,11 @@ queda sin módulos operativos.
 
 ## Relación con Programs
 
-`Programs` puede comenzar su frontera: todo programa pertenecerá a un plan y
-solo configurará módulos habilitados por ese plan.
+`Programs PR1` cerró el catálogo administrativo. `Programs P2` está
+documentado hasta Listo (publicación, snapshots y umbrales):
+[`06-second-delivery-planning.md`](../programs/06-second-delivery-planning.md).
 
 ## Próximo paso
 
-Inventariar Programs a partir de los módulos habilitados por un plan.
+Ninguno dentro de Plans. El roadmap continúa en la implementación de
+Programs P2.

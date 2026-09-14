@@ -1,7 +1,7 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.8
-- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa
+- **Versión:** 0.9
+- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra umbral de entrada, publicación y snapshot de configuración del programa
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
 
@@ -32,6 +32,9 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Desactivación automática del plan | Paso a inactivo cuando un plan activo queda sin módulos operativos porque el catálogo desactivó módulos. |
 | Suscripción | Relación del usuario IB con un plan. |
 | Placement | Programa actual del usuario dentro del plan suscrito. |
+| Umbral de entrada | Entero no negativo asociado a un programa: suelo de puntos a partir del cual ese nivel es alcanzable. |
+| Ladder de programas | Secuencia ordenada de programas de un plan cuyos umbrales de entrada son estrictamente crecientes con la posición. Define intervalos contiguos sin solapes. |
+| Configuración publicada del programa | Versión inmutable de la configuración de un programa (selecciones, umbral congelado y snapshots de módulo) válida para ejecución y auditoría. |
 
 ## Relaciones
 
@@ -97,8 +100,30 @@ erDiagram
 | BR-PROGRAM-007 | La selección de módulos de un programa es siempre un subconjunto de las vinculaciones del plan propietario. |
 | BR-PROGRAM-008 | Activar, desactivar o archivar el plan no crea, elimina ni altera por sí solo los programas de ese plan. |
 | BR-PROGRAM-009 | Solo un plan no archivado admite crear, editar o reordenar sus programas. |
+| BR-PROGRAM-010 | Cada programa declara un único umbral de entrada: un entero no negativo. No se modelan rangos min-max ni un máximo nulo en el último nivel. |
+| BR-PROGRAM-011 | Los umbrales de entrada de los programas de un mismo plan son estrictamente crecientes con la posición del ladder. |
+| BR-PROGRAM-012 | El intervalo efectivo del programa en posición `i` es `[umbral_i, umbral_{i+1})`. El del último programa es `[umbral_n, ∞)`. Los intervalos son contiguos y no se solapan. |
+| BR-PROGRAM-013 | El placement por progresión sitúa al IB en el programa de mayor posición del plan tal que `puntos >= umbral_de_entrada` de ese programa. |
+| BR-PROGRAM-014 | Una configuración publicada del programa es inmutable. Todo cambio funcional de selecciones, umbral publicado o semántica congelada exige una nueva versión. |
 | BR-SUBSCRIPTION-001 | Una suscripción activa es requisito para tener placement y participar en progresión o recompensas. |
 | BR-SUBSCRIPTION-002 | Cambiar de programa no sustituye ni recrea la suscripción al plan. |
+
+## Ladder de umbrales
+
+El ladder no usa un par min-max por programa. Un solo umbral de entrada por
+nivel, ordenado de forma estrictamente creciente, produce el mismo resultado
+sin solapes ni casos especiales en el último programa.
+
+Ejemplo con tres programas:
+
+| Posición | Código | Umbral de entrada | Intervalo efectivo |
+| --- | --- | --- | --- |
+| 1 | basic | 0 | `[0, 100)` |
+| 2 | advanced | 100 | `[100, 500)` |
+| 3 | pro | 500 | `[500, ∞)` |
+
+Con 99 puntos el placement es `basic`; con 100, `advanced`; con 500 o más,
+`pro`.
 
 ## Estados del plan
 
@@ -130,7 +155,9 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Programa creado o editado dentro de un plan.
 - Programas de un plan reordenados.
 - Módulos seleccionados o retirados de un programa.
+- Umbral de entrada de un programa definido o modificado.
 - Configuración de programa publicada.
+- Nueva versión de configuración de programa publicada.
 - Módulo incorporado al catálogo.
 - Capacidades de un módulo modificadas.
 - Módulo activado o desactivado.
