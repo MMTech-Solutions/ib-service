@@ -1,7 +1,7 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.7
-- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan
+- **Versión:** 0.8
+- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
 
@@ -16,7 +16,9 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Plan IB | Producto comercial y elemento de mayor jerarquía de la suscripción. |
 | Plan dedicado | Plan cuya configuración favorece la actividad de un módulo o perfil de negocio concreto. |
 | Plan mixto | Plan que combina de forma deliberada contribuciones y recompensas de varios módulos. |
-| Programa IB | Nivel de crecimiento dentro de un plan. |
+| Programa IB | Nivel de crecimiento dentro de un plan. Tiene código estable, nombre y descripción opcional. |
+| Código del programa | Identidad de negocio del programa, estable y única dentro de su plan. |
+| Selección de módulo del programa | Relación que asocia al programa un módulo ya habilitado por su plan. Puede estar vacía antes de publicar la configuración del programa. |
 | Módulo | Dominio externo que produce actividad, por ejemplo Broker, Copy Trading, Prop Firm o Hedge Fund. |
 | Catálogo de módulos | Registro duradero de los módulos que IB reconoce, su disponibilidad y las capacidades que implementa cada uno. |
 | Capacidad de módulo | Vocabulario de actividad o comportamiento implementado por un módulo, como trades, depósitos o compras de challenges. No es una facultad concedida administrativamente. |
@@ -39,6 +41,8 @@ erDiagram
     PLAN ||--|{ PROGRAM : contains
     PLAN ||--|{ MODULE_BINDING : enables
     PLAN ||--o{ PLAN_OPERATIONAL_CHANGE : records
+    PROGRAM ||--o{ PROGRAM_MODULE_SELECTION : selects
+    MODULE_BINDING ||--o{ PROGRAM_MODULE_SELECTION : constrains
     PROGRAM ||--o{ MODULE_CONFIG_SNAPSHOT : freezes
     MODULE_CATALOG ||--o{ MODULE_CONFIG_SNAPSHOT : described_at_publication
     PLAN ||--o{ SUBSCRIPTION : receives
@@ -87,6 +91,12 @@ erDiagram
 | BR-PROGRAM-001 | Todo placement pertenece a una suscripción y señala un programa del mismo plan de esa suscripción. |
 | BR-PROGRAM-002 | La progresión automática solo cambia el programa del usuario dentro del plan al que está suscrito. |
 | BR-PROGRAM-003 | Los programas del plan mantienen un orden y umbrales no ambiguos para determinar el placement. |
+| BR-PROGRAM-004 | El código del programa es una identidad de negocio estable, única dentro de su plan e irreutilizable dentro de ese plan. |
+| BR-PROGRAM-005 | Antes de publicarse, un programa puede existir sin módulos seleccionados, incluso si su plan está activo. |
+| BR-PROGRAM-006 | Publicar una configuración de programa exige al menos un módulo seleccionado que el plan propietario tenga habilitado. |
+| BR-PROGRAM-007 | La selección de módulos de un programa es siempre un subconjunto de las vinculaciones del plan propietario. |
+| BR-PROGRAM-008 | Activar, desactivar o archivar el plan no crea, elimina ni altera por sí solo los programas de ese plan. |
+| BR-PROGRAM-009 | Solo un plan no archivado admite crear, editar o reordenar sus programas. |
 | BR-SUBSCRIPTION-001 | Una suscripción activa es requisito para tener placement y participar en progresión o recompensas. |
 | BR-SUBSCRIPTION-002 | Cambiar de programa no sustituye ni recrea la suscripción al plan. |
 
@@ -117,6 +127,10 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Módulo habilitado o retirado de un plan.
 - Plan archivado.
 - Plan publicado.
+- Programa creado o editado dentro de un plan.
+- Programas de un plan reordenados.
+- Módulos seleccionados o retirados de un programa.
+- Configuración de programa publicada.
 - Módulo incorporado al catálogo.
 - Capacidades de un módulo modificadas.
 - Módulo activado o desactivado.

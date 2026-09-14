@@ -47,6 +47,17 @@ final class InMemoryPlanRepository implements PlanRepositoryInterface
         return null;
     }
 
+    public function findByIdIncludingArchived(string $id): ?Plan
+    {
+        foreach ($this->plans as $plan) {
+            if ($plan->id === $id) {
+                return $this->copy($plan);
+            }
+        }
+
+        return null;
+    }
+
     public function findByCode(string $code): ?Plan
     {
         $plan = $this->plans[$code] ?? null;

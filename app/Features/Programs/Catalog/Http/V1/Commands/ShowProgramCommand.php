@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Features\Programs\Catalog\Http\V1\Commands;
+
+use App\Features\Programs\Catalog\Http\V1\Requests\ShowProgramRequest;
+use Spatie\LaravelData\Data;
+
+final class ShowProgramCommand extends Data
+{
+    public function __construct(
+        public readonly string $planId,
+        public readonly string $programId,
+    ) {}
+
+    public static function fromRequest(ShowProgramRequest $request): self
+    {
+        $validated = $request->validated();
+
+        return new self(
+            planId: (string) $validated['plan'],
+            programId: (string) $validated['program'],
+        );
+    }
+}

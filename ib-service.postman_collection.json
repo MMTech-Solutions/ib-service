@@ -557,7 +557,7 @@
                                         {"key": "is_active", "value": "false", "description": "Filter by active state: true or false.", "disabled": true}
                                     ]
                                 },
-                                "description": "Requires ib.plans.manage on the admin_panel surface. Returns non-archived plans ordered by code."
+                                "description": "Requires ib.plans.manage on the admin_panel surface. Returns non-archived plans ordered by code as data[]."
                             },
                             "response": []
                         },
@@ -695,6 +695,116 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Programs",
+                    "item": [
+                        {
+                            "name": "List programs",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs"]
+                                },
+                                "description": "Requires ib.programs.manage on the admin_panel surface. Returns programs of the plan ordered by position."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create program",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"code\": \"basic\",\n  \"name\": \"Basic\",\n  \"description\": \"Entry level\",\n  \"module_ids\": [\"{{MODULE_ID}}\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs"]
+                                },
+                                "description": "Creates a program under a non-archived plan. module_ids is optional and must be a subset of the plan bindings."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show program",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}"]
+                                },
+                                "description": "Returns a program with selected module_ids and lock_version."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update program",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"Basic\",\n  \"description\": \"Updated description\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}"]
+                                },
+                                "description": "Partial update. module_ids replaces the complete selection set when present. Empty selections are allowed before publication."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reorder programs",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"program_ids\": [\"{{PROGRAM_ID}}\"]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/reorder",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "reorder"]
+                                },
+                                "description": "Atomically reorders all programs of the plan. program_ids must list every program exactly once."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
@@ -747,6 +857,16 @@
         },
         {
             "key": "PLAN_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRAM_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "MODULE_ID",
             "value": "",
             "type": "string"
         },

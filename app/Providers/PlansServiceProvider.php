@@ -10,7 +10,9 @@ use App\Features\Plans\Catalog\Listeners\DeactivatePlansAfterModuleDeactivated;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPlanRepository;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPlanRepository;
 use App\Features\Plans\Catalog\UseCases\IsModuleReferencedUseCase;
+use App\Features\Plans\Catalog\UseCases\ResolvePlanContextUseCase;
 use App\Features\Plans\Contracts\Ports\Input\IsModuleReferencedPort;
+use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -22,6 +24,7 @@ final class PlansServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(IsModuleReferencedPort::class, IsModuleReferencedUseCase::class);
+        $this->app->singleton(ResolvePlanContextPort::class, ResolvePlanContextUseCase::class);
         $this->app->singleton(
             'plans.repositories.memory',
             fn (): InMemoryPlanRepository => new InMemoryPlanRepository,

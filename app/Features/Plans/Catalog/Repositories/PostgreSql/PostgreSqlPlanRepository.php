@@ -35,6 +35,13 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
         return $record === null ? null : $this->hydrate($record);
     }
 
+    public function findByIdIncludingArchived(string $id): ?Plan
+    {
+        $record = PlanRecord::query()->with('bindings')->whereKey($id)->first();
+
+        return $record === null ? null : $this->hydrate($record);
+    }
+
     public function findByCode(string $code): ?Plan
     {
         $record = PlanRecord::query()->current()->with('bindings')->where('code', $code)->first();

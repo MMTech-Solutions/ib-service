@@ -17,6 +17,11 @@ use App\Features\Plans\Catalog\Http\V1\Controllers\ListPlansController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\ShowPlanController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\StorePlanController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\UpdatePlanController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\ListProgramsController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -43,5 +48,10 @@ Route::prefix('ib/v1')
                 Route::post('plans/{plan}/activate', ActivatePlanController::class)->name('ib.v1.admin.plans.activate');
                 Route::post('plans/{plan}/deactivate', DeactivatePlanController::class)->name('ib.v1.admin.plans.deactivate');
                 Route::delete('plans/{plan}', ArchivePlanController::class)->name('ib.v1.admin.plans.destroy');
+                Route::get('plans/{plan}/programs', ListProgramsController::class)->name('ib.v1.admin.plans.programs.index');
+                Route::post('plans/{plan}/programs', StoreProgramController::class)->name('ib.v1.admin.plans.programs.store');
+                Route::post('plans/{plan}/programs/reorder', ReorderProgramsController::class)->name('ib.v1.admin.plans.programs.reorder');
+                Route::get('plans/{plan}/programs/{program}', ShowProgramController::class)->name('ib.v1.admin.plans.programs.show');
+                Route::patch('plans/{plan}/programs/{program}', UpdateProgramController::class)->name('ib.v1.admin.plans.programs.update');
             });
     });

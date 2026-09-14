@@ -16,6 +16,8 @@ interface PlanRepositoryInterface
 
     public function findById(string $id): ?Plan;
 
+    public function findByIdIncludingArchived(string $id): ?Plan;
+
     public function findByCode(string $code): ?Plan;
 
     /** @return list<Plan> */
