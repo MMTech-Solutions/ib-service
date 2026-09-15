@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Programs\Catalog\UseCases;
 
+use App\Features\Programs\Catalog\Actions\AssertProgramLadderAction;
 use App\Features\Programs\Catalog\Actions\AssertProgramModuleSelectionAction;
 use App\Features\Programs\Catalog\Actions\PresentProgramAction;
 use App\Features\Programs\Catalog\DTOs\ProgramDetailData;
@@ -11,6 +12,7 @@ use App\Features\Programs\Catalog\Exceptions\ProgramConcurrencyException;
 use App\Features\Programs\Catalog\Exceptions\ProgramNotFoundException;
 use App\Features\Programs\Catalog\Factories\ProgramRepositoryFactory;
 use App\Features\Programs\Catalog\Http\V1\Commands\UpdateProgramCommand;
+use App\Features\Programs\Catalog\Models\Program;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -19,6 +21,7 @@ final class UpdateProgramUseCase
     public function __construct(
         private readonly ProgramRepositoryFactory $repositoryFactory,
         private readonly AssertProgramModuleSelectionAction $assertSelection,
+        private readonly AssertProgramLadderAction $assertLadder,
         private readonly PresentProgramAction $presentProgram,
     ) {}
 
@@ -48,12 +51,24 @@ final class UpdateProgramUseCase
                 ) || $changed;
             }
 
+            if ($command->hasEntryThreshold) {
+                $changed = $program->assignEntryThreshold((int) $command->entryThreshold, $now) || $changed;
+            }
+
             if ($command->moduleIds !== null) {
                 $changed = $program->replaceSelections(
                     $command->moduleIds,
                     static fn (): string => (string) Str::uuid7(),
                     $now,
                 ) || $changed;
+            }
+
+            if ($command->hasEntryThreshold) {
+                $projected = array_map(
+                    static fn (Program $item): Program => $item->id === $program->id ? $program : $item,
+                    $repository->listByPlanId($command->planId),
+                );
+                $this->assertLadder->assert($projected);
             }
 
             if ($changed) {

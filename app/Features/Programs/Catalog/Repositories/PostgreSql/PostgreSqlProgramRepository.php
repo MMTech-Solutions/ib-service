@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Programs\Catalog\Repositories\PostgreSql;
 
 use App\Features\Programs\Catalog\Contracts\Repositories\ProgramRepositoryInterface;
+use App\Features\Programs\Catalog\DTOs\ProgramReorderItem;
 use App\Features\Programs\Catalog\Exceptions\DuplicateProgramCodeException;
 use App\Features\Programs\Catalog\Exceptions\ProgramConcurrencyException;
 use App\Features\Programs\Catalog\Exceptions\ProgramReorderConflictException;
@@ -83,6 +84,7 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
                 'name' => $program->name,
                 'description' => $program->description,
                 'position' => $program->position,
+                'entry_threshold' => $program->entryThreshold,
                 'lock_version' => $nextLockVersion,
                 'updated_at' => $program->updatedAt,
             ]);
@@ -95,9 +97,12 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
         $program->lockVersion = $nextLockVersion;
     }
 
-    public function reorder(string $planId, array $orderedProgramIds, string $now): void
+    /**
+     * @param  list<ProgramReorderItem>  $items
+     */
+    public function reorder(string $planId, array $items, string $now): void
     {
-        $this->connection->transaction(function () use ($planId, $orderedProgramIds, $now): void {
+        $this->connection->transaction(function () use ($planId, $items, $now): void {
             $records = ProgramRecord::query()
                 ->where('plan_id', $planId)
                 ->orderBy('position')
@@ -106,15 +111,25 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
                 ->keyBy(static fn (ProgramRecord $record): string => (string) $record->id);
 
             $currentIds = $records->keys()->sort()->values()->all();
-            $incoming = array_values($orderedProgramIds);
-            $sortedIncoming = $incoming;
+            $incomingIds = array_map(
+                static fn (ProgramReorderItem $item): string => $item->id,
+                $items,
+            );
+            $sortedIncoming = $incomingIds;
             sort($sortedIncoming);
 
-            if ($currentIds !== $sortedIncoming || count($incoming) !== count(array_unique($incoming))) {
+            if ($currentIds !== $sortedIncoming || count($incomingIds) !== count(array_unique($incomingIds))) {
                 throw ProgramReorderConflictException::forPlan($planId);
             }
 
-            foreach ($incoming as $index => $programId) {
+            foreach ($items as $item) {
+                $record = $records[$item->id] ?? null;
+                if ($record === null || (int) $record->lock_version !== $item->lockVersion) {
+                    throw ProgramConcurrencyException::forProgram($item->id);
+                }
+            }
+
+            foreach ($incomingIds as $index => $programId) {
                 ProgramRecord::query()
                     ->whereKey($programId)
                     ->where('plan_id', $planId)
@@ -124,13 +139,15 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
                     ]);
             }
 
-            foreach ($incoming as $index => $programId) {
+            foreach ($items as $index => $item) {
                 $affected = ProgramRecord::query()
-                    ->whereKey($programId)
+                    ->whereKey($item->id)
                     ->where('plan_id', $planId)
+                    ->where('lock_version', $item->lockVersion)
                     ->update([
                         'position' => $index + 1,
-                        'lock_version' => ((int) $records[$programId]->lock_version) + 1,
+                        'entry_threshold' => $item->entryThreshold,
+                        'lock_version' => $item->lockVersion + 1,
                         'updated_at' => $now,
                     ]);
 
@@ -159,6 +176,7 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
             name: (string) $record->name,
             description: $record->description === null ? null : (string) $record->description,
             position: (int) $record->position,
+            entryThreshold: (int) $record->entry_threshold,
             lockVersion: (int) $record->lock_version,
             selections: $record->selections->map(
                 static fn (ProgramModuleSelectionRecord $selection): ProgramModuleSelection => new ProgramModuleSelection(
@@ -183,6 +201,7 @@ final class PostgreSqlProgramRepository implements ProgramRepositoryInterface
             'name' => $program->name,
             'description' => $program->description,
             'position' => $program->position,
+            'entry_threshold' => $program->entryThreshold,
             'lock_version' => $program->lockVersion,
             'created_at' => $program->createdAt,
             'updated_at' => $program->updatedAt,

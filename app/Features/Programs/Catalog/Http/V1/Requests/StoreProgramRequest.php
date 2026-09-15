@@ -29,6 +29,7 @@ final class StoreProgramRequest extends FormRequest
             'code' => ['required', 'string', 'max:64', 'regex:/^[a-z][a-z0-9_-]*$/'],
             'name' => ['required', 'string', 'max:120', 'regex:/\S/'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'entry_threshold' => ['required', 'integer', 'min:0'],
             'module_ids' => ['sometimes', 'array', 'max:50'],
             'module_ids.*' => ['uuid', 'distinct'],
             'position' => ['prohibited'],

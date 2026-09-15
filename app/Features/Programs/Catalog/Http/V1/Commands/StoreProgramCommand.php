@@ -17,6 +17,7 @@ final class StoreProgramCommand extends Data
         public readonly string $code,
         public readonly string $name,
         public readonly ?string $description,
+        public readonly int $entryThreshold,
         public readonly array $moduleIds,
     ) {}
 
@@ -31,6 +32,7 @@ final class StoreProgramCommand extends Data
             description: array_key_exists('description', $validated) && $validated['description'] !== null
                 ? (string) $validated['description']
                 : null,
+            entryThreshold: (int) $validated['entry_threshold'],
             moduleIds: array_values(array_unique($validated['module_ids'] ?? [])),
         );
     }

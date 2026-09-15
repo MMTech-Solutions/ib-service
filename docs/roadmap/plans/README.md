@@ -25,11 +25,11 @@ queda sin módulos operativos.
 
 ## Relación con Programs
 
-`Programs PR1` cerró el catálogo administrativo. `Programs P2` está
-documentado hasta Listo (publicación, snapshots y umbrales):
+`Programs PR1` cerró el catálogo administrativo. `Programs P2` cierra el
+ladder vivo de umbrales:
 [`06-second-delivery-planning.md`](../programs/06-second-delivery-planning.md).
 
 ## Próximo paso
 
-Ninguno dentro de Plans. El roadmap continúa en la implementación de
-Programs P2.
+Ninguno dentro de Plans. Programs P2 está cerrado; el roadmap continúa en
+Rules R1 y en suscripciones/placement.

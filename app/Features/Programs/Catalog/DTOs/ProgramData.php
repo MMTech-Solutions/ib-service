@@ -18,6 +18,7 @@ final class ProgramData extends Data
         public readonly string $name,
         public readonly ?string $description,
         public readonly int $position,
+        public readonly int $entry_threshold,
         public readonly int $lock_version,
         public readonly array $module_ids,
         public readonly string $created_at,

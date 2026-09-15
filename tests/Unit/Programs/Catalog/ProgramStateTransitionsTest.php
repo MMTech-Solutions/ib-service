@@ -23,6 +23,7 @@ final class ProgramStateTransitionsTest extends TestCase
             name: 'Basic',
             description: null,
             position: 1,
+            entryThreshold: 0,
             moduleIds: [$moduleA],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $now,
@@ -35,5 +36,8 @@ final class ProgramStateTransitionsTest extends TestCase
         self::assertSame([$moduleA, $moduleB], $program->moduleIds());
         self::assertTrue($program->assignPosition(2, $now));
         self::assertFalse($program->assignPosition(2, $now));
+        self::assertTrue($program->assignEntryThreshold(10, $now));
+        self::assertFalse($program->assignEntryThreshold(10, $now));
+        self::assertSame(10, $program->entryThreshold);
     }
 }

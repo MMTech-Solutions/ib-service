@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Programs\Catalog\Contracts\Repositories;
 
+use App\Features\Programs\Catalog\DTOs\ProgramReorderItem;
 use App\Features\Programs\Catalog\Models\Program;
 use Closure;
 
@@ -25,7 +26,7 @@ interface ProgramRepositoryInterface
     public function update(Program $program, int $expectedLockVersion): void;
 
     /**
-     * @param  list<string>  $orderedProgramIds
+     * @param  list<ProgramReorderItem>  $items
      */
-    public function reorder(string $planId, array $orderedProgramIds, string $now): void;
+    public function reorder(string $planId, array $items, string $now): void;
 }

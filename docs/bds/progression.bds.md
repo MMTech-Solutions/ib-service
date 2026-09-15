@@ -49,7 +49,7 @@ flowchart LR
 | BR-POINTS-009 | Una contribución registrada no se recalcula silenciosamente cuando cambia una ponderación; las nuevas condiciones requieren otra versión de regla. |
 | BR-POINTS-010 | Un run puede mantener, subir o bajar el placement según los puntos y umbrales aplicables. |
 | BR-POINTS-011 | Todos los módulos de un plan mixto contribuyen mediante el mismo ledger y mecanismo de evaluación, aunque utilicen métricas y ponderaciones diferentes. |
-| BR-POINTS-012 | El procesamiento pausado de un módulo impide calcular nuevas contribuciones suyas aunque la configuración publicada permanezca vigente. |
+| BR-POINTS-012 | El procesamiento pausado de un módulo impide calcular nuevas contribuciones suyas aunque las selecciones y umbrales del programa permanezcan vigentes. |
 | BR-POINTS-013 | La actividad del módulo recibida o consultada durante una pausa se conserva para el período configurado y queda identificada para su tratamiento posterior. |
 | BR-POINTS-014 | Un módulo inactivo no ingiere ni consulta actividad y no genera contribuciones nuevas. |
 

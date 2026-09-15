@@ -26,8 +26,11 @@ final class ReorderProgramsRequest extends FormRequest
     {
         return [
             'plan' => ['required', 'uuid'],
-            'program_ids' => ['required', 'array', 'min:1'],
-            'program_ids.*' => ['uuid', 'distinct'],
+            'programs' => ['required', 'array', 'min:1'],
+            'programs.*.id' => ['required', 'uuid', 'distinct'],
+            'programs.*.entry_threshold' => ['required', 'integer', 'min:0'],
+            'programs.*.lock_version' => ['required', 'integer', 'min:1'],
+            'program_ids' => ['prohibited'],
         ];
     }
 }

@@ -20,6 +20,7 @@ final class Program
         public string $name,
         public ?string $description,
         public int $position,
+        public int $entryThreshold,
         public int $lockVersion,
         public array $selections,
         public readonly string $createdAt,
@@ -36,6 +37,7 @@ final class Program
         string $name,
         ?string $description,
         int $position,
+        int $entryThreshold,
         array $moduleIds,
         Closure $generateId,
         string $now,
@@ -47,6 +49,7 @@ final class Program
             name: $name,
             description: $description,
             position: $position,
+            entryThreshold: $entryThreshold,
             lockVersion: 1,
             selections: [],
             createdAt: $now,
@@ -99,6 +102,18 @@ final class Program
         return true;
     }
 
+    public function assignEntryThreshold(int $entryThreshold, string $now): bool
+    {
+        if ($this->entryThreshold === $entryThreshold) {
+            return false;
+        }
+
+        $this->entryThreshold = $entryThreshold;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
     public function assignPosition(int $position, string $now): bool
     {
         if ($this->position === $position) {
@@ -129,6 +144,7 @@ final class Program
             name: $this->name,
             description: $this->description,
             position: $this->position,
+            entry_threshold: $this->entryThreshold,
             lock_version: $this->lockVersion,
             module_ids: $this->moduleIds(),
             created_at: $this->createdAt,
@@ -147,6 +163,7 @@ final class Program
             name: $list->name,
             description: $list->description,
             position: $list->position,
+            entry_threshold: $list->entry_threshold,
             lock_version: $list->lock_version,
             module_ids: $list->module_ids,
             created_at: $list->created_at,

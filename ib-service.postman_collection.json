@@ -713,7 +713,7 @@
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs"]
                                 },
-                                "description": "Requires ib.programs.manage on the admin_panel surface. Returns programs of the plan ordered by position."
+                                "description": "Requires ib.programs.manage on the admin_panel surface. Returns programs of the plan ordered by position, including live entry_threshold."
                             },
                             "response": []
                         },
@@ -729,14 +729,14 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"code\": \"basic\",\n  \"name\": \"Basic\",\n  \"description\": \"Entry level\",\n  \"module_ids\": [\"{{MODULE_ID}}\"]\n}"
+                                    "raw": "{\n  \"code\": \"basic\",\n  \"name\": \"Basic\",\n  \"description\": \"Entry level\",\n  \"entry_threshold\": 0,\n  \"module_ids\": [\"{{MODULE_ID}}\"]\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs",
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs"]
                                 },
-                                "description": "Creates a program under a non-archived plan. module_ids is optional and must be a subset of the plan bindings."
+                                "description": "Creates a program under a non-archived plan. entry_threshold is required. module_ids is optional and must be a subset of the plan bindings."
                             },
                             "response": []
                         },
@@ -754,7 +754,7 @@
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}"]
                                 },
-                                "description": "Returns a program with selected module_ids and lock_version."
+                                "description": "Returns a program with selected module_ids, entry_threshold and lock_version."
                             },
                             "response": []
                         },
@@ -770,14 +770,14 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"name\": \"Basic\",\n  \"description\": \"Updated description\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                    "raw": "{\n  \"name\": \"Basic\",\n  \"description\": \"Updated description\",\n  \"entry_threshold\": 0,\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"lock_version\": {{LOCK_VERSION}}\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}",
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}"]
                                 },
-                                "description": "Partial update. module_ids replaces the complete selection set when present. Empty selections are allowed before publication."
+                                "description": "Partial update. module_ids replaces the complete selection set when present. Empty selections are allowed. entry_threshold is live and must keep the plan ladder strictly increasing."
                             },
                             "response": []
                         },
@@ -793,14 +793,14 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"program_ids\": [\"{{PROGRAM_ID}}\"]\n}"
+                                    "raw": "{\n  \"programs\": [\n    {\n      \"id\": \"{{PROGRAM_ID}}\",\n      \"entry_threshold\": 0,\n      \"lock_version\": {{LOCK_VERSION}}\n    }\n  ]\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/reorder",
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "reorder"]
                                 },
-                                "description": "Atomically reorders all programs of the plan. program_ids must list every program exactly once."
+                                "description": "Atomically reorders all programs of the plan and sets their live entry thresholds. programs must list every program exactly once with lock_version."
                             },
                             "response": []
                         }

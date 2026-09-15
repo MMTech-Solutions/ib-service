@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Contracts;
 
 use App\Features\Programs\Catalog\Contracts\Repositories\ProgramRepositoryInterface;
+use App\Features\Programs\Catalog\DTOs\ProgramReorderItem;
 use App\Features\Programs\Catalog\Exceptions\DuplicateProgramCodeException;
 use App\Features\Programs\Catalog\Exceptions\ProgramConcurrencyException;
 use App\Features\Programs\Catalog\Exceptions\ProgramReorderConflictException;
@@ -36,6 +37,7 @@ abstract class ProgramRepositoryContract extends TestCase
         self::assertNotNull($stored);
         self::assertSame('basic', $stored->code);
         self::assertSame(1, $stored->position);
+        self::assertSame(0, $stored->entryThreshold);
         self::assertSame($this->moduleIds(), $stored->moduleIds());
 
         $listed = $repository->listByPlanId($this->planId());
@@ -77,6 +79,25 @@ abstract class ProgramRepositoryContract extends TestCase
         $repository->update($stale, 1);
     }
 
+    public function test_it_updates_entry_threshold(): void
+    {
+        $repository = $this->repository();
+        $first = $this->program('basic', 1, []);
+        $second = $this->program('advanced', 2, []);
+        $repository->create($first);
+        $repository->create($second);
+
+        $writer = $repository->findById($second->id);
+        self::assertNotNull($writer);
+        $writer->assignEntryThreshold(50, $this->now());
+        $repository->update($writer, 1);
+
+        $stored = $repository->findById($second->id);
+        self::assertNotNull($stored);
+        self::assertSame(50, $stored->entryThreshold);
+        self::assertSame(2, $stored->lockVersion);
+    }
+
     public function test_it_reorders_programs_contiguously(): void
     {
         $repository = $this->repository();
@@ -85,7 +106,10 @@ abstract class ProgramRepositoryContract extends TestCase
         $repository->create($first);
         $repository->create($second);
 
-        $repository->reorder($this->planId(), [$second->id, $first->id], $this->now());
+        $repository->reorder($this->planId(), [
+            new ProgramReorderItem($second->id, 0, 1),
+            new ProgramReorderItem($first->id, 1, 1),
+        ], $this->now());
 
         $listed = $repository->listByPlanId($this->planId());
         self::assertSame(['advanced', 'basic'], array_map(
@@ -97,6 +121,25 @@ abstract class ProgramRepositoryContract extends TestCase
             $listed,
         ));
         self::assertSame(2, $listed[0]->lockVersion);
+        self::assertSame([0, 1], array_map(
+            static fn (Program $program): int => $program->entryThreshold,
+            $listed,
+        ));
+    }
+
+    public function test_it_rejects_stale_lock_versions_on_reorder(): void
+    {
+        $repository = $this->repository();
+        $first = $this->program('basic', 1, []);
+        $second = $this->program('advanced', 2, []);
+        $repository->create($first);
+        $repository->create($second);
+
+        $this->expectException(ProgramConcurrencyException::class);
+        $repository->reorder($this->planId(), [
+            new ProgramReorderItem($first->id, 0, 1),
+            new ProgramReorderItem($second->id, 10, 0),
+        ], $this->now());
     }
 
     public function test_it_rejects_incomplete_reorder_sets(): void
@@ -107,7 +150,9 @@ abstract class ProgramRepositoryContract extends TestCase
         $repository->create($this->program('advanced', 2, []));
 
         $this->expectException(ProgramReorderConflictException::class);
-        $repository->reorder($this->planId(), [$first->id], $this->now());
+        $repository->reorder($this->planId(), [
+            new ProgramReorderItem($first->id, 0, 1),
+        ], $this->now());
     }
 
     public function test_transaction_rolls_back_after_an_error(): void
@@ -145,6 +190,7 @@ abstract class ProgramRepositoryContract extends TestCase
             name: ucfirst($code),
             description: null,
             position: $position,
+            entryThreshold: $position - 1,
             moduleIds: $moduleIds,
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $this->now(),

@@ -25,6 +25,7 @@ final class ProgramRecordFactory extends Factory
             'name' => fake()->words(2, true),
             'description' => fake()->sentence(),
             'position' => 1,
+            'entry_threshold' => 0,
             'lock_version' => 1,
             'created_at' => $now,
             'updated_at' => $now,

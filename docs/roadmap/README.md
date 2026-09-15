@@ -14,14 +14,13 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
 | [`Plans`](plans/README.md) | Completado | P1 completado | 2026-09-14 |
-| [`Programs`](programs/README.md) | PR1 completado; P2 Listo | P2 documentado; próximo implementación P2 | 2026-09-14 |
+| [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
 
 ## Secuencia entre features
 
-La jerarquía del dominio determina el orden inicial. Tras PR1, las
-dependencias dejan de ser una cadena única: P2 cierra publicación, snapshots
-y umbrales; Rules y Subscriptions pueden avanzar después; Progression y
-Rewards dependen de ambos.
+La jerarquía del dominio determina el orden inicial. Tras PR1, P2 cierra el
+ladder vivo de umbrales. Rules y Subscriptions pueden avanzar después;
+Progression y Rewards dependen de ambos.
 
 ```text
 Modules M1
@@ -30,7 +29,7 @@ Plans P1
     ↓
 Programs PR1
     ↓
-Programs P2  (publicación, snapshots, umbrales)
+Programs P2  (ladder vivo de umbrales)
     ├──→ Rules R1 ──────────────┐
     └──→ Subscriptions/placement ┤──→ Progression
                                  └──→ Rewards
@@ -38,7 +37,7 @@ Programs P2  (publicación, snapshots, umbrales)
 
 ```mermaid
 flowchart LR
-    PR1["Programs PR1 completado"] --> P2["Programs P2: publicación, snapshots y umbrales"]
+    PR1["Programs PR1 completado"] --> P2["Programs P2: ladder vivo"]
     P2 --> Rules["Rules R1"]
     P2 --> Subs["Subscriptions y placement"]
     Rules --> Progression["Progression"]
@@ -55,9 +54,8 @@ flowchart LR
   primer `Contracts/Data` versionado.
 - `Programs` no consume libremente el catálogo de módulos: primero debe obtener
   el contexto y los módulos habilitados por el plan propietario.
-- `Programs P2` está documentado hasta Listo (publicación, snapshots y
-  umbrales). El próximo trabajo de Programs es la implementación vertical;
-  Rules y Subscriptions abren inventario tras ese prerrequisito.
+- `Programs P2` implementa el ladder vivo de umbrales. No publica ni
+  versiona programas. Rules y Subscriptions abren inventario tras P2.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

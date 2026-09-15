@@ -1,7 +1,7 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.9
-- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra umbral de entrada, publicación y snapshot de configuración del programa
+- **Versión:** 0.10
+- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
 
@@ -18,11 +18,10 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Plan mixto | Plan que combina de forma deliberada contribuciones y recompensas de varios módulos. |
 | Programa IB | Nivel de crecimiento dentro de un plan. Tiene código estable, nombre y descripción opcional. |
 | Código del programa | Identidad de negocio del programa, estable y única dentro de su plan. |
-| Selección de módulo del programa | Relación que asocia al programa un módulo ya habilitado por su plan. Puede estar vacía antes de publicar la configuración del programa. |
+| Selección de módulo del programa | Relación que asocia al programa un módulo ya habilitado por su plan. Puede permanecer vacía. |
 | Módulo | Dominio externo que produce actividad, por ejemplo Broker, Copy Trading, Prop Firm o Hedge Fund. |
 | Catálogo de módulos | Registro duradero de los módulos que IB reconoce, su disponibilidad y las capacidades que implementa cada uno. |
 | Capacidad de módulo | Vocabulario de actividad o comportamiento implementado por un módulo, como trades, depósitos o compras de challenges. No es una facultad concedida administrativamente. |
-| Snapshot de módulo del programa | Copia inmutable de la semántica y capacidades del módulo utilizadas por una configuración publicada del programa. |
 | Disponibilidad de módulo | Condición activa o inactiva que determina si el módulo puede seleccionarse y participar en cualquier procesamiento. |
 | Estado de procesamiento | Condición `running` o `paused` que permite operar normalmente o suspender cálculos y pagos sin detener la captura de actividad. |
 | Vinculación de módulo | Relación que habilita un módulo para un plan. Identifica el módulo reconocido por el catálogo; la fuente de actividad concreta permanece fuera de esta fase. |
@@ -34,7 +33,6 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Placement | Programa actual del usuario dentro del plan suscrito. |
 | Umbral de entrada | Entero no negativo asociado a un programa: suelo de puntos a partir del cual ese nivel es alcanzable. |
 | Ladder de programas | Secuencia ordenada de programas de un plan cuyos umbrales de entrada son estrictamente crecientes con la posición. Define intervalos contiguos sin solapes. |
-| Configuración publicada del programa | Versión inmutable de la configuración de un programa (selecciones, umbral congelado y snapshots de módulo) válida para ejecución y auditoría. |
 
 ## Relaciones
 
@@ -46,8 +44,6 @@ erDiagram
     PLAN ||--o{ PLAN_OPERATIONAL_CHANGE : records
     PROGRAM ||--o{ PROGRAM_MODULE_SELECTION : selects
     MODULE_BINDING ||--o{ PROGRAM_MODULE_SELECTION : constrains
-    PROGRAM ||--o{ MODULE_CONFIG_SNAPSHOT : freezes
-    MODULE_CATALOG ||--o{ MODULE_CONFIG_SNAPSHOT : described_at_publication
     PLAN ||--o{ SUBSCRIPTION : receives
     SUBSCRIPTION ||--|| PLACEMENT : has
     PLACEMENT }o--|| PROGRAM : current_level
@@ -79,12 +75,12 @@ erDiagram
 | BR-MODULE-004 | Un programa solo puede configurar actividad compatible con las capacidades implementadas por el módulo correspondiente. |
 | BR-MODULE-005 | El catálogo describe capacidades del módulo; no define ponderaciones, progresión ni reglas económicas del programa. |
 | BR-MODULE-006 | El catálogo de módulos no se versiona como un agregado completo. |
-| BR-MODULE-007 | Al publicar una configuración de programa se conserva un snapshot de la semántica y capacidades de módulo que justifican su ejecución. |
-| BR-MODULE-008 | La configuración del programa mantiene además una relación directa con el registro del módulo para consultar su disponibilidad y estado de procesamiento actuales. |
-| BR-MODULE-009 | La disponibilidad y el estado de procesamiento no forman parte del snapshot; cambiarlos no crea una nueva versión de catálogo ni de programa. |
+| BR-MODULE-007 | El programa no congela semántica ni capacidades del módulo. Conserva únicamente la selección como referencia al registro del catálogo. |
+| BR-MODULE-008 | Cualquier consumidor posterior consulta semántica, capacidades, disponibilidad y estado de procesamiento vigentes en el catálogo de módulos. |
+| BR-MODULE-009 | Un cambio de disponibilidad o procesamiento del módulo no versiona el programa ni su umbral de entrada. Planes y programas conservan identidad estable y no se versionan. |
 | BR-MODULE-010 | Pausar el procesamiento de un módulo detiene sus cálculos y pagos, pero mantiene la ingesta de eventos y las consultas de actividad necesarias para conservar el período configurado. |
 | BR-MODULE-011 | Un módulo con procesamiento pausado continúa activo y puede seleccionarse en configuraciones nuevas. |
-| BR-MODULE-012 | Desactivar un módulo prevalece sobre configuraciones publicadas: impide nuevas selecciones, ingesta de eventos, consultas de actividad externa, cálculos y pagos. |
+| BR-MODULE-012 | Desactivar un módulo prevalece sobre selecciones y programas existentes: impide nuevas selecciones, ingesta de eventos, consultas de actividad externa, cálculos y pagos. |
 | BR-MODULE-013 | Un módulo que haya sido referenciado permanece en el catálogo y conserva sus relaciones e historial cuando se desactiva; no se elimina física ni lógicamente. |
 | BR-MODULE-014 | Una capacidad solo puede declararse para un módulo cuando existe una implementación que la respalda; una acción administrativa no puede conceder capacidades. |
 | BR-MODULE-015 | Todo evento rechazado por inactividad del módulo deja evidencia auditable, aunque no se incorpore como actividad del dominio. |
@@ -95,8 +91,8 @@ erDiagram
 | BR-PROGRAM-002 | La progresión automática solo cambia el programa del usuario dentro del plan al que está suscrito. |
 | BR-PROGRAM-003 | Los programas del plan mantienen un orden y umbrales no ambiguos para determinar el placement. |
 | BR-PROGRAM-004 | El código del programa es una identidad de negocio estable, única dentro de su plan e irreutilizable dentro de ese plan. |
-| BR-PROGRAM-005 | Antes de publicarse, un programa puede existir sin módulos seleccionados, incluso si su plan está activo. |
-| BR-PROGRAM-006 | Publicar una configuración de programa exige al menos un módulo seleccionado que el plan propietario tenga habilitado. |
+| BR-PROGRAM-005 | Un programa puede existir sin módulos seleccionados, incluso si su plan está activo. |
+| BR-PROGRAM-006 | El umbral de entrada y el orden del programa no dependen de que haya módulos seleccionados. |
 | BR-PROGRAM-007 | La selección de módulos de un programa es siempre un subconjunto de las vinculaciones del plan propietario. |
 | BR-PROGRAM-008 | Activar, desactivar o archivar el plan no crea, elimina ni altera por sí solo los programas de ese plan. |
 | BR-PROGRAM-009 | Solo un plan no archivado admite crear, editar o reordenar sus programas. |
@@ -104,7 +100,7 @@ erDiagram
 | BR-PROGRAM-011 | Los umbrales de entrada de los programas de un mismo plan son estrictamente crecientes con la posición del ladder. |
 | BR-PROGRAM-012 | El intervalo efectivo del programa en posición `i` es `[umbral_i, umbral_{i+1})`. El del último programa es `[umbral_n, ∞)`. Los intervalos son contiguos y no se solapan. |
 | BR-PROGRAM-013 | El placement por progresión sitúa al IB en el programa de mayor posición del plan tal que `puntos >= umbral_de_entrada` de ese programa. |
-| BR-PROGRAM-014 | Una configuración publicada del programa es inmutable. Todo cambio funcional de selecciones, umbral publicado o semántica congelada exige una nueva versión. |
+| BR-PROGRAM-014 | El umbral de entrada es mutable. Un cambio válido del ladder afecta a las evaluaciones posteriores que lo lean; no se conserva un snapshot de umbral por usuario, placement ni run. |
 | BR-SUBSCRIPTION-001 | Una suscripción activa es requisito para tener placement y participar en progresión o recompensas. |
 | BR-SUBSCRIPTION-002 | Cambiar de programa no sustituye ni recrea la suscripción al plan. |
 
@@ -112,7 +108,8 @@ erDiagram
 
 El ladder no usa un par min-max por programa. Un solo umbral de entrada por
 nivel, ordenado de forma estrictamente creciente, produce el mismo resultado
-sin solapes ni casos especiales en el último programa.
+sin solapes ni casos especiales en el último programa. El umbral vive en el
+programa y se lee vigente en cada evaluación posterior.
 
 Ejemplo con tres programas:
 
@@ -156,8 +153,7 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Programas de un plan reordenados.
 - Módulos seleccionados o retirados de un programa.
 - Umbral de entrada de un programa definido o modificado.
-- Configuración de programa publicada.
-- Nueva versión de configuración de programa publicada.
+- Ladder de programas de un plan reconfigurado.
 - Módulo incorporado al catálogo.
 - Capacidades de un módulo modificadas.
 - Módulo activado o desactivado.

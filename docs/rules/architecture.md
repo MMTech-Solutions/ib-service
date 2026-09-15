@@ -141,10 +141,13 @@ Features/Modules/
 - Broker puede implementar temporalmente los puertos destinados al futuro Trading Account Service, exponiendo únicamente las necesidades de IB. La sustitución posterior cambia el adapter o repository de salida, no los consumidores ni los contratos de `Modules`.
 - Un módulo puede combinar varias fuentes: Broker puede obtener depósitos desde Broker Service y volumen, PnL, cuentas o símbolos desde Trading Account Service; PropFirm puede obtener challenges desde PropFirm Service y cuentas o métricas desde Trading Account Service.
 
-El catálogo de módulos no se versiona como un agregado completo. La configuración publicada del programa conserva un snapshot inmutable de la semántica y capacidades utilizadas, mientras mantiene una relación directa con el registro del módulo para consultar su control operativo actual.
+El catálogo de módulos no se versiona como un agregado completo. El programa
+conserva una referencia directa al registro del módulo; no congela semántica
+ni capacidades. Disponibilidad y estado de procesamiento se consultan vigentes
+en el catálogo cuando un consumidor posterior lo necesite.
 
-La disponibilidad y el estado de procesamiento no forman parte del snapshot ni
-crean una nueva versión. Se modelan por separado:
+La disponibilidad y el estado de procesamiento no versionan el catálogo ni el
+programa. Se modelan por separado:
 
 - `is_active` indica si el módulo participa en el sistema. Un módulo inactivo no
   puede seleccionarse, ingerir eventos, consultar actividad externa, calcular

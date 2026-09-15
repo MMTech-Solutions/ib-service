@@ -35,6 +35,7 @@ final class UpdateProgramRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'module_ids' => ['sometimes', 'array', 'max:50'],
             'module_ids.*' => ['uuid', 'distinct'],
+            'entry_threshold' => ['sometimes', 'integer', 'min:0'],
             'lock_version' => ['required', 'integer', 'min:1'],
             'code' => ['prohibited'],
             'position' => ['prohibited'],
@@ -44,8 +45,8 @@ final class UpdateProgramRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator): void {
-            if (! $this->exists('name') && ! $this->exists('description') && ! $this->exists('module_ids')) {
-                $validator->errors()->add('name', 'At least one of name, description, or module_ids must be present.');
+            if (! $this->exists('name') && ! $this->exists('description') && ! $this->exists('module_ids') && ! $this->exists('entry_threshold')) {
+                $validator->errors()->add('name', 'At least one of name, description, module_ids, or entry_threshold must be present.');
             }
         });
     }

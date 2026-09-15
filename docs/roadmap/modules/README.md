@@ -34,8 +34,8 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 - M1 no ofrece creación administrativa de módulos ni un endpoint exclusivo para
   capacidades; lista y detalle incluyen las capacidades sincronizadas.
 - El catálogo no se versiona completamente.
-- La configuración publicada de un programa conserva un snapshot de la
-  semántica y capacidades del módulo utilizadas al publicarse.
+- El programa referencia el registro actual del módulo; no congela semántica
+  ni capacidades en un snapshot.
 - La relación directa con el registro actual del módulo controla su
   operatividad en tiempo real y permite un botón de pánico.
 - El puerto de entrada pertenece al feature que expone la capacidad y su caso

@@ -38,9 +38,8 @@ plan.
 
 ## Fuera de PR1
 
-- Publicación y versionado de la configuración del programa.
-- Snapshot de módulo del programa.
-- Umbrales de placement, suscripciones y placements.
+- Umbrales de placement (P2).
+- Suscripciones y placements.
 - Activación, desactivación o archivo del programa.
 - Configuración de actividad o scope de instrumentos.
 - Eventos Kafka de integración.

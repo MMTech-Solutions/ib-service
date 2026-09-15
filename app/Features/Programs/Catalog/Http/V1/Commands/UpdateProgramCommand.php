@@ -20,6 +20,8 @@ final class UpdateProgramCommand extends Data
         public readonly ?string $description,
         public readonly bool $hasName,
         public readonly bool $hasDescription,
+        public readonly bool $hasEntryThreshold,
+        public readonly ?int $entryThreshold,
         public readonly ?array $moduleIds,
     ) {}
 
@@ -37,6 +39,10 @@ final class UpdateProgramCommand extends Data
                 : null,
             hasName: array_key_exists('name', $validated),
             hasDescription: array_key_exists('description', $validated),
+            hasEntryThreshold: array_key_exists('entry_threshold', $validated),
+            entryThreshold: array_key_exists('entry_threshold', $validated)
+                ? (int) $validated['entry_threshold']
+                : null,
             moduleIds: array_key_exists('module_ids', $validated)
                 ? array_values(array_unique($validated['module_ids'] ?? []))
                 : null,

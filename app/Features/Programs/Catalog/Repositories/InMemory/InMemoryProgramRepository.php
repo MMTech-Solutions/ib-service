@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Programs\Catalog\Repositories\InMemory;
 
 use App\Features\Programs\Catalog\Contracts\Repositories\ProgramRepositoryInterface;
+use App\Features\Programs\Catalog\DTOs\ProgramReorderItem;
 use App\Features\Programs\Catalog\Exceptions\DuplicateProgramCodeException;
 use App\Features\Programs\Catalog\Exceptions\ProgramConcurrencyException;
 use App\Features\Programs\Catalog\Exceptions\ProgramReorderConflictException;
@@ -91,30 +92,38 @@ final class InMemoryProgramRepository implements ProgramRepositoryInterface
         $this->programs[$program->id] = $this->copy($program);
     }
 
-    public function reorder(string $planId, array $orderedProgramIds, string $now): void
+    /**
+     * @param  list<ProgramReorderItem>  $items
+     */
+    public function reorder(string $planId, array $items, string $now): void
     {
         $current = $this->listByPlanId($planId);
         $currentIds = array_map(static fn (Program $program): string => $program->id, $current);
-        $incoming = array_values($orderedProgramIds);
+        $incomingIds = array_map(static fn (ProgramReorderItem $item): string => $item->id, $items);
         $sortedCurrent = $currentIds;
-        $sortedIncoming = $incoming;
+        $sortedIncoming = $incomingIds;
         sort($sortedCurrent);
         sort($sortedIncoming);
 
-        if ($sortedCurrent !== $sortedIncoming || count($incoming) !== count(array_unique($incoming))) {
+        if ($sortedCurrent !== $sortedIncoming || count($incomingIds) !== count(array_unique($incomingIds))) {
             throw ProgramReorderConflictException::forPlan($planId);
         }
 
-        foreach ($incoming as $index => $programId) {
-            $program = $this->programs[$programId] ?? null;
+        foreach ($items as $index => $item) {
+            $program = $this->programs[$item->id] ?? null;
             if ($program === null || $program->planId !== $planId) {
                 throw ProgramReorderConflictException::forPlan($planId);
             }
 
+            if ($program->lockVersion !== $item->lockVersion) {
+                throw ProgramConcurrencyException::forProgram($item->id);
+            }
+
             $program->position = $index + 1;
+            $program->entryThreshold = $item->entryThreshold;
             $program->updatedAt = $now;
             $program->lockVersion++;
-            $this->programs[$programId] = $this->copy($program);
+            $this->programs[$item->id] = $this->copy($program);
         }
     }
 

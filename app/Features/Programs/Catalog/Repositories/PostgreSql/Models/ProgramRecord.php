@@ -37,6 +37,7 @@ final class ProgramRecord extends Model
     {
         return [
             'position' => 'integer',
+            'entry_threshold' => 'integer',
             'lock_version' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

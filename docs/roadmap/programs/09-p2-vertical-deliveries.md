@@ -1,59 +1,48 @@
 # Programs P2: entregas verticales
 
-Estado: **Listo** (pendiente de implementación)
-Dependencia: etapas de inventario y dominio P2
+Estado: **P2 completado**
+Dependencia: inventario y dominio P2
 
-## P2 — Publicación, snapshots y umbrales
+## P2 — Ladder vivo de umbrales
 
-Entrega vertical de HTTP a persistencia (cuando se implemente):
+Entrega vertical sobre las rutas administrativas de PR1:
 
-- umbral de entrada entero por programa y validación del ladder del plan;
-- publicación de una versión inmutable con selecciones, umbral congelado y
-  snapshots de módulo;
-- republicación que crea una nueva versión sin mutar el historial;
-- consulta de configuración vigente e historial de versiones;
-- puerto mínimo Programs → Modules para leer semántica/capacidades al
-  publicar;
-- rechazo de publicar sin módulos habilitados o con ladder inválido.
+- `entry_threshold` entero ≥ 0 en el programa;
+- validación del ladder del plan en crear, editar y reordenar;
+- reconfiguración atómica de posiciones y umbrales en reorder;
+- rechazo `PROGRAM_LADDER_INVALID` cuando el ladder quedaría inválido.
 
-Criterio de aceptación: un operador con `ib.programs.manage` define umbrales
-estrictamente crecientes en los programas de un plan no archivado, selecciona
-al menos un módulo habilitado y publica. Obtiene la versión vigente con
-snapshots. Tras cambiar umbral o módulos, republica y ve una nueva versión;
-la anterior permanece consultable e inmutable. Publicar sin módulos o con
-umbrales no crecientes se rechaza. Un plan archivado rechaza publicar.
+Criterio de aceptación: un operador con `ib.programs.manage` crea programas
+con umbral en un plan no archivado, los lista y muestra con ese valor, edita
+un umbral si el ladder permanece creciente y reconfigura orden y umbrales en
+una sola operación. Umbrales negativos, duplicados o no crecientes se
+rechazan. Un plan archivado rechaza las mutaciones.
 
-### Superficie HTTP (provisional)
+### Superficie HTTP
 
-Nombres de ruta no definitivos hasta la implementación:
+Sin endpoints de publicación. Rutas PR1:
 
-- `PATCH .../programs/{program}` admite `entry_threshold` en el borrador
-  (además de los campos de PR1).
-- `POST .../programs/{program}/publications` publica una nueva versión.
-- `GET .../programs/{program}/publications/current` configuración vigente.
-- `GET .../programs/{program}/publications` historial paginado.
-- `GET .../programs/{program}/publications/{version}` detalle de versión.
+- `POST /api/ib/v1/admin/plans/{plan}/programs` exige `entry_threshold`.
+- `PATCH /api/ib/v1/admin/plans/{plan}/programs/{program}` admite
+  `entry_threshold` junto con los campos de PR1.
+- `POST /api/ib/v1/admin/plans/{plan}/programs/reorder` recibe la colección
+  completa `{id, entry_threshold, lock_version}`.
+- List y show incluyen `entry_threshold` en el recurso.
 
-Permiso: `ib.programs.manage` en la surface `admin_panel` (mismo que PR1,
-salvo decisión distinta en implementación).
+Permiso: `ib.programs.manage` en `admin_panel`.
 
 ### Contratos entre features
 
-- Reutiliza `ResolvePlanContextPort` / `PlanContextData` V1.
-- Origina un puerto mínimo de lectura de módulo para snapshot (semántica +
-  capacidades). Disponibilidad y procesamiento no viajan en el snapshot.
-- No publica puerto hacia Rules ni Subscriptions en P2.
+Reutiliza `ResolvePlanContextPort`. No origina puerto hacia Modules.
 
 ## Fuera de P2
 
+- Publicación, versionado y snapshots.
 - Configuración de actividad o scope (`BR-MODULE-004`).
-- Suscripciones, placement ejecutado y anclaje.
-- Rules, Progression, Rewards.
-- Eventos Kafka de integración.
-- Activación, desactivación o archivo del programa.
+- Ponderaciones por símbolo (Rules/Progression).
+- Suscripciones y placement ejecutado.
 
-## Criterios de salida (documentales)
+## Criterios de salida
 
-Alcance, dependencias y criterios de aceptación de P2 están definidos para
-comenzar implementación. La evidencia de extremo a extremo se registrará en
-un `11-p2-implementation.md` (o equivalente) cuando exista código.
+El recorrido funciona de extremo a extremo y queda evidenciado en
+[`11-p2-implementation.md`](11-p2-implementation.md).

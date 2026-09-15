@@ -37,8 +37,7 @@ El usuario IB, las suscripciones y el placement no son actores de PR1.
 | Vinculación | Seleccionar módulos de un programa | El conjunto es un subconjunto de los módulos habilitados por el plan; puede quedar vacío. | PR1 | Aceptado |
 | Vinculación | Rechazar un módulo no habilitado | La selección se rechaza; el programa no queda asociado a ese módulo. | PR1 | Aceptado |
 | Consumo | Obtener contexto del plan propietario | Programs opera con el plan y sus módulos habilitados, no con el catálogo global. | PR1 | Aceptado |
-| Publicación | Publicar una configuración de programa | Queda un snapshot de semántica y capacidades del módulo. | P2 | Aceptado en [`07-p2-use-case-inventory.md`](07-p2-use-case-inventory.md) |
-| Umbrales | Definir umbrales de progresión | Los umbrales permiten resolver el placement. | P2 | Aceptado: enteros de entrada; ver BDS `BR-PROGRAM-010`–`013` |
+| Umbrales | Definir umbrales de progresión | Los umbrales permiten resolver el placement. | P2 | Aceptado: enteros vivos; ver [`07-p2-use-case-inventory.md`](07-p2-use-case-inventory.md) |
 | Configuración | Configurar actividad o scope de instrumentos | El programa declara actividad compatible con capacidades del módulo. | Posterior | Diferido: `BR-MODULE-004` vigente; sin payload en PR1 |
 | Suscripción | Asignar placement inicial | El usuario queda en un programa del plan suscrito. | Posterior | Diferido: suscripciones fuera de PR1 |
 | Operación | Modificar un placement administrativamente | Cambia el programa actual según una política de anclaje. | Posterior | Diferido: pendiente de BDS |
@@ -58,13 +57,10 @@ pertenecen a otros roadmaps o a decisiones de dominio aún abiertas.
 4. La selección de módulos es un subconjunto de las vinculaciones del plan
    (`BR-PROGRAM-007`). `BR-PLAN-003` y `BR-PLAN-006` siguen limitando
    contribuciones y recompensas a módulos habilitados.
-5. Antes de publicarse, un programa puede existir sin módulos, incluso si el
-   plan está activo (`BR-PROGRAM-005`). La publicación exigirá al menos un
-   módulo habilitado por el plan (`BR-PROGRAM-006`), pero esa publicación no
-   forma parte de PR1.
+5. Un programa puede existir sin módulos, incluso si el plan está activo
+   (`BR-PROGRAM-005`). El umbral no exige selecciones (`BR-PROGRAM-006`).
 6. El orden entre programas del mismo plan entra en PR1; los umbrales
-   concretos de `BR-PROGRAM-003` no. Diferir umbrales es decisión de alcance
-   del roadmap, no una redefinición de la regla.
+   concretos de `BR-PROGRAM-003` se cierran en P2.
 7. PR1 no define un ciclo de vida propio del programa. Mientras el plan no
    esté archivado, el programa permanece editable (`BR-PROGRAM-009`).
 8. Un plan activo o inactivo no archivado admite crear, editar y reordenar
@@ -82,13 +78,10 @@ pertenecen a otros roadmaps o a decisiones de dominio aún abiertas.
 
 ## Fuera de PR1
 
-- Publicación y versionado → documentado en P2.
-- Snapshot de módulo del programa → documentado en P2.
-- Umbrales de placement → documentado en P2 (`BR-PROGRAM-010`–`013`).
+- Umbrales de placement → P2 (`BR-PROGRAM-010`–`014`).
 - Suscripciones, placement inicial y cambios de programa.
-- Reglas de contribución, puntos, runs, rewards y CPA.
+- Ponderaciones por símbolo, reglas de contribución, puntos, runs y rewards.
 - Restauración o archivo de programas, si llegaran a definirse.
-- Tablas, endpoints, clases y contratos públicos de implementación P2.
 
 ## Criterios de salida
 

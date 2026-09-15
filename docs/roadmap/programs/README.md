@@ -1,6 +1,6 @@
 # Roadmap del feature Programs
 
-Estado: **PR1 completado; P2 Listo**
+Estado: **PR1 y P2 completados**
 Dependencia satisfecha: `Plans P1` completado
 Última revisión: 2026-09-14
 
@@ -10,19 +10,15 @@ Dependencia satisfecha: `Plans P1` completado
 pertenece a un plan y no consulta el catálogo global de módulos: obtiene el
 contexto y los módulos habilitados por ese plan.
 
-`Modules M1` y `Plans P1` están cerrados. El puerto público mínimo de `Plans`
-nació con PR1. **P2** (publicación, snapshots y umbrales) está documentado
-hasta Listo y es prerrequisito de Rules, Subscriptions, Progression y Rewards.
+`Modules M1` y `Plans P1` están cerrados. **P2** es el ladder vivo de umbrales
+de entrada: un entero mutable por programa, estrictamente creciente con la
+posición. No hay publicación ni snapshots de configuración.
 
 ## Primera entrega: PR1
 
 Catálogo administrativo de programas dentro de un plan: código único por plan,
 nombre, descripción opcional, orden relativo y selección de módulos
 habilitados por el plan propietario.
-
-PR1 no publica, no versiona, no congela snapshots ni define umbrales. Un
-programa puede existir sin módulos antes de publicarse, incluso si el plan
-está activo.
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
@@ -34,17 +30,16 @@ está activo.
 
 ## Segunda entrega: P2
 
-Publicación y versionado de la configuración del programa, snapshot de
-módulos y umbrales de entrada (entero, ladder estrictamente creciente).
+Umbral de entrada vivo y validación atómica del ladder del plan.
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
-| 0. Planificación y dependencias | [`06-second-delivery-planning.md`](06-second-delivery-planning.md) | Listo |
+| 0. Planificación y dependencias | [`06-second-delivery-planning.md`](06-second-delivery-planning.md) | Completado |
 | 1. Inventario de casos de uso | [`07-p2-use-case-inventory.md`](07-p2-use-case-inventory.md) | Completado |
 | 2. Agregados, estados y transacciones | [`08-p2-domain-model.md`](08-p2-domain-model.md) | Completado |
-| 3. Entregas verticales | [`09-p2-vertical-deliveries.md`](09-p2-vertical-deliveries.md) | Listo |
-| 4. Modelo de datos | [`10-p2-data-model.md`](10-p2-data-model.md) | Listo |
-| 5. Implementación | pendiente | No iniciado |
+| 3. Entregas verticales | [`09-p2-vertical-deliveries.md`](09-p2-vertical-deliveries.md) | P2 completado |
+| 4. Modelo de datos | [`10-p2-data-model.md`](10-p2-data-model.md) | Completado |
+| 5. Implementación | [`11-p2-implementation.md`](11-p2-implementation.md) | P2 completado |
 
 ## Relación con Plans y Modules
 
@@ -52,31 +47,23 @@ módulos y umbrales de entrada (entero, ladder estrictamente creciente).
 - `BR-PROGRAM-004`: el código es estable y único dentro del plan.
 - `BR-PROGRAM-007`: la selección de módulos es un subconjunto de las
   vinculaciones del plan.
-- `BR-PROGRAM-005` y `BR-PROGRAM-006`: vacío permitido antes de publicar;
-  publicar exige al menos un módulo habilitado por el plan.
-- `BR-PROGRAM-008` y `BR-PROGRAM-009`: los cambios de disponibilidad o
-  archivo del plan no mutan programas; solo un plan no archivado admite
-  mutaciones.
+- `BR-PROGRAM-005` y `BR-PROGRAM-006`: un programa puede existir sin módulos;
+  el umbral no exige selecciones.
+- `BR-PROGRAM-008` y `BR-PROGRAM-009`: solo un plan no archivado admite
+  mutaciones; el ciclo de vida del plan no muta programas.
 - `BR-MODULE-004`: configuración de actividad fuera de P2.
-- `BR-PROGRAM-003` y `BR-PROGRAM-010`–`013`: orden (PR1) y umbrales de
-  entrada enteros del ladder (P2).
-- `BR-PROGRAM-014` y `BR-MODULE-007`–`009`: publicación inmutable y
-  snapshots.
+- `BR-PROGRAM-003` y `BR-PROGRAM-010`–`014`: ladder vivo, umbral mutable.
 - PR1 origina `ResolvePlanContextPort` y `PlanContextData` V1 en `Plans`.
 
-## Fuera de PR1 / cubierto o diferido en P2
+## Fuera de P2
 
-- Publicación y versionado → P2 (Listo documental).
-- Snapshot de módulo → P2 (Listo documental).
-- Umbrales de placement → P2 (Listo documental).
-- Suscripciones y placements → feature `Subscriptions` tras P2 implementado.
-- Activación, desactivación o archivo del programa.
-- Configuración de actividad o scope de instrumentos.
+- Publicación o versionado de programas o planes.
+- Snapshots de módulo, umbral, placement o run.
+- Suscripciones y placements.
+- Ponderaciones por símbolo, Rules, Progression y Rewards.
 - Eventos Kafka y puerto inverso Programs → Plans.
 
 ## Próximo paso
 
-Implementar P2 según
-[`09-p2-vertical-deliveries.md`](09-p2-vertical-deliveries.md) y
-[`10-p2-data-model.md`](10-p2-data-model.md). Después, Rules y Subscriptions
-pueden abrir inventario; Progression y Rewards dependen de ambos.
+Ninguno dentro de Programs. El roadmap continúa en Rules R1 y en
+suscripciones/placement, que leen el ladder vivo.

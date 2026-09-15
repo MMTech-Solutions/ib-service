@@ -77,9 +77,7 @@ selección administrativa de PR1.
 
 ## Fuera de PR1
 
-- Publicación y versionado de la configuración del programa.
-- Snapshot de módulo del programa.
-- Umbrales de placement.
+- Umbrales de placement (P2).
 - Suscripciones, placement, Rules, Progression y Rewards.
 - Tablas, endpoints, clases y nombres definitivos de puertos.
 
