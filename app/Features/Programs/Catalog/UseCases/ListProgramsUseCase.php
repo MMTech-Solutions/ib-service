@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Programs\Catalog\UseCases;
 
+use App\Features\Plans\Contracts\Data\V1\ResolvePlanContextQueryData;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Programs\Catalog\DTOs\ProgramData;
 use App\Features\Programs\Catalog\DTOs\ProgramsPageData;
@@ -20,7 +21,7 @@ final class ListProgramsUseCase
 
     public function execute(ListProgramsCommand $command): ProgramsPageData
     {
-        $this->plans->resolve($command->planId);
+        $this->plans->resolve(new ResolvePlanContextQueryData(plan_id: $command->planId));
         $programs = $this->repositoryFactory->make()->listByPlanId($command->planId);
 
         return new ProgramsPageData(

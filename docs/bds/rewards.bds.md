@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.4
-- **Estado:** base inicial
+- **Versión:** 0.5
+- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -15,7 +15,9 @@ CPA, volumen, PnL y futuras modalidades utilizan un pipeline común de evaluaci�
 | --- | --- |
 | Regla | Política reutilizable que identifica una estrategia de recompensa. Tiene un nombre único dentro del plan y un slug estable derivado de su nombre inicial. |
 | Versión de regla | Configuración publicada e inmutable de una regla. |
-| Asignación | Relación que establece en qué programa, módulo y scope aplica una versión de regla. |
+| Asignación | Relación histórica que establece en qué programa, módulo, vigencia y scope aplica una versión de regla. |
+| Asignación activa | Asignación cuyo intervalo de vigencia está abierto (`ends_at` nulo). |
+| Scope de instrumentos | Alcance de instrumentos en el que aplica la asignación. En esta fase el único valor admitido es `all` (todos los instrumentos del módulo). |
 | Estrategia | Tipo de cálculo que interpreta una configuración válida y produce una evaluación. |
 | Recompensa | Obligación calculada a favor de un beneficiario. |
 | Settlement | Confirmación de que la operación financiera solicitada fue asentada. |
@@ -29,6 +31,7 @@ erDiagram
     RULE ||--|{ RULE_VERSION : versions
     PROGRAM ||--o{ RULE_ASSIGNMENT : receives
     MODULE_BINDING ||--o{ RULE_ASSIGNMENT : scopes
+    PROGRAM_MODULE_SELECTION ||--o{ RULE_ASSIGNMENT : constrains
     RULE_VERSION ||--o{ RULE_ASSIGNMENT : reused_by
     RULE_ASSIGNMENT ||--o{ REWARD : produces
     CPA_CONTEXT ||--o| REWARD : pays_once
@@ -47,6 +50,12 @@ erDiagram
 | BR-RULE-007 | La configuración de una versión debe ser válida para el tipo de estrategia declarado antes de publicarse. |
 | BR-RULE-008 | Toda regla tiene un nombre obligatorio y único dentro de su plan, una descripción opcional y un slug único derivado del nombre inicial. El slug permanece estable aunque cambie el nombre; una colisión de nombre o slug impide crear o renombrar la regla. |
 | BR-RULE-009 | Publicar una versión no cambia automáticamente las asignaciones existentes. Cada asignación selecciona deliberadamente una versión publicada, y sustituirla por otra versión es una decisión explícita. |
+| BR-RULE-010 | Una asignación solo puede referenciar un módulo habilitado por el plan y seleccionado por el programa receptor. |
+| BR-RULE-011 | Una asignación selecciona una versión publicada de la misma regla. El identificador de versión de una asignación histórica no se modifica. |
+| BR-RULE-012 | La vigencia de una asignación es el intervalo semiabierto `[starts_at, ends_at)`. Una asignación activa tiene `ends_at` nulo. Crear una asignación la activa de inmediato. Un reemplazo o retiro en el mismo instante puede dejar `ends_at = starts_at` (intervalo vacío). |
+| BR-RULE-013 | En un instante dado existe como máximo una asignación activa por combinación de regla, programa y módulo. Distintas reglas pueden coexistir en el mismo programa y módulo. |
+| BR-RULE-014 | Reemplazar la versión de una asignación cierra la vigente (`ends_at = ahora`) y crea otra activa con la nueva versión en la misma operación. Retirar solo cierra la vigente. |
+| BR-RULE-015 | En esta fase el scope de una asignación es siempre `all`. Un scope instrumental explícito requiere el catálogo de instrumentos del módulo. |
 | BR-REWARD-001 | CPA, volumen y PnL comparten la orquestación de contexto, elegibilidad, idempotencia, auditoría y solicitud de pago. |
 | BR-REWARD-002 | Cada estrategia declara los hechos o métricas que necesita; compartir pipeline no obliga a compartir el mismo input. |
 | BR-REWARD-003 | Una recompensa conserva plan, programa, módulo, asignación, versión de regla, inputs y resultado utilizados. |
@@ -71,12 +80,13 @@ Plan Fx - Advanced
     └── Programa Pro      + Broker
 ```
 
-Las tres asignaciones comparten configuración económica. Cada una puede utilizar un scope de instrumentos explícito. Si cambian monto o umbrales, se publica otra versión y las asignaciones se actualizan deliberadamente.
+Las tres asignaciones comparten configuración económica y scope `all`. Si cambian monto o umbrales, se publica otra versión y las asignaciones se reemplazan deliberadamente, conservando el historial.
 
 ## Eventos de negocio
 
 - Versión de regla publicada.
 - Regla asignada o retirada de un programa y módulo.
+- Versión de una asignación reemplazada.
 - Contexto CPA capturado.
 - Actividad aceptada para evaluación.
 - Recompensa calculada.
@@ -91,3 +101,4 @@ Las tres asignaciones comparten configuración económica. Cada una puede utiliz
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
 - Capacidades mínimas que cada estrategia exige a los módulos proveedores.
 - Fórmulas definitivas de CPA, volumen, PnL y distribución multinivel.
+- Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

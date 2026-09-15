@@ -38,8 +38,8 @@ sustituir los BDS ni las reglas técnicas.
   Modules; P1 completado.
 - [`programs/`](roadmap/programs/README.md): PR1 y P2 completados (catálogo
   administrativo y ladder vivo de umbrales).
-- [`rules/`](roadmap/rules/README.md): R1 completado (catálogo de reglas y
-  versiones; asignaciones en R2).
+- [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,
+  versiones y asignaciones históricas).
 
 ## Jerarquía de autoridad
 

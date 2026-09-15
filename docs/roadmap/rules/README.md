@@ -1,14 +1,14 @@
 # Roadmap del feature Rules
 
-Estado: **R1 completado**
+Estado: **R1 y R2 completados**
 Dependencia satisfecha: `Programs P2` completado
 Última revisión: 2026-09-15
 
 ## Posición en la secuencia
 
 `Rules` es el catálogo de políticas reutilizables del plan. R1 cubre identidad
-administrativa y el ciclo de vida de versiones. Las asignaciones a programa y
-módulo, y cualquier evaluación, quedan para R2.
+administrativa y el ciclo de vida de versiones. R2 añade asignaciones
+históricas a programa y módulo.
 
 ## Primera entrega: R1
 
@@ -25,22 +25,39 @@ sustituye asignaciones futuras.
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para R1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | R1 completado |
 
+## Segunda entrega: R2
+
+Asignaciones históricas de una versión publicada a programa y módulo, con
+scope `all` y vigencia inmediata.
+
+| Etapa | Documento | Estado |
+| --- | --- | --- |
+| 0. Planificación y dependencias | [`06-second-delivery-planning.md`](06-second-delivery-planning.md) | Completado |
+| 1. Inventario de casos de uso | [`07-r2-use-case-inventory.md`](07-r2-use-case-inventory.md) | Completado |
+| 2. Agregados, estados y transacciones | [`08-r2-domain-model.md`](08-r2-domain-model.md) | Completado |
+| 3. Entregas verticales | [`09-r2-vertical-deliveries.md`](09-r2-vertical-deliveries.md) | R2 completado |
+| 4. Modelo de datos | [`10-r2-data-model.md`](10-r2-data-model.md) | Completado |
+| 5. Implementación | [`11-r2-implementation.md`](11-r2-implementation.md) | R2 completado |
+
 ## Relación con Plans, Programs y Modules
 
 - `BR-RULE-001` y `BR-RULE-008`: la identidad pertenece al plan; nombre y slug
   son únicos dentro de ese plan.
 - `BR-RULE-002`, `BR-RULE-007` y `BR-RULE-009`: una versión publicada es
   inmutable y disponible; publicar no cambia asignaciones.
+- `BR-RULE-010`–`015`: asignación histórica, unicidad activa, scope `all`.
 - Mutaciones exigen un plan no archivado, reutilizando `ResolvePlanContextPort`.
-- R1 no origina puertos públicos ni consulta Programs o Modules.
+- R2 origina `ResolveProgramContextPort` para validar programa y módulo
+  seleccionado.
 
-## Fuera de R1
+## Fuera de R2
 
-- Asignaciones a programa, módulo, vigencia y scope.
-- Sustitución deliberada de la versión asignada.
 - Evaluación, recompensas, CPA, Progression y Kafka.
+- Scope instrumental explícito (Modules M2).
+- Precedencia entre reglas concurrentes.
 - Estrategias distintas de `points_per_quantity_unit`.
 
 ## Próximo paso
 
-R2: asignaciones que seleccionan deliberadamente una versión publicada.
+Ninguno dentro de Rules. El roadmap continúa en Subscriptions/placement y,
+cuando ambos estén listos, en Progression y Rewards.

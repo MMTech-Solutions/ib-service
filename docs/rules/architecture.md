@@ -214,6 +214,24 @@ es conservador y no elimina registros.
 
 Un feature puede contener subfeatures cuando representa una capacidad compuesta, por ejemplo `Plans/Catalog` y `Plans/Templates`. Cada subfeature conserva sus propios `Http`, `UseCases`, `Actions`, repositories, factories y modelos cuando los necesite.
 
+Los subfeatures del mismo feature compuesto pueden colaborar internamente sin
+publicar un puerto en `Contracts`:
+
+- Pueden inyectar `Services`, factories y repositories de un subfeature hermano.
+- Pueden consumir las entidades de dominio, excepciones internas y DTOs internos
+  que ese hermano exponga a través de su factory o repository.
+- No comparten Actions entre subfeatures; cada Action permanece en el subfeature
+  que la declara.
+- No cruzan modelos Eloquent fuera del repository propietario.
+- La colaboración entre features de primer nivel distintos sigue exigiendo
+  puertos publicados en `Contracts`; el acceso interno entre subfeatures no
+  sustituye esa frontera.
+
+Ejemplo: `Rules/Assignments` puede usar `Rules/Catalog` vía
+`RuleRepositoryFactory` y las entidades `Rule` / `RuleVersion`. Ese mismo
+subfeature debe consumir `Programs` únicamente mediante
+`ResolveProgramContextPort`.
+
 Un feature compuesto puede declarar un hermano `Shared`:
 
 ```text
@@ -437,11 +455,12 @@ Un repository remoto es apropiado cuando la integración se presenta al dominio 
 ## Modelos, entidades, DTOs y objetos de valor
 
 - Los modelos Eloquent son detalles de persistencia y no salen del repository propietario.
-- Ningún modelo se lee ni se modifica desde un UseCase, Action, Resource u otro feature.
+- Ningún modelo Eloquent se lee ni se modifica desde un UseCase, Action, Resource u otro feature.
 - El repository devuelve entidades, objetos de valor, DTOs internos o read models tipados según el caso.
+- Las entidades de dominio (objetos PHP en `Models/` que no son Eloquent) sí pueden crearse y mutarse desde UseCases o Actions del feature o subfeature propietario mediante sus métodos de dominio; no son el detalle de persistencia.
 - Una respuesta de SDK se mapea en el adapter o repository; los tipos del SDK no se propagan al resto del feature.
 - Solo se crea una entidad cuando IB gobierna su identidad y ciclo de vida.
-- Solo se crea un modelo para datos persistidos localmente; una actividad externa no requiere un modelo salvo que exista un snapshot, caché o proyección local explícita.
+- Solo se crea un modelo Eloquent para datos persistidos localmente; una actividad externa no requiere un modelo salvo que exista un snapshot, caché o proyección local explícita.
 
 `spatie/laravel-data` es la tecnología obligatoria para Commands, DTOs internos, contratos públicos, resultados, filtros y payloads serializables. Los objetos de valor dedicados se conservan para conceptos con invariantes, igualdad por valor u operaciones propias, como dinero, puntos, períodos, cantidades ponderadas o referencias de símbolo. Un `Data` puede contener objetos de valor; una misma clase no debe asumir ambiguamente ambos roles.
 

@@ -15,7 +15,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
 | [`Plans`](plans/README.md) | Completado | P1 completado | 2026-09-14 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
-| [`Rules`](rules/README.md) | Completado | R1 completado; próximo R2 asignaciones | 2026-09-15 |
+| [`Rules`](rules/README.md) | Completado | R1 y R2 completados | 2026-09-15 |
 
 ## Secuencia entre features
 

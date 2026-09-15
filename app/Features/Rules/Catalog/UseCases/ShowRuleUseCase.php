@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Rules\Catalog\UseCases;
 
+use App\Features\Plans\Contracts\Data\V1\ResolvePlanContextQueryData;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Rules\Catalog\Actions\PresentRuleAction;
 use App\Features\Rules\Catalog\DTOs\RuleDetailData;
@@ -21,7 +22,7 @@ final class ShowRuleUseCase
 
     public function execute(ShowRuleCommand $command): RuleDetailData
     {
-        $this->plans->resolve($command->planId);
+        $this->plans->resolve(new ResolvePlanContextQueryData(plan_id: $command->planId));
         $rule = $this->repositoryFactory->make()->findByPlanAndId($command->planId, $command->ruleId);
         if ($rule === null) {
             throw RuleNotFoundException::forId($command->ruleId);

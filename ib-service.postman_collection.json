@@ -995,6 +995,118 @@
                                 "description": "Publishes a draft version. Publishing does not activate it or replace other published versions."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "List rule assignments",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/assignments?program_id={{PROGRAM_ID}}&module_id={{MODULE_ID}}&active=true&page=1&per_page=100",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "assignments"],
+                                    "query": [
+                                        {"key": "program_id", "value": "{{PROGRAM_ID}}"},
+                                        {"key": "module_id", "value": "{{MODULE_ID}}"},
+                                        {"key": "active", "value": "true"},
+                                        {"key": "page", "value": "1"},
+                                        {"key": "per_page", "value": "100"}
+                                    ]
+                                },
+                                "description": "Requires ib.rules.manage. Returns paginated assignment history for the rule. Filters: program_id, module_id, active."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create rule assignment",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"program_id\": \"{{PROGRAM_ID}}\",\n  \"module_id\": \"{{MODULE_ID}}\",\n  \"rule_version_id\": \"{{RULE_VERSION_ID}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/assignments",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "assignments"]
+                                },
+                                "description": "Creates an active assignment. rule_version_id must be published. Module must be selected on the program. scope_type and dates are server-owned."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show rule assignment",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/assignments/{{RULE_ASSIGNMENT_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "assignments", "{{RULE_ASSIGNMENT_ID}}"]
+                                },
+                                "description": "Returns a single assignment, including historical ones."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Replace rule assignment",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"rule_version_id\": \"{{RULE_VERSION_ID}}\",\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/assignments/{{RULE_ASSIGNMENT_ID}}/replace",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "assignments", "{{RULE_ASSIGNMENT_ID}}", "replace"]
+                                },
+                                "description": "Closes the active assignment and creates a new active one with the published rule_version_id."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Withdraw rule assignment",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/assignments/{{RULE_ASSIGNMENT_ID}}/withdraw",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "assignments", "{{RULE_ASSIGNMENT_ID}}", "withdraw"]
+                                },
+                                "description": "Closes an active assignment. Historical rows keep their rule_version_id unchanged."
+                            },
+                            "response": []
                         }
                     ]
                 }
@@ -1064,6 +1176,11 @@
         },
         {
             "key": "RULE_VERSION_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "RULE_ASSIGNMENT_ID",
             "value": "",
             "type": "string"
         },

@@ -22,6 +22,11 @@ use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\ShowRuleAssignmentController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\StoreRuleAssignmentController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\WithdrawRuleAssignmentController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\ListRulesController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\ListRuleVersionsController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\PublishRuleVersionController;
@@ -72,5 +77,15 @@ Route::prefix('ib/v1')
                 Route::patch('plans/{plan}/rules/{rule}/versions/{version}', UpdateRuleVersionController::class)->name('ib.v1.admin.plans.rules.versions.update');
                 Route::post('plans/{plan}/rules/{rule}/versions/{version}/publish', PublishRuleVersionController::class)
                     ->name('ib.v1.admin.plans.rules.versions.publish');
+                Route::get('plans/{plan}/rules/{rule}/assignments', ListRuleAssignmentsController::class)
+                    ->name('ib.v1.admin.plans.rules.assignments.index');
+                Route::post('plans/{plan}/rules/{rule}/assignments', StoreRuleAssignmentController::class)
+                    ->name('ib.v1.admin.plans.rules.assignments.store');
+                Route::get('plans/{plan}/rules/{rule}/assignments/{assignment}', ShowRuleAssignmentController::class)
+                    ->name('ib.v1.admin.plans.rules.assignments.show');
+                Route::post('plans/{plan}/rules/{rule}/assignments/{assignment}/replace', ReplaceRuleAssignmentController::class)
+                    ->name('ib.v1.admin.plans.rules.assignments.replace');
+                Route::post('plans/{plan}/rules/{rule}/assignments/{assignment}/withdraw', WithdrawRuleAssignmentController::class)
+                    ->name('ib.v1.admin.plans.rules.assignments.withdraw');
             });
     });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Programs\Catalog\UseCases;
 
+use App\Features\Plans\Contracts\Data\V1\ResolvePlanContextQueryData;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Programs\Catalog\Actions\PresentProgramAction;
 use App\Features\Programs\Catalog\DTOs\ProgramDetailData;
@@ -21,7 +22,7 @@ final class ShowProgramUseCase
 
     public function execute(ShowProgramCommand $command): ProgramDetailData
     {
-        $this->plans->resolve($command->planId);
+        $this->plans->resolve(new ResolvePlanContextQueryData(plan_id: $command->planId));
         $program = $this->repositoryFactory->make()->findByPlanAndId($command->planId, $command->programId);
         if ($program === null) {
             throw ProgramNotFoundException::forId($command->programId);
