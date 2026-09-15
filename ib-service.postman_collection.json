@@ -805,6 +805,198 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Rules",
+                    "item": [
+                        {
+                            "name": "List rules",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules"]
+                                },
+                                "description": "Requires ib.rules.manage on the admin_panel surface. Returns rules of the plan ordered by name."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create rule",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"CPA Standard\",\n  \"description\": \"Reusable CPA policy\",\n  \"strategy_type\": \"points_per_quantity_unit\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules"]
+                                },
+                                "description": "Creates a rule under a non-archived plan. slug is generated from name and cannot be sent. Duplicate name or slug returns 409."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show rule",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}"]
+                                },
+                                "description": "Returns a rule with its versions. Publishing does not mark any version as current."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update rule",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"CPA Standard\",\n  \"description\": \"Updated description\",\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}"]
+                                },
+                                "description": "Partial update of name or description. slug and strategy_type are prohibited. Renaming does not regenerate slug."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List rule versions",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/versions",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "versions"]
+                                },
+                                "description": "Returns versions of the rule ordered by version_number."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create rule version",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"schema_version\": 1,\n  \"configuration\": {\n    \"unit\": \"lot\",\n    \"points_per_unit\": \"50.00\"\n  }\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/versions",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "versions"]
+                                },
+                                "description": "Creates a draft version. configuration must be valid for the rule strategy_type."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show rule version",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/versions/{{RULE_VERSION_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "versions", "{{RULE_VERSION_ID}}"]
+                                },
+                                "description": "Returns a single rule version."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update rule version",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"schema_version\": 1,\n  \"configuration\": {\n    \"unit\": \"lot\",\n    \"points_per_unit\": \"75.00\"\n  },\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/versions/{{RULE_VERSION_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "versions", "{{RULE_VERSION_ID}}"]
+                                },
+                                "description": "Updates a draft version. Published versions return RULE_VERSION_IMMUTABLE."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Publish rule version",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/rules/{{RULE_ID}}/versions/{{RULE_VERSION_ID}}/publish",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "rules", "{{RULE_ID}}", "versions", "{{RULE_VERSION_ID}}", "publish"]
+                                },
+                                "description": "Publishes a draft version. Publishing does not activate it or replace other published versions."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
@@ -862,6 +1054,16 @@
         },
         {
             "key": "PROGRAM_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "RULE_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "RULE_VERSION_ID",
             "value": "",
             "type": "string"
         },

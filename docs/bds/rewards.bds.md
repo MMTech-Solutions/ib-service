@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.3
+- **Versión:** 0.4
 - **Estado:** base inicial
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -13,13 +13,13 @@ CPA, volumen, PnL y futuras modalidades utilizan un pipeline común de evaluaci�
 
 | Concepto | Definición |
 | --- | --- |
-| Regla | Política reutilizable que identifica una estrategia de recompensa. |
+| Regla | Política reutilizable que identifica una estrategia de recompensa. Tiene un nombre único dentro del plan y un slug estable derivado de su nombre inicial. |
 | Versión de regla | Configuración publicada e inmutable de una regla. |
 | Asignación | Relación que establece en qué programa, módulo y scope aplica una versión de regla. |
 | Estrategia | Tipo de cálculo que interpreta una configuración válida y produce una evaluación. |
 | Recompensa | Obligación calculada a favor de un beneficiario. |
 | Settlement | Confirmación de que la operación financiera solicitada fue asentada. |
-| Contexto CPA | Snapshot que fija referido, plan, programa, regla y condiciones aplicables a una adquisición. |
+| Contexto CPA | Snapshot que fija referido, plan, programa, asignación, versión de regla, scope y condiciones aplicables a una adquisición. |
 
 ## Relaciones
 
@@ -45,6 +45,8 @@ erDiagram
 | BR-RULE-005 | Una regla no puede utilizar un módulo que el plan no tenga habilitado. |
 | BR-RULE-006 | Un cambio de versión no altera recompensas ni contextos calculados con versiones anteriores. |
 | BR-RULE-007 | La configuración de una versión debe ser válida para el tipo de estrategia declarado antes de publicarse. |
+| BR-RULE-008 | Toda regla tiene un nombre obligatorio y único dentro de su plan, una descripción opcional y un slug único derivado del nombre inicial. El slug permanece estable aunque cambie el nombre; una colisión de nombre o slug impide crear o renombrar la regla. |
+| BR-RULE-009 | Publicar una versión no cambia automáticamente las asignaciones existentes. Cada asignación selecciona deliberadamente una versión publicada, y sustituirla por otra versión es una decisión explícita. |
 | BR-REWARD-001 | CPA, volumen y PnL comparten la orquestación de contexto, elegibilidad, idempotencia, auditoría y solicitud de pago. |
 | BR-REWARD-002 | Cada estrategia declara los hechos o métricas que necesita; compartir pipeline no obliga a compartir el mismo input. |
 | BR-REWARD-003 | Una recompensa conserva plan, programa, módulo, asignación, versión de regla, inputs y resultado utilizados. |
@@ -55,8 +57,8 @@ erDiagram
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
-| BR-CPA-001 | Al capturar una adquisición CPA se fija el usuario referido y el contexto vigente que determina por qué programa se pagará. |
-| BR-CPA-002 | La progresión posterior del IB no cambia el programa, regla, scope o condiciones congeladas en el contexto CPA. |
+| BR-CPA-001 | Al capturar una adquisición CPA se fija el usuario referido y el contexto vigente que determina por qué programa se pagará, incluida la asignación y la versión de regla aplicable. |
+| BR-CPA-002 | La progresión posterior del IB y la publicación de nuevas versiones no cambian el programa, asignación, versión de regla, scope o condiciones congeladas en el contexto CPA. |
 | BR-CPA-003 | Una misma adquisición no puede pagarse nuevamente por el solo hecho de que el IB cambie de programa. |
 
 ## Ejemplo de reutilización CPA

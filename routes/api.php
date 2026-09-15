@@ -22,6 +22,15 @@ use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\ListRulesController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\ListRuleVersionsController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\PublishRuleVersionController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\ShowRuleController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\ShowRuleVersionController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleVersionController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleController;
+use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleVersionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -53,5 +62,15 @@ Route::prefix('ib/v1')
                 Route::post('plans/{plan}/programs/reorder', ReorderProgramsController::class)->name('ib.v1.admin.plans.programs.reorder');
                 Route::get('plans/{plan}/programs/{program}', ShowProgramController::class)->name('ib.v1.admin.plans.programs.show');
                 Route::patch('plans/{plan}/programs/{program}', UpdateProgramController::class)->name('ib.v1.admin.plans.programs.update');
+                Route::get('plans/{plan}/rules', ListRulesController::class)->name('ib.v1.admin.plans.rules.index');
+                Route::post('plans/{plan}/rules', StoreRuleController::class)->name('ib.v1.admin.plans.rules.store');
+                Route::get('plans/{plan}/rules/{rule}', ShowRuleController::class)->name('ib.v1.admin.plans.rules.show');
+                Route::patch('plans/{plan}/rules/{rule}', UpdateRuleController::class)->name('ib.v1.admin.plans.rules.update');
+                Route::get('plans/{plan}/rules/{rule}/versions', ListRuleVersionsController::class)->name('ib.v1.admin.plans.rules.versions.index');
+                Route::post('plans/{plan}/rules/{rule}/versions', StoreRuleVersionController::class)->name('ib.v1.admin.plans.rules.versions.store');
+                Route::get('plans/{plan}/rules/{rule}/versions/{version}', ShowRuleVersionController::class)->name('ib.v1.admin.plans.rules.versions.show');
+                Route::patch('plans/{plan}/rules/{rule}/versions/{version}', UpdateRuleVersionController::class)->name('ib.v1.admin.plans.rules.versions.update');
+                Route::post('plans/{plan}/rules/{rule}/versions/{version}/publish', PublishRuleVersionController::class)
+                    ->name('ib.v1.admin.plans.rules.versions.publish');
             });
     });

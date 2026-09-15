@@ -46,6 +46,8 @@ final class UserContextArchitectureTest extends TestCase
             app_path('Features/Modules/Catalog/Http/V1/Resources'),
             app_path('Features/Plans/Catalog/Http/V1/Controllers'),
             app_path('Features/Plans/Catalog/Http/V1/Resources'),
+            app_path('Features/Programs/Catalog/Http/V1/Controllers'),
+            app_path('Features/Rules/Catalog/Http/V1/Controllers'),
         ], static fn (string $path): bool => File::isDirectory($path));
 
         foreach ($paths as $path) {
