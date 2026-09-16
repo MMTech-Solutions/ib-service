@@ -15,6 +15,7 @@ use App\Features\Plans\Catalog\Models\PlanOperationalChange;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanModuleBindingRecord;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanOperationalChangeRecord;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanRecord;
+use App\Features\Plans\Contracts\Exceptions\PlanNotFoundException;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -147,6 +148,23 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
     public function isModuleReferenced(string $moduleId): bool
     {
         return PlanModuleBindingRecord::query()->where('module_id', $moduleId)->exists();
+    }
+
+    public function lockAscending(array $planIds): void
+    {
+        $unique = array_values(array_unique($planIds));
+        sort($unique);
+
+        foreach ($unique as $planId) {
+            $locked = PlanRecord::query()
+                ->whereKey($planId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null) {
+                throw PlanNotFoundException::forId($planId);
+            }
+        }
     }
 
     private function syncBindings(Plan $plan): void

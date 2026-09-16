@@ -11,6 +11,7 @@ use App\Features\Plans\Catalog\Exceptions\DuplicatePlanCodeException;
 use App\Features\Plans\Catalog\Exceptions\PlanConcurrencyException;
 use App\Features\Plans\Catalog\Models\Plan;
 use App\Features\Plans\Catalog\Models\PlanOperationalChange;
+use App\Features\Plans\Contracts\Exceptions\PlanNotFoundException;
 use Closure;
 use Throwable;
 
@@ -150,6 +151,18 @@ final class InMemoryPlanRepository implements PlanRepositoryInterface
         }
 
         return false;
+    }
+
+    public function lockAscending(array $planIds): void
+    {
+        $unique = array_values(array_unique($planIds));
+        sort($unique);
+
+        foreach ($unique as $planId) {
+            if ($this->findByIdIncludingArchived($planId) === null) {
+                throw PlanNotFoundException::forId($planId);
+            }
+        }
     }
 
     private function copy(Plan $plan): Plan

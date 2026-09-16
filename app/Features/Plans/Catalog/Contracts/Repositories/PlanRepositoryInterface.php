@@ -32,4 +32,11 @@ interface PlanRepositoryInterface
     public function paginate(PlanListQueryData $query): PlanAggregatePageData;
 
     public function isModuleReferenced(string $moduleId): bool;
+
+    /**
+     * Locks plan rows in ascending UUID order for cross-feature mutations.
+     *
+     * @param  list<string>  $planIds
+     */
+    public function lockAscending(array $planIds): void;
 }

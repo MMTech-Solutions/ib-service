@@ -1,6 +1,6 @@
 # Roadmap del feature Subscriptions
 
-Estado: **Implementación en curso; sesión 3 completada**
+Estado: **Implementación en curso; sesión 4 completada**
 Dependencias satisfechas: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Última revisión: 2026-09-15
@@ -34,7 +34,7 @@ flowchart LR
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para S1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para S1 |
 | 4. Modelo de datos | [`04-data-model.md`](04-data-model.md) | Completado para S1 |
-| 5. Implementación y contract tests | [`05-s1-implementation.md`](05-s1-implementation.md) | En curso; sesión 3 completada |
+| 5. Implementación y contract tests | [`05-s1-implementation.md`](05-s1-implementation.md) | En curso; sesión 4 completada |
 
 ## Decisiones confirmadas
 
@@ -68,8 +68,7 @@ flowchart LR
 
 ## Fuera de esta etapa
 
-- Cancelación, cambio de plan/programa, fijación y cierre integral de S1
-  (sesiones 4–5).
+- Fijación, archivo concurrente y cierre integral de S1 (sesión 5).
 - Cálculo de contribuciones, ejecución de runs y cálculo o pago de rewards.
 - Aplicación de versiones futuras de planes a suscripciones existentes.
 - Ventanas, actividad tardía y reversas propias de Progression o Rewards.
@@ -85,6 +84,6 @@ flowchart LR
 
 ## Próximo paso
 
-Continuar S1 con la sesión 4 de
-[`05-s1-implementation.md`](05-s1-implementation.md) (ciclo de vida
-administrativo), sin habilitar la capacidad hasta cerrar la sesión 5.
+Continuar S1 con la sesión 5 de
+[`05-s1-implementation.md`](05-s1-implementation.md) (fijación, concurrencia y
+cierre integral), sin habilitar la capacidad hasta cerrar esa sesión.

@@ -38,6 +38,9 @@ use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleVersionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApplyForSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApproveSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\CancelSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionPlanController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionProgramController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionsController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowCurrentSubscriptionController;
@@ -99,6 +102,12 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.subscriptions.approve');
                 Route::post('subscriptions/{subscription}/reject', RejectSubscriptionController::class)
                     ->name('ib.v1.admin.subscriptions.reject');
+                Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionController::class)
+                    ->name('ib.v1.admin.subscriptions.cancel');
+                Route::post('subscriptions/{subscription}/change-plan', ChangeSubscriptionPlanController::class)
+                    ->name('ib.v1.admin.subscriptions.change-plan');
+                Route::post('subscriptions/{subscription}/placement/change', ChangeSubscriptionProgramController::class)
+                    ->name('ib.v1.admin.subscriptions.placement.change');
             });
 
         Route::prefix('customer')

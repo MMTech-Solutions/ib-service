@@ -1,6 +1,6 @@
 # Subscriptions S1: plan de implementación
 
-Estado: **En curso; sesión 3 completada**
+Estado: **En curso; sesión 4 completada**
 Dependencias funcionales: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Entrega objetivo: S1 — Suscripciones y placement administrativo
@@ -138,7 +138,7 @@ integración futura.
 | 1 | Contextos de Plans y Programs | Completada | Programs P2 y Plans P1 |
 | 2 | Núcleo y persistencia | Completada | Sesión 1 |
 | 3 | Solicitud, consultas y moderación | Completada | Sesiones 1 y 2 |
-| 4 | Ciclo de vida administrativo | No iniciada | Sesiones 1 a 3 |
+| 4 | Ciclo de vida administrativo | Completada | Sesiones 1 a 3 |
 | 5 | Fijación, concurrencia y cierre integral | No iniciada | Sesiones 1 a 4 |
 
 ## Sesión 1 — Contextos de Plans y Programs
@@ -372,7 +372,7 @@ otra identidad o audiencia.
 
 ## Sesión 4 — Ciclo de vida administrativo
 
-Estado: **No iniciada**
+Estado: **Completada**
 
 ### Objetivo
 
@@ -416,7 +416,24 @@ respetan la historia temporal y rechazan escrituras administrativas obsoletas.
 
 ### Evidencia
 
-Pendiente.
+- Puerto Plans → Subscriptions: `LockPlanRowsPort` + `LockPlanRowsUseCase`;
+  `PlanRepositoryInterface::lockAscending()` en InMemory/PostgreSQL
+  (`SELECT … FOR UPDATE` en orden ascendente de UUID, incluyendo archivados).
+- UseCases: `CancelSubscriptionUseCase`, `ChangeSubscriptionPlanUseCase`,
+  `ChangeSubscriptionProgramUseCase`.
+- Excepción de estado: `SubscriptionNotActiveException`.
+- HTTP admin: `POST …/cancel`, `POST …/change-plan`,
+  `POST …/placement/change` con `lock_version` obligatorio; motivo opcional.
+- Postman Administration/Subscriptions: cancel, change plan, change program.
+- Cambio de plan: locks de planes origen/destino, sin aprobación, origen
+  `admin_plan_change`, `requires_approval = null`, `replaces_subscription_id`,
+  `operation_id` compartido y `replace()` atómico.
+- Tests ejecutados (80 passed, 546 assertions en el foco de sesión 4 +
+  regresión Subscriptions):
+  `SubscriptionLifecycleEndpointTest`,
+  `SubscriptionModerationEndpointTest`,
+  suite unitaria y contractual de Subscriptions Catalog.
+- Pint (`vendor/bin/pint --dirty`) y `graphify update .` aplicados.
 
 ## Sesión 5 — Fijación, concurrencia y cierre integral
 

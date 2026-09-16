@@ -1201,6 +1201,75 @@
                                 "description": "Rejects a pending subscription. reason is required and non-empty after trim."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Cancel subscription",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"lock_version\": 1,\n  \"reason\": \"Partner requested exit\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/cancel",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "cancel"]
+                                },
+                                "description": "Cancels an active subscription. Ends the subscription, closes the open placement and records cancel history. lock_version is required."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Change subscription plan",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"plan_id\": \"{{PLAN_ID}}\",\n  \"program_id\": \"{{PROGRAM_ID}}\",\n  \"lock_version\": 1,\n  \"reason\": \"Move to premium ladder\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/change-plan",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "change-plan"]
+                                },
+                                "description": "Ends the active subscription and creates a replacement active subscription on the destination plan. Omitting program_id uses the first program. Does not apply approval or transfer fixation. lock_version is required."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Change subscription program",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"program_id\": \"{{PROGRAM_ID}}\",\n  \"lock_version\": 1,\n  \"reason\": \"Manual placement adjustment\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placement/change",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "placement", "change"]
+                                },
+                                "description": "Changes the program of an active subscription within the same plan while preserving fixed/unfixed placement condition. lock_version is required."
+                            },
+                            "response": []
                         }
                     ]
                 }
