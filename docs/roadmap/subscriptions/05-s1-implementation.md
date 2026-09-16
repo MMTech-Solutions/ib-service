@@ -1,6 +1,6 @@
 # Subscriptions S1: plan de implementación
 
-Estado: **En curso; sesión 1 completada**
+Estado: **En curso; sesión 2 completada**
 Dependencias funcionales: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Entrega objetivo: S1 — Suscripciones y placement administrativo
@@ -136,7 +136,7 @@ integración futura.
 | Sesión | Alcance | Estado | Dependencia |
 | --- | --- | --- | --- |
 | 1 | Contextos de Plans y Programs | Completada | Programs P2 y Plans P1 |
-| 2 | Núcleo y persistencia | No iniciada | Sesión 1 |
+| 2 | Núcleo y persistencia | Completada | Sesión 1 |
 | 3 | Solicitud, consultas y moderación | No iniciada | Sesiones 1 y 2 |
 | 4 | Ciclo de vida administrativo | No iniciada | Sesiones 1 a 3 |
 | 5 | Fijación, concurrencia y cierre integral | No iniciada | Sesiones 1 a 4 |
@@ -219,7 +219,7 @@ existentes.
 
 ## Sesión 2 — Núcleo y persistencia
 
-Estado: **No iniciada**
+Estado: **Completada**
 
 ### Objetivo
 
@@ -269,7 +269,24 @@ contrato observable.
 
 ### Evidencia
 
-Pendiente.
+- Migración `2026_09_15_120000_create_subscriptions_tables` (`subscriptions`,
+  `subscription_placements`, `subscription_changes`) con checks, FKs `restrict`,
+  índices parciales de unicidad abierta/reemplazo/placement vigente y catálogo
+  de acciones.
+- Enums: `SubscriptionStatus`, `SubscriptionOrigin`, `PlacementCondition`,
+  `SubscriptionActorKind`, `SubscriptionChangeAction`.
+- Agregado de dominio: `Subscription`, `SubscriptionPlacement`,
+  `SubscriptionChange` (matriz de historia e invariantes de forma).
+- Contrato `SubscriptionRepositoryInterface` + factory + config
+  `subscriptions.repository`; provider `SubscriptionsServiceProvider`.
+- Repositories InMemory y PostgreSQL con `create`, `save`, `replace`,
+  `resolvePlacementAt`, optimistic locking y pertenencia programa→plan.
+- Tests ejecutados (37 passed, 145 assertions):
+  `SubscriptionDomainInvariantTest`,
+  `InMemorySubscriptionRepositoryContractTest`,
+  `PostgreSqlSubscriptionRepositoryContractTest`,
+  `PostgreSqlSubscriptionConstraintTest`.
+- Pint (`vendor/bin/pint --dirty`) y `graphify update .` aplicados.
 
 ## Sesión 3 — Solicitud, consultas y moderación
 
