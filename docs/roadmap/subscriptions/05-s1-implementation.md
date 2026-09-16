@@ -1,6 +1,6 @@
 # Subscriptions S1: plan de implementación
 
-Estado: **En curso; sesión 2 completada**
+Estado: **En curso; sesión 3 completada**
 Dependencias funcionales: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Entrega objetivo: S1 — Suscripciones y placement administrativo
@@ -137,7 +137,7 @@ integración futura.
 | --- | --- | --- | --- |
 | 1 | Contextos de Plans y Programs | Completada | Programs P2 y Plans P1 |
 | 2 | Núcleo y persistencia | Completada | Sesión 1 |
-| 3 | Solicitud, consultas y moderación | No iniciada | Sesiones 1 y 2 |
+| 3 | Solicitud, consultas y moderación | Completada | Sesiones 1 y 2 |
 | 4 | Ciclo de vida administrativo | No iniciada | Sesiones 1 a 3 |
 | 5 | Fijación, concurrencia y cierre integral | No iniciada | Sesiones 1 a 4 |
 
@@ -290,7 +290,7 @@ contrato observable.
 
 ## Sesión 3 — Solicitud, consultas y moderación
 
-Estado: **No iniciada**
+Estado: **Completada**
 
 ### Objetivo
 
@@ -346,7 +346,29 @@ otra identidad o audiencia.
 
 ### Evidencia
 
-Pendiente.
+- Permisos: `CustomerSubscriptionPermission` (`ib.subscriptions.apply` /
+  `ib.subscriptions.read`) y `AdminSubscriptionPermission`
+  (`ib.subscriptions.manage`); snapshots en `LocalRbacSnapshotSeeder`.
+- UseCases: `ApplyForSubscriptionUseCase`, `ShowCurrentSubscriptionUseCase`,
+  `ListSubscriptionsUseCase`, `ShowSubscriptionUseCase`,
+  `ApproveSubscriptionUseCase`, `RejectSubscriptionUseCase`.
+- Acciones: `AssertPlanEligibleForSubscriptionAction`,
+  `PresentSubscriptionAction`; DTOs de presentación y listado paginado.
+- Repository: `paginate` en contrato InMemory/PostgreSQL.
+- HTTP customer: `POST /api/ib/v1/customer/subscriptions`,
+  `GET /api/ib/v1/customer/subscriptions/current`.
+- HTTP admin: list/show/approve/reject bajo `/api/ib/v1/admin/subscriptions`.
+- Postman: carpetas Administration/Subscriptions y Customers/Subscriptions;
+  variable `SUBSCRIPTION_ID`.
+- `UserContext` deja de ser `scoped` (bind por resolución) para no reutilizar
+  identidad entre peticiones en el mismo proceso de prueba.
+- Tests ejecutados (53 passed, 307 assertions en el foco de sesión 3 +
+  regresión Subscriptions/arquitectura/RBAC):
+  `SubscriptionModerationEndpointTest`,
+  `LocalRbacSnapshotSeederTest`,
+  `UserContextArchitectureTest`,
+  suite unitaria y contractual de Subscriptions Catalog.
+- Pint (`vendor/bin/pint --dirty`) y `graphify update .` aplicados.
 
 ## Sesión 4 — Ciclo de vida administrativo
 

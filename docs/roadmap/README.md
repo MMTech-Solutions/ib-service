@@ -16,7 +16,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Plans`](plans/README.md) | P1 completado | Extensión de aprobación requerida por Subscriptions S1 | 2026-09-15 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
 | [`Rules`](rules/README.md) | Completado | R1 y R2 completados | 2026-09-15 |
-| [`Subscriptions`](subscriptions/README.md) | S1 en curso | Sesión 2 completada; siguiente sesión 3 | 2026-09-15 |
+| [`Subscriptions`](subscriptions/README.md) | S1 en curso | Sesión 3 completada; siguiente sesión 4 | 2026-09-15 |
 
 ## Secuencia entre features
 

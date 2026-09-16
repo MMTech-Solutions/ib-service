@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Features\Subscriptions\Catalog\Repositories\PostgreSql;
 
 use App\Features\Subscriptions\Catalog\Contracts\Repositories\SubscriptionRepositoryInterface;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
 use App\Features\Subscriptions\Catalog\Enums\PlacementCondition;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionActorKind;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionChangeAction;
@@ -62,6 +64,32 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         }
 
         return $subscription->placementAt($occurredAt);
+    }
+
+    public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData
+    {
+        $builder = SubscriptionRecord::query()
+            ->when($query->planId !== null, fn ($builder) => $builder->where('plan_id', $query->planId))
+            ->when($query->status !== null, fn ($builder) => $builder->where('status', $query->status->value))
+            ->when(
+                $query->externalUserId !== null,
+                fn ($builder) => $builder->where('external_user_id', $query->externalUserId),
+            )
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        $paginator = $builder->paginate($query->perPage, ['*'], 'page', $query->page);
+        $subscriptions = collect($paginator->items())
+            ->map(fn (SubscriptionRecord $record): Subscription => $this->hydrate($record))
+            ->all();
+
+        return new SubscriptionAggregatePageData(
+            subscriptions: $subscriptions,
+            currentPage: $paginator->currentPage(),
+            perPage: $paginator->perPage(),
+            total: $paginator->total(),
+            lastPage: $paginator->lastPage(),
+        );
     }
 
     public function create(Subscription $subscription): void

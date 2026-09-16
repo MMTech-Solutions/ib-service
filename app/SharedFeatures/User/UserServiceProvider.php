@@ -17,7 +17,7 @@ final class UserServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->scoped(UserContext::class, static function (Application $app): UserContext {
+        $this->app->bind(UserContext::class, static function (Application $app): UserContext {
             $authFactory = $app->make(AuthFactory::class);
             $guard = (string) config('rbac.auth.guard', 'web');
             $gatewayUser = $authFactory->guard($guard)->user();

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Features\Subscriptions\Catalog\Repositories\InMemory;
 
 use App\Features\Subscriptions\Catalog\Contracts\Repositories\SubscriptionRepositoryInterface;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionStatus;
 use App\Features\Subscriptions\Catalog\Exceptions\DuplicateOpenSubscriptionException;
 use App\Features\Subscriptions\Catalog\Exceptions\DuplicateSubscriptionReplacementException;
@@ -70,6 +72,52 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
         $placement = $subscription->placementAt($occurredAt);
 
         return $placement === null ? null : unserialize(serialize($placement), ['allowed_classes' => true]);
+    }
+
+    public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData
+    {
+        $filtered = array_values(array_filter(
+            $this->subscriptions,
+            static function (Subscription $subscription) use ($query): bool {
+                if ($query->planId !== null && $subscription->planId !== $query->planId) {
+                    return false;
+                }
+
+                if ($query->status !== null && $subscription->status !== $query->status) {
+                    return false;
+                }
+
+                return $query->externalUserId === null
+                    || $subscription->externalUserId === $query->externalUserId;
+            },
+        ));
+
+        usort(
+            $filtered,
+            static function (Subscription $left, Subscription $right): int {
+                $createdCompare = strcmp($right->createdAt, $left->createdAt);
+                if ($createdCompare !== 0) {
+                    return $createdCompare;
+                }
+
+                return strcmp($right->id, $left->id);
+            },
+        );
+
+        $total = count($filtered);
+        $offset = ($query->page - 1) * $query->perPage;
+        $subscriptions = array_map(
+            fn (Subscription $subscription): Subscription => $this->copy($subscription),
+            array_slice($filtered, $offset, $query->perPage),
+        );
+
+        return new SubscriptionAggregatePageData(
+            subscriptions: $subscriptions,
+            currentPage: $query->page,
+            perPage: $query->perPage,
+            total: $total,
+            lastPage: max(1, (int) ceil($total / max(1, $query->perPage))),
+        );
     }
 
     public function create(Subscription $subscription): void

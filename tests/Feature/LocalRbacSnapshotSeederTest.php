@@ -25,10 +25,10 @@ final class LocalRbacSnapshotSeederTest extends TestCase
 
         self::assertCount(2, $snapshots);
         self::assertSame('admin_panel', $snapshots[0]->surface);
-        self::assertSame(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage'], json_decode($snapshots[0]->permissions, true, flags: JSON_THROW_ON_ERROR));
+        self::assertSame(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage'], json_decode($snapshots[0]->permissions, true, flags: JSON_THROW_ON_ERROR));
         self::assertSame('customer_app', $snapshots[1]->surface);
         self::assertSame(
-            ['customer.frontend.access', 'customer.profile.read'],
+            ['customer.frontend.access', 'customer.profile.read', 'ib.subscriptions.apply', 'ib.subscriptions.read'],
             json_decode($snapshots[1]->permissions, true, flags: JSON_THROW_ON_ERROR),
         );
     }

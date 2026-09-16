@@ -1109,13 +1109,154 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Subscriptions",
+                    "item": [
+                        {
+                            "name": "List subscriptions",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions?page=1&per_page=100&status=pending&plan_id={{PLAN_ID}}&external_user_id={{CUSTOMER_USER_SUB}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions"],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "status", "value": "pending", "description": "Filter by subscription status.", "disabled": true},
+                                        {"key": "plan_id", "value": "{{PLAN_ID}}", "description": "Filter by plan UUID.", "disabled": true},
+                                        {"key": "external_user_id", "value": "{{CUSTOMER_USER_SUB}}", "description": "Filter by IAM user UUID.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Requires ib.subscriptions.manage. Returns subscriptions of every status as data[] with pagination and applied filters in meta."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show subscription",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}"]
+                                },
+                                "description": "Returns a subscription with its immutable change history and current placement when active."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Approve subscription",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"program_id\": \"{{PROGRAM_ID}}\",\n  \"reason\": \"Qualified partner\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/approve",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "approve"]
+                                },
+                                "description": "Approves a pending subscription on the same requested plan. Omitting program_id uses the first program by position. Failures leave the pending request intact."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reject subscription",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"Incomplete profile\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/reject",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "reject"]
+                                },
+                                "description": "Rejects a pending subscription. reason is required and non-empty after trim."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
         {
             "name": "Customers",
-            "description": "Customer routes resolve the customer_app RBAC surface and must use CUSTOMER_USERINFO. No customer HTTP routes are implemented yet.",
-            "item": []
+            "description": "Customer routes resolve the customer_app RBAC surface and must use CUSTOMER_USERINFO.",
+            "item": [
+                {
+                    "name": "Subscriptions",
+                    "item": [
+                        {
+                            "name": "Apply for subscription",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{CUSTOMER_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"plan_id\": \"{{PLAN_ID}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/customer/subscriptions",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "customer", "subscriptions"]
+                                },
+                                "description": "Requires ib.subscriptions.apply. Identity comes from the gateway user. Creates pending or active according to the plan approval snapshot."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show current subscription",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{CUSTOMER_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/customer/subscriptions/current",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "customer", "subscriptions", "current"]
+                                },
+                                "description": "Requires ib.subscriptions.read. Returns the authenticated user's open subscription or 404 when none exists."
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "variable": [
@@ -1166,6 +1307,11 @@
         },
         {
             "key": "PROGRAM_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "SUBSCRIPTION_ID",
             "value": "",
             "type": "string"
         },

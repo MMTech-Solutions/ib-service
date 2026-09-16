@@ -36,6 +36,12 @@ use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleVersionController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleVersionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApplyForSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApproveSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionsController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowCurrentSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -87,5 +93,18 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.plans.rules.assignments.replace');
                 Route::post('plans/{plan}/rules/{rule}/assignments/{assignment}/withdraw', WithdrawRuleAssignmentController::class)
                     ->name('ib.v1.admin.plans.rules.assignments.withdraw');
+                Route::get('subscriptions', ListSubscriptionsController::class)->name('ib.v1.admin.subscriptions.index');
+                Route::get('subscriptions/{subscription}', ShowSubscriptionController::class)->name('ib.v1.admin.subscriptions.show');
+                Route::post('subscriptions/{subscription}/approve', ApproveSubscriptionController::class)
+                    ->name('ib.v1.admin.subscriptions.approve');
+                Route::post('subscriptions/{subscription}/reject', RejectSubscriptionController::class)
+                    ->name('ib.v1.admin.subscriptions.reject');
+            });
+
+        Route::prefix('customer')
+            ->group(function (): void {
+                Route::post('subscriptions', ApplyForSubscriptionController::class)->name('ib.v1.customer.subscriptions.store');
+                Route::get('subscriptions/current', ShowCurrentSubscriptionController::class)
+                    ->name('ib.v1.customer.subscriptions.current');
             });
     });

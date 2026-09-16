@@ -22,7 +22,7 @@ trait InteractsWithAdminGateway
             'sub' => self::AUTHORIZED_SUB,
             'surface' => 'admin_panel',
             'rev' => 1,
-            'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage'], JSON_THROW_ON_ERROR),
+            'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage'], JSON_THROW_ON_ERROR),
             'roles' => '[]',
             'created_at' => now(),
             'updated_at' => now(),
@@ -49,6 +49,7 @@ trait InteractsWithAdminGateway
 
     protected function assertGatewayAuthGuards(string $method, string $uri, array $payload = []): void
     {
+        $this->flushHeaders();
         $this->json($method, $uri, $payload)->assertUnauthorized();
         $this->withHeaders([
             'X-Internal-Token' => 'test-internal-token',

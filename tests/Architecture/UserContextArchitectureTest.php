@@ -49,6 +49,7 @@ final class UserContextArchitectureTest extends TestCase
             app_path('Features/Programs/Catalog/Http/V1/Controllers'),
             app_path('Features/Rules/Catalog/Http/V1/Controllers'),
             app_path('Features/Rules/Assignments/Http/V1/Controllers'),
+            app_path('Features/Subscriptions/Catalog/Http/V1/Controllers'),
         ], static fn (string $path): bool => File::isDirectory($path));
 
         foreach ($paths as $path) {
@@ -108,6 +109,10 @@ final class UserContextArchitectureTest extends TestCase
             'Programs publishes AssertSelectedModuleQueryData in Contracts/Data/V1.',
         );
         self::assertFalse(
+            File::isDirectory(app_path('Features/Subscriptions/Catalog/Contracts/Data')),
+            'Subscriptions has no inter-feature consumer yet; Data objects belong in DTOs.',
+        );
+        self::assertFalse(
             File::isDirectory(app_path('Features/Rules/Assignments/Contracts/Data')),
             'Rules Assignments has no inter-feature consumer yet; Data objects belong in DTOs.',
         );
@@ -162,5 +167,26 @@ final class UserContextArchitectureTest extends TestCase
         }
 
         self::assertSame([], $violations, 'Rules Assignments must use Programs/Modules Contracts only.');
+    }
+
+    public function test_subscriptions_do_not_import_plans_or_programs_internals(): void
+    {
+        $violations = [];
+        $path = app_path('Features/Subscriptions');
+        if (! File::isDirectory($path)) {
+            self::fail('Subscriptions directory is missing.');
+        }
+
+        foreach (File::allFiles($path) as $file) {
+            $contents = File::get($file->getPathname());
+            if (
+                str_contains($contents, 'App\\Features\\Plans\\Catalog\\')
+                || str_contains($contents, 'App\\Features\\Programs\\Catalog\\')
+            ) {
+                $violations[] = $file->getRelativePathname();
+            }
+        }
+
+        self::assertSame([], $violations, 'Subscriptions must use Plans/Programs Contracts only.');
     }
 }
