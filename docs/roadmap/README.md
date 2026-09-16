@@ -13,9 +13,10 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
-| [`Plans`](plans/README.md) | Completado | P1 completado | 2026-09-14 |
+| [`Plans`](plans/README.md) | P1 completado | Extensión de aprobación requerida por Subscriptions S1 | 2026-09-15 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
 | [`Rules`](rules/README.md) | Completado | R1 y R2 completados | 2026-09-15 |
+| [`Subscriptions`](subscriptions/README.md) | Modelo de datos S1 completado | S1 listo para implementación | 2026-09-15 |
 
 ## Secuencia entre features
 
@@ -57,6 +58,10 @@ flowchart LR
   el contexto y los módulos habilitados por el plan propietario.
 - `Programs P2` implementa el ladder vivo de umbrales. No publica ni
   versiona programas. Rules y Subscriptions abren inventario tras P2.
+- `Subscriptions` conserva una única suscripción abierta global por usuario,
+  historia terminal y placement libre o fijado. Sus entregas verticales y su
+  modelo de datos S1 están cerrados; el próximo paso es implementar S1 antes de
+  abrir Progression y Rewards.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 
