@@ -55,6 +55,10 @@ final class UpdatePlanUseCase
                 ) || $changed;
             }
 
+            if ($command->hasRequiresApproval) {
+                $changed = $plan->updateRequiresApproval((bool) $command->requiresApproval, $now) || $changed;
+            }
+
             if ($changed) {
                 $repository->update($plan, $command->lockVersion);
             }

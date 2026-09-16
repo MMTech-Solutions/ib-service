@@ -17,6 +17,7 @@ final class StorePlanCommand extends Data
         public readonly string $name,
         public readonly ?string $description,
         public readonly array $moduleIds,
+        public readonly bool $requiresApproval,
     ) {}
 
     public static function fromRequest(StorePlanRequest $request): self
@@ -30,6 +31,9 @@ final class StorePlanCommand extends Data
                 ? (string) $validated['description']
                 : null,
             moduleIds: array_values(array_unique($validated['module_ids'] ?? [])),
+            requiresApproval: array_key_exists('requires_approval', $validated)
+                ? (bool) $validated['requires_approval']
+                : true,
         );
     }
 }

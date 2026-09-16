@@ -27,6 +27,7 @@ final class PlanStateTransitionsTest extends TestCase
         );
 
         self::assertFalse($plan->isActive);
+        self::assertTrue($plan->requiresApproval);
         self::assertSame([], $plan->moduleIds());
         $this->expectException(PlanCannotActivateException::class);
         $plan->activate([], '2026-09-14T00:00:01.000000Z');

@@ -42,6 +42,7 @@ final class PlanRecord extends Model
     {
         return [
             'is_active' => 'boolean',
+            'requires_approval' => 'boolean',
             'lock_version' => 'integer',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

@@ -83,6 +83,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
                 'name' => $plan->name,
                 'description' => $plan->description,
                 'is_active' => $plan->isActive,
+                'requires_approval' => $plan->requiresApproval,
                 'lock_version' => $nextLockVersion,
                 'updated_at' => $plan->updatedAt,
                 'deleted_at' => $plan->deletedAt,
@@ -165,6 +166,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
             name: (string) $record->name,
             description: $record->description === null ? null : (string) $record->description,
             isActive: (bool) $record->is_active,
+            requiresApproval: (bool) $record->requires_approval,
             lockVersion: (int) $record->lock_version,
             bindings: $record->bindings->map(
                 static fn (PlanModuleBindingRecord $binding): PlanModuleBinding => new PlanModuleBinding(
@@ -189,6 +191,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
             'name' => $plan->name,
             'description' => $plan->description,
             'is_active' => $plan->isActive,
+            'requires_approval' => $plan->requiresApproval,
             'lock_version' => $plan->lockVersion,
             'created_at' => $plan->createdAt,
             'updated_at' => $plan->updatedAt,

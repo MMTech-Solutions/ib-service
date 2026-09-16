@@ -17,6 +17,7 @@ final class PlanDetailData extends Data
         public readonly string $name,
         public readonly ?string $description,
         public readonly bool $is_active,
+        public readonly bool $requires_approval,
         public readonly int $lock_version,
         public readonly array $modules,
         public readonly string $created_at,

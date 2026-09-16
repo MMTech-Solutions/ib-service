@@ -573,14 +573,14 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"code\": \"mix\",\n  \"name\": \"Mix\",\n  \"description\": \"Mixed activity\",\n  \"module_ids\": [\"{{MODULE_ID}}\"]\n}"
+                                    "raw": "{\n  \"code\": \"mix\",\n  \"name\": \"Mix\",\n  \"description\": \"Mixed activity\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"requires_approval\": true\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans",
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans"]
                                 },
-                                "description": "Creates an inactive plan. module_ids is optional and must reference operational modules."
+                                "description": "Creates an inactive plan. module_ids is optional and must reference operational modules. Omitting requires_approval defaults to true."
                             },
                             "response": []
                         },
@@ -598,7 +598,7 @@
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}"]
                                 },
-                                "description": "Returns a non-archived plan with configured modules and lock_version."
+                                "description": "Returns a non-archived plan with configured modules, requires_approval and lock_version."
                             },
                             "response": []
                         },
@@ -614,14 +614,14 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"name\": \"Mix\",\n  \"description\": \"Updated description\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"lock_version\": {{LOCK_VERSION}}\n}"
+                                    "raw": "{\n  \"name\": \"Mix\",\n  \"description\": \"Updated description\",\n  \"module_ids\": [\"{{MODULE_ID}}\"],\n  \"requires_approval\": true,\n  \"lock_version\": {{LOCK_VERSION}}\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}",
                                     "host": ["{{BASE_URL}}"],
                                     "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}"]
                                 },
-                                "description": "Partial update. module_ids replaces the complete binding set when present. Active plans cannot keep an empty set."
+                                "description": "Partial update. module_ids replaces the complete binding set when present. Active plans cannot keep an empty set. Omitting requires_approval preserves the persisted value."
                             },
                             "response": []
                         },

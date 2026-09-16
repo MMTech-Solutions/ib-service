@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\InteractsWithAdminGateway;
 use Tests\TestCase;
 
@@ -31,6 +33,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'description' => 'Mixed activity',
         ])->assertCreated()
             ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.requires_approval', true)
             ->assertJsonPath('data.modules', [])
             ->json('data');
 
@@ -225,6 +228,71 @@ final class PlanCatalogEndpointTest extends TestCase
 
         $this->artisan('modules:sync --prune --force')->assertExitCode(2);
         $this->assertDatabaseHas('modules', ['id' => $legacy->id, 'is_active' => false]);
+    }
+
+    public function test_requires_approval_defaults_on_create_and_preserves_value_when_omitted_on_update(): void
+    {
+        $omitted = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'approval-default',
+            'name' => 'Approval default',
+        ])->assertCreated()
+            ->assertJsonPath('data.requires_approval', true)
+            ->json('data');
+
+        $explicit = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'approval-false',
+            'name' => 'Approval false',
+            'requires_approval' => false,
+        ])->assertCreated()
+            ->assertJsonPath('data.requires_approval', false)
+            ->json('data');
+
+        $nameOnly = $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$explicit['id']}", [
+            'name' => 'Approval false renamed',
+            'lock_version' => $explicit['lock_version'],
+        ])->assertOk()
+            ->assertJsonPath('data.requires_approval', false)
+            ->assertJsonPath('data.name', 'Approval false renamed')
+            ->json('data');
+
+        $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$nameOnly['id']}", [
+            'requires_approval' => true,
+            'lock_version' => $nameOnly['lock_version'],
+        ])->assertOk()
+            ->assertJsonPath('data.requires_approval', true);
+
+        $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$omitted['id']}")
+            ->assertOk()
+            ->assertJsonPath('data.requires_approval', true);
+    }
+
+    public function test_requires_approval_backfill_does_not_fabricate_administrative_effects(): void
+    {
+        $planId = (string) Str::uuid7();
+        $createdAt = '2026-01-01 00:00:00+00';
+        $updatedAt = '2026-01-02 00:00:00+00';
+
+        DB::table('plans')->insert([
+            'id' => $planId,
+            'code' => 'legacy-approval',
+            'name' => 'Legacy approval',
+            'description' => null,
+            'is_active' => false,
+            'lock_version' => 4,
+            'created_at' => $createdAt,
+            'updated_at' => $updatedAt,
+            'deleted_at' => null,
+        ]);
+
+        $row = DB::table('plans')->where('id', $planId)->first();
+        self::assertNotNull($row);
+        self::assertTrue((bool) $row->requires_approval);
+        self::assertSame(4, (int) $row->lock_version);
+        self::assertSame(
+            CarbonImmutable::parse($updatedAt)->utc()->toISOString(),
+            CarbonImmutable::parse((string) $row->updated_at)->utc()->toISOString(),
+        );
+        $this->assertDatabaseMissing('plan_operational_changes', ['plan_id' => $planId]);
     }
 
     private function brokerId(): string

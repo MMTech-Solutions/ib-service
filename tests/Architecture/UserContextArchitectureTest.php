@@ -88,12 +88,20 @@ final class UserContextArchitectureTest extends TestCase
             'Plans publishes ResolvePlanContextQueryData in Contracts/Data/V1.',
         );
         self::assertTrue(
+            File::exists(app_path('Features/Plans/Contracts/Data/V1/PlanSubscriptionContextData.php')),
+            'Plans publishes PlanSubscriptionContextData in Contracts/Data/V1.',
+        );
+        self::assertTrue(
             File::exists(app_path('Features/Plans/Contracts/Data/V1/AssertEnabledModuleIdsQueryData.php')),
             'Plans publishes AssertEnabledModuleIdsQueryData in Contracts/Data/V1.',
         );
         self::assertTrue(
             File::exists(app_path('Features/Programs/Contracts/Data/V1/ResolveProgramContextQueryData.php')),
             'Programs publishes ResolveProgramContextQueryData in Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Programs/Contracts/Data/V1/ProgramSubscriptionContextData.php')),
+            'Programs publishes ProgramSubscriptionContextData in Contracts/Data/V1.',
         );
         self::assertTrue(
             File::exists(app_path('Features/Programs/Contracts/Data/V1/AssertSelectedModuleQueryData.php')),
@@ -109,7 +117,9 @@ final class UserContextArchitectureTest extends TestCase
     {
         $ports = [
             app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanContextPort.php'),
+            app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanSubscriptionContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramContextPort.php'),
+            app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramSubscriptionContextPort.php'),
         ];
 
         foreach ($ports as $portPath) {

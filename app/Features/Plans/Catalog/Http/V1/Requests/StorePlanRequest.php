@@ -25,6 +25,7 @@ final class StorePlanRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'module_ids' => ['sometimes', 'array', 'max:50'],
             'module_ids.*' => ['uuid', 'distinct'],
+            'requires_approval' => ['sometimes', 'boolean'],
             'is_active' => ['prohibited'],
             'lock_version' => ['prohibited'],
         ];

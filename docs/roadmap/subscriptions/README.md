@@ -1,8 +1,8 @@
 # Roadmap del feature Subscriptions
 
-Estado: **Modelo de datos completado para S1**
+Estado: **Implementación en curso; sesión 1 completada**
 Dependencias satisfechas: `Programs P2` y `Rules R2` completados
-Dependencia de implementación: extensión de Plans para `BR-PLAN-017`
+Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Última revisión: 2026-09-15
 
 ## Objetivo
@@ -34,7 +34,7 @@ flowchart LR
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para S1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para S1 |
 | 4. Modelo de datos | [`04-data-model.md`](04-data-model.md) | Completado para S1 |
-| 5. Implementación y contract tests | — | No iniciado |
+| 5. Implementación y contract tests | [`05-s1-implementation.md`](05-s1-implementation.md) | En curso; sesión 1 completada |
 
 ## Decisiones confirmadas
 
@@ -68,8 +68,7 @@ flowchart LR
 
 ## Fuera de esta etapa
 
-- Implementación de migraciones, repositories, casos de uso, endpoints y
-  contratos entre features.
+- Agregado, migraciones, HTTP y concurrencia de Subscriptions (sesiones 2–5).
 - Cálculo de contribuciones, ejecución de runs y cálculo o pago de rewards.
 - Aplicación de versiones futuras de planes a suscripciones existentes.
 - Ventanas, actividad tardía y reversas propias de Progression o Rewards.
@@ -85,7 +84,6 @@ flowchart LR
 
 ## Próximo paso
 
-Implementar S1 como una única entrega funcional siguiendo
-[`03-vertical-deliveries.md`](03-vertical-deliveries.md) y el esquema,
-transacciones y contract tests definidos en
-[`04-data-model.md`](04-data-model.md).
+Continuar S1 con la sesión 2 de
+[`05-s1-implementation.md`](05-s1-implementation.md) (núcleo y persistencia),
+sin habilitar la capacidad hasta cerrar la sesión 5.

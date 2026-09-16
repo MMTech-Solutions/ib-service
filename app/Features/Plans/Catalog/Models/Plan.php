@@ -24,6 +24,7 @@ final class Plan
         public string $name,
         public ?string $description,
         public bool $isActive,
+        public bool $requiresApproval,
         public int $lockVersion,
         public array $bindings,
         public readonly string $createdAt,
@@ -42,6 +43,7 @@ final class Plan
         array $moduleIds,
         Closure $generateId,
         string $now,
+        bool $requiresApproval = true,
     ): self {
         $plan = new self(
             id: $id,
@@ -49,6 +51,7 @@ final class Plan
             name: $name,
             description: $description,
             isActive: false,
+            requiresApproval: $requiresApproval,
             lockVersion: 1,
             bindings: [],
             createdAt: $now,
@@ -68,6 +71,18 @@ final class Plan
 
         $this->name = $name;
         $this->description = $description;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
+    public function updateRequiresApproval(bool $requiresApproval, string $now): bool
+    {
+        if ($this->requiresApproval === $requiresApproval) {
+            return false;
+        }
+
+        $this->requiresApproval = $requiresApproval;
         $this->updatedAt = $now;
 
         return true;
@@ -195,6 +210,7 @@ final class Plan
             name: $this->name,
             description: $this->description,
             is_active: $this->isActive,
+            requires_approval: $this->requiresApproval,
             lock_version: $this->lockVersion,
             modules: $this->moduleData($modulesById),
             created_at: $this->createdAt,
@@ -215,6 +231,7 @@ final class Plan
             name: $list->name,
             description: $list->description,
             is_active: $list->is_active,
+            requires_approval: $list->requires_approval,
             lock_version: $list->lock_version,
             modules: $list->modules,
             created_at: $list->created_at,

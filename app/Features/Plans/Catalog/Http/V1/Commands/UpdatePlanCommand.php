@@ -20,6 +20,8 @@ final class UpdatePlanCommand extends Data
         public readonly bool $hasName,
         public readonly bool $hasDescription,
         public readonly ?array $moduleIds,
+        public readonly ?bool $requiresApproval,
+        public readonly bool $hasRequiresApproval,
     ) {}
 
     public static function fromRequest(UpdatePlanRequest $request): self
@@ -38,6 +40,10 @@ final class UpdatePlanCommand extends Data
             moduleIds: array_key_exists('module_ids', $validated)
                 ? array_values(array_unique($validated['module_ids'] ?? []))
                 : null,
+            requiresApproval: array_key_exists('requires_approval', $validated)
+                ? (bool) $validated['requires_approval']
+                : null,
+            hasRequiresApproval: array_key_exists('requires_approval', $validated),
         );
     }
 }

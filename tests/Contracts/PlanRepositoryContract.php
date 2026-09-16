@@ -41,6 +41,7 @@ abstract class PlanRepositoryContract extends TestCase
         self::assertSame($plan->id, $storedByCode->id);
         self::assertSame($plan->code, $storedById->code);
         self::assertFalse($storedById->isActive);
+        self::assertTrue($storedById->requiresApproval);
         self::assertSame($this->moduleIds(), $storedById->moduleIds());
 
         $page = $repository->paginate(new PlanListQueryData(search: 'MI'));

@@ -1,6 +1,6 @@
 # Roadmap del feature Plans
 
-Estado: **P1 completado; extensión requerida por Subscriptions S1**
+Estado: **P1 completado; `requires_approval` y puerto de suscripción añadidos (Subscriptions S1 sesión 1)**
 Dependencia satisfecha: `Modules M1` completado
 Última revisión: 2026-09-15
 
@@ -32,15 +32,12 @@ ladder vivo de umbrales:
 `Subscriptions S1` es el siguiente consumidor real de Plans y requiere que el
 plan determine si las nuevas solicitudes necesitan aprobación. El valor
 vigente se fija al solicitar y sus cambios solo afectan solicitudes futuras
-(`BR-PLAN-017`). La entrega vertical y el contrato especializado quedaron
-definidos en
-[`03-vertical-deliveries.md`](../subscriptions/03-vertical-deliveries.md); su
-modelo de datos quedó cerrado en
-[`04-data-model.md`](../subscriptions/04-data-model.md) y la implementación
-permanece pendiente.
+(`BR-PLAN-017`). La sesión 1 de
+[`05-s1-implementation.md`](../subscriptions/05-s1-implementation.md) añadió
+`requires_approval` y el puerto `ResolvePlanSubscriptionContextPort` sin
+alterar de forma incompatible el V1 usado por Programs y Rules.
 
 ## Próximo paso
 
-Implementar con Subscriptions S1 la persistencia y compatibilidad de
-`requires_approval` y el contrato público especializado que lo expone al
-consumidor.
+Ninguno dentro de Plans para la sesión 1 de Subscriptions. Continuar el
+resto de S1 desde el roadmap de Subscriptions.

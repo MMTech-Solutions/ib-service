@@ -31,6 +31,7 @@ final class UpdatePlanRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'module_ids' => ['sometimes', 'array', 'max:50'],
             'module_ids.*' => ['uuid', 'distinct'],
+            'requires_approval' => ['sometimes', 'boolean'],
             'lock_version' => ['required', 'integer', 'min:1'],
             'code' => ['prohibited'],
             'is_active' => ['prohibited'],
@@ -40,8 +41,13 @@ final class UpdatePlanRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator): void {
-            if (! $this->exists('name') && ! $this->exists('description') && ! $this->exists('module_ids')) {
-                $validator->errors()->add('name', 'At least one of name, description, or module_ids must be present.');
+            if (
+                ! $this->exists('name')
+                && ! $this->exists('description')
+                && ! $this->exists('module_ids')
+                && ! $this->exists('requires_approval')
+            ) {
+                $validator->errors()->add('name', 'At least one of name, description, module_ids, or requires_approval must be present.');
             }
         });
     }

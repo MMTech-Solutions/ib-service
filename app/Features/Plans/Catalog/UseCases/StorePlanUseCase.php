@@ -35,6 +35,7 @@ final class StorePlanUseCase
             moduleIds: $command->moduleIds,
             generateId: static fn (): string => (string) Str::uuid7(),
             now: CarbonImmutable::now('UTC')->toISOString(),
+            requiresApproval: $command->requiresApproval,
         );
 
         try {
