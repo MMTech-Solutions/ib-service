@@ -7,12 +7,14 @@ namespace App\Features\Rules\Assignments\UseCases;
 use App\Features\Rules\Assignments\Actions\AssertAssignmentPlanMutableAction;
 use App\Features\Rules\Assignments\Actions\AssertAssignmentProgramContextAction;
 use App\Features\Rules\Assignments\Actions\AssertPublishedRuleVersionAction;
+use App\Features\Rules\Assignments\Actions\AssertUniquePointsPerQuantityUnitAssignmentAction;
 use App\Features\Rules\Assignments\Actions\PresentRuleAssignmentAction;
 use App\Features\Rules\Assignments\DTOs\RuleAssignmentData;
 use App\Features\Rules\Assignments\Exceptions\DuplicateActiveRuleAssignmentException;
 use App\Features\Rules\Assignments\Factories\RuleAssignmentRepositoryFactory;
 use App\Features\Rules\Assignments\Http\V1\Commands\StoreRuleAssignmentCommand;
 use App\Features\Rules\Assignments\Models\RuleAssignment;
+use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -23,6 +25,7 @@ final class StoreRuleAssignmentUseCase
         private readonly AssertAssignmentPlanMutableAction $assertPlan,
         private readonly AssertAssignmentProgramContextAction $assertProgram,
         private readonly AssertPublishedRuleVersionAction $assertVersion,
+        private readonly AssertUniquePointsPerQuantityUnitAssignmentAction $assertUniquePointsUnit,
         private readonly PresentRuleAssignmentAction $present,
     ) {}
 
@@ -30,15 +33,24 @@ final class StoreRuleAssignmentUseCase
     {
         $this->assertPlan->assertMutable($command->planId);
         $this->assertProgram->assertSelectedModule($command->planId, $command->programId, $command->moduleId);
-        $this->assertVersion->assert($command->planId, $command->ruleId, $command->ruleVersionId);
+        $version = $this->assertVersion->assert($command->planId, $command->ruleId, $command->ruleVersionId);
+        $rule = $this->assertVersion->rule($command->planId, $command->ruleId);
         $repository = $this->repositoryFactory->make();
 
-        return $repository->transaction(function () use ($repository, $command): RuleAssignmentData {
+        return $repository->transaction(function () use ($repository, $command, $version, $rule): RuleAssignmentData {
             if ($repository->findActive($command->ruleId, $command->programId, $command->moduleId) !== null) {
                 throw DuplicateActiveRuleAssignmentException::forContext(
                     $command->ruleId,
                     $command->programId,
                     $command->moduleId,
+                );
+            }
+
+            if ($rule->strategyType === RuleStrategyType::PointsPerQuantityUnit->value) {
+                $this->assertUniquePointsUnit->assert(
+                    $command->programId,
+                    $command->moduleId,
+                    (string) $version->configuration['unit'],
                 );
             }
 

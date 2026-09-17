@@ -100,6 +100,58 @@ abstract class RuleAssignmentRepositoryContract extends TestCase
         );
     }
 
+    public function test_it_lists_assignments_effective_at_an_instant(): void
+    {
+        $repository = $this->repository();
+        $t1 = '2026-09-10T10:00:00.000000Z';
+        $t2 = '2026-09-11T10:00:00.000000Z';
+
+        $first = RuleAssignment::activate(
+            id: (string) Str::uuid7(),
+            ruleId: $this->ruleId(),
+            ruleVersionId: $this->ruleVersionId(),
+            programId: $this->programId(),
+            moduleId: $this->moduleId(),
+            now: $t1,
+        );
+        $repository->create($first);
+
+        $writer = $repository->findById($first->id);
+        self::assertNotNull($writer);
+        $writer->withdraw($t2);
+        $repository->update($writer, 1);
+
+        $second = RuleAssignment::activate(
+            id: (string) Str::uuid7(),
+            ruleId: $this->ruleId(),
+            ruleVersionId: $this->alternateRuleVersionId(),
+            programId: $this->programId(),
+            moduleId: $this->moduleId(),
+            now: $t2,
+        );
+        $repository->create($second);
+
+        $before = $repository->listEffectiveAt(
+            $this->programId(),
+            $this->moduleId(),
+            '2026-09-10T12:00:00.000000Z',
+        );
+        self::assertCount(1, $before);
+        self::assertSame($first->id, $before[0]->id);
+
+        $atBoundary = $repository->listEffectiveAt(
+            $this->programId(),
+            $this->moduleId(),
+            $t2,
+        );
+        self::assertCount(1, $atBoundary);
+        self::assertSame($second->id, $atBoundary[0]->id);
+
+        $active = $repository->listActiveForProgramModule($this->programId(), $this->moduleId());
+        self::assertCount(1, $active);
+        self::assertSame($second->id, $active[0]->id);
+    }
+
     public function test_it_rejects_stale_lock_versions(): void
     {
         $repository = $this->repository();

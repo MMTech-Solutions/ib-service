@@ -54,6 +54,40 @@ final class PostgreSqlRuleAssignmentRepository implements RuleAssignmentReposito
         return $record === null ? null : $this->hydrate($record);
     }
 
+    public function listEffectiveAt(string $programId, string $moduleId, string $occurredAt): array
+    {
+        $records = RuleAssignmentRecord::query()
+            ->where('program_id', $programId)
+            ->where('module_id', $moduleId)
+            ->where('starts_at', '<=', $occurredAt)
+            ->where(function ($query) use ($occurredAt): void {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>', $occurredAt);
+            })
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->get();
+
+        return $records
+            ->map(fn (RuleAssignmentRecord $record) => $this->hydrate($record))
+            ->all();
+    }
+
+    public function listActiveForProgramModule(string $programId, string $moduleId): array
+    {
+        $records = RuleAssignmentRecord::query()
+            ->where('program_id', $programId)
+            ->where('module_id', $moduleId)
+            ->whereNull('ends_at')
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->get();
+
+        return $records
+            ->map(fn (RuleAssignmentRecord $record) => $this->hydrate($record))
+            ->all();
+    }
+
     public function paginateByRule(RuleAssignmentListQueryData $query): RuleAssignmentsPageData
     {
         $builder = RuleAssignmentRecord::query()

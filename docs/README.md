@@ -39,12 +39,12 @@ sustituir los BDS ni las reglas técnicas.
 - [`programs/`](roadmap/programs/README.md): PR1 y P2 completados (catálogo
   administrativo y ladder vivo de umbrales); extensión de umbral `0` pendiente.
 - [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,
-  versiones y asignaciones históricas); extensión de unicidad por métrica
-  pendiente.
+  versiones y asignaciones históricas); P0.1 publicado (puerto de contexto
+  `points_per_quantity_unit` + `BR-RULE-016`).
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
-  (suscripciones, placement, fijación y salvaguarda de archivo).
-- [`progression/`](roadmap/progression/README.md): inventario y modelo de
-  dominio PG1 completados; entregas verticales pendientes (PG2 diferido).
+  (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 pendiente.
+- [`progression/`](roadmap/progression/README.md): sesiones 1–2 de PG1
+  completadas; P0.1 hecha; P0.2–P0.3 y sesión 3 bloqueados (PG2 diferido).
 
 ## Jerarquía de autoridad
 

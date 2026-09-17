@@ -15,9 +15,9 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Modules`](modules/README.md) | M1 completado | M3: contrato de actividad definido; adapter pendiente | 2026-09-17 |
 | [`Plans`](plans/README.md) | P1 completado | Extensión: período de progresión obligatorio | 2026-09-17 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
-| [`Rules`](rules/README.md) | R1 y R2 completados | Extensión: unicidad por métrica/unidad | 2026-09-17 |
-| [`Subscriptions`](subscriptions/README.md) | S1 completada | Suscripciones y placement administrativo | 2026-09-16 |
-| [`Progression`](progression/README.md) | Modelo de datos PG1 completado | Plan de implementación preparado; bloqueado por adapter M3 | 2026-09-17 |
+| [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
+| [`Subscriptions`](subscriptions/README.md) | S1 completada | Extensión P0.2: contexto en `occurred_at` pendiente | 2026-09-16 |
+| [`Progression`](progression/README.md) | Sesiones 1–2 completadas; P0.1 hecha | PG1: P0.2–P0.3 y sesión 3 bloqueados | 2026-09-17 |
 
 ## Secuencia entre features
 
@@ -68,10 +68,10 @@ flowchart LR
   fijación y salvaguarda de archivo), con permisos, Postman y suite PostgreSQL
   verificados. Progression y Rewards pueden consumir ese contexto sin reabrir
   S1 para contratos especulativos.
-- `Progression` está en descubrimiento: PG1 cubre evaluación y contribuciones
-  con actividad pull-only vía Modules M3; PG2 cubre runs y placement. Las
-  extensiones de período en Plans, umbral `0` en Programs y unicidad por
-  métrica/unidad en Rules se diseñan con ese consumidor.
+- `Progression` tiene sesiones 1–2 de PG1 completadas y P0.1 (Rules) cerrado.
+  La sesión 3 sigue bloqueada por P0.2 (Subscriptions) y P0.3 (Plans). PG2
+  cubre runs y placement. El umbral `0` en Programs permanece como extensión
+  aparte.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

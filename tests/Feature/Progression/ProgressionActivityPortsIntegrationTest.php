@@ -137,9 +137,9 @@ final class ProgressionActivityPortsIntegrationTest extends TestCase
         self::assertInstanceOf(ResolveProgramContextPort::class, $gateways->programContext());
         self::assertInstanceOf(ResolveProgramSubscriptionContextPort::class, $gateways->programSubscriptionContext());
         self::assertInstanceOf(HasOpenSubscriptionsForPlanPort::class, $gateways->openSubscriptionsForPlan());
-        self::assertFalse(
-            is_dir(app_path('Features/Rules/Contracts/Ports/Input')),
-            'Rules has no Progression read port yet; Session 1 must not invent one.',
+        self::assertTrue(
+            is_file(app_path('Features/Rules/Contracts/Ports/Input/ResolvePointsContributionContextPort.php')),
+            'P0.1 publishes ResolvePointsContributionContextPort in Rules.',
         );
     }
 

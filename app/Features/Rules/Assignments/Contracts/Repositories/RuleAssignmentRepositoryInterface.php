@@ -19,6 +19,21 @@ interface RuleAssignmentRepositoryInterface
 
     public function findActive(string $ruleId, string $programId, string $moduleId): ?RuleAssignment;
 
+    /**
+     * Assignments effective at {@see $occurredAt} for the program and module.
+     * Interval semantics follow BR-RULE-012: `[starts_at, ends_at)`.
+     *
+     * @return list<RuleAssignment>
+     */
+    public function listEffectiveAt(string $programId, string $moduleId, string $occurredAt): array;
+
+    /**
+     * Currently active assignments (`ends_at` null) for the program and module.
+     *
+     * @return list<RuleAssignment>
+     */
+    public function listActiveForProgramModule(string $programId, string $moduleId): array;
+
     public function paginateByRule(RuleAssignmentListQueryData $query): RuleAssignmentsPageData;
 
     public function create(RuleAssignment $assignment): void;

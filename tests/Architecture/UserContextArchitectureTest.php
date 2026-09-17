@@ -122,7 +122,15 @@ final class UserContextArchitectureTest extends TestCase
         );
         self::assertFalse(
             File::isDirectory(app_path('Features/Rules/Assignments/Contracts/Data')),
-            'Rules Assignments has no inter-feature consumer yet; Data objects belong in DTOs.',
+            'Rules Assignments keeps internal Data in DTOs; public Data lives in Rules/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Rules/Contracts/Data/V1/PointsContributionContextData.php')),
+            'P0.1 publishes PointsContributionContextData in Rules/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Rules/Contracts/Ports/Input/ResolvePointsContributionContextPort.php')),
+            'P0.1 publishes ResolvePointsContributionContextPort for Progression.',
         );
     }
 
@@ -133,6 +141,7 @@ final class UserContextArchitectureTest extends TestCase
             app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanSubscriptionContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramSubscriptionContextPort.php'),
+            app_path('Features/Rules/Contracts/Ports/Input/ResolvePointsContributionContextPort.php'),
         ];
 
         foreach ($ports as $portPath) {

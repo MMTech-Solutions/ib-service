@@ -1,9 +1,11 @@
 # Roadmap del feature Progression
 
-Estado: **Modelo de datos PG1 completado; implementación bloqueada por Modules M3**
-Dependencias satisfechas: `Programs P2`, `Rules R2` y `Subscriptions S1` completados
-Dependencia de implementación de PG1: `Modules M3` (actividad normalizada pull-only)
-Extensiones pendientes en proveedores: período obligatorio en Plans; umbral `0` del primer programa en Programs; unicidad por métrica/unidad en Rules
+Estado: **Sesiones 1–2 de PG1 completadas; P0.1 hecha; implementación bloqueada por P0.2–P0.3**
+Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
+`Modules M3` (contrato + adapter deposits), Progression sesiones 1–2, Rules P0.1
+Dependencia de desbloqueo de sesión 3: P0.2 (Subscriptions) y P0.3 (Plans)
+Extensiones pendientes en proveedores: período obligatorio en Plans (P0.3);
+contexto histórico de suscripción (P0.2); umbral `0` del primer programa en Programs
 Última revisión: 2026-09-17
 
 ## Objetivo
@@ -41,7 +43,7 @@ excluida) y contribuciones auditables. No ejecuta runs ni mueve placement.
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para PG1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para PG1 |
 | 4. Modelo de datos | [`04-pg1-data-model.md`](04-pg1-data-model.md) | Completado para PG1 |
-| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Plan preparado; bloqueado por adapter M3 |
+| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–2 y P0.1 Completadas; P0.2–P0.3 y sesión 3 Bloqueadas |
 
 ## Segunda entrega: PG2
 
@@ -111,7 +113,6 @@ de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
 
 ## Próximo paso
 
-Implementar el primer adapter de Modules M3 conforme a
-[`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md).
-Después, ejecutar las sesiones de [`05-pg1-implementation.md`](05-pg1-implementation.md)
-hasta habilitar PG1 de extremo a extremo.
+Completar P0.2 (Subscriptions) y P0.3 (Plans) según
+[`05-pg1-implementation.md`](05-pg1-implementation.md). Solo entonces reabrir
+la sesión 3 de evaluación pull-only.

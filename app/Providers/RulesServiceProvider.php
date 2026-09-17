@@ -6,8 +6,10 @@ namespace App\Providers;
 
 use App\Features\Rules\Assignments\Repositories\InMemory\InMemoryRuleAssignmentRepository;
 use App\Features\Rules\Assignments\Repositories\PostgreSql\PostgreSqlRuleAssignmentRepository;
+use App\Features\Rules\Assignments\UseCases\ResolvePointsContributionContextUseCase;
 use App\Features\Rules\Catalog\Repositories\InMemory\InMemoryRuleRepository;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\PostgreSqlRuleRepository;
+use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Rules\Contracts\Strategies\RuleStrategyRegistryInterface;
 use App\Features\Rules\Services\Strategies\ClosedRuleStrategyRegistry;
 use Illuminate\Contracts\Foundation\Application;
@@ -19,6 +21,10 @@ final class RulesServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(RuleStrategyRegistryInterface::class, ClosedRuleStrategyRegistry::class);
+        $this->app->singleton(
+            ResolvePointsContributionContextPort::class,
+            ResolvePointsContributionContextUseCase::class,
+        );
         $this->app->singleton(
             'rules.repositories.memory',
             fn (): InMemoryRuleRepository => new InMemoryRuleRepository,

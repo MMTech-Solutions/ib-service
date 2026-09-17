@@ -1,6 +1,6 @@
 # Roadmap del feature Rules
 
-Estado: **R1 y R2 completados; extensión de Progression pendiente**
+Estado: **R1 y R2 completados; extensión P0.1 de Progression completada**
 Dependencia satisfecha: `Programs P2` completado
 Última revisión: 2026-09-17
 
@@ -53,13 +53,23 @@ scope `all` y vigencia inmediata.
 ## Extensión requerida por Progression
 
 [`Progression`](../progression/README.md) es el primer consumidor real de
-lectura y evaluación de las asignaciones ya implementadas. Además,
-`BR-RULE-016` / `BR-POINTS-016` exigen como máximo una asignación activa
-`points_per_quantity_unit` por combinación de programa, módulo y métrica o
-unidad. R2 garantiza hoy una asignación activa por regla + programa + módulo,
-pero **aún no valida la unicidad por métrica/unidad** entre reglas distintas
-del mismo tipo. Esa extensión se diseña con Progression; no reabre R2 como
-entrega independiente.
+lectura de las asignaciones ya implementadas.
+
+### P0.1 — Completada (2026-09-17)
+
+- Puerto Input: `ResolvePointsContributionContextPort`
+- Data V1: `ResolvePointsContributionContextQueryData`,
+  `PointsContributionContextData`, `ResolvePointsContributionContextResultData`
+- Binding en `RulesServiceProvider`; implementación en Assignments
+- `BR-RULE-016` validado al crear/reemplazar asignaciones
+  `points_per_quantity_unit` (unicidad por programa + módulo + `unit` del
+  schema publicado de la estrategia)
+- Evidencia y pruebas: ver
+  [`../progression/05-pg1-implementation.md`](../progression/05-pg1-implementation.md)
+  (sección Evidencia P0.1)
+
+La evaluación de puntos sigue perteneciendo a Progression (sesión 3). Este
+feature no calcula contribuciones ni consume el puerto desde Progression aún.
 
 ## Fuera de R2
 
@@ -71,5 +81,5 @@ entrega independiente.
 
 ## Próximo paso
 
-Exponer el puerto de lectura/evaluación y la unicidad por métrica/unidad
-junto con Progression PG1. Subscriptions S1 ya está cerrada.
+Ninguno en Rules para desbloquear PG1 sesión 3: P0.1 está cerrada. Quedan
+P0.2 (Subscriptions) y P0.3 (Plans) en el prerrequisito P0 de Progression.

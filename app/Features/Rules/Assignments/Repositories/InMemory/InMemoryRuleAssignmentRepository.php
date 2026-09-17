@@ -10,6 +10,7 @@ use App\Features\Rules\Assignments\DTOs\RuleAssignmentsPageData;
 use App\Features\Rules\Assignments\Exceptions\DuplicateActiveRuleAssignmentException;
 use App\Features\Rules\Assignments\Exceptions\RuleAssignmentConcurrencyException;
 use App\Features\Rules\Assignments\Models\RuleAssignment;
+use Carbon\CarbonImmutable;
 use Closure;
 use Throwable;
 
@@ -61,6 +62,47 @@ final class InMemoryRuleAssignmentRepository implements RuleAssignmentRepository
         }
 
         return null;
+    }
+
+    public function listEffectiveAt(string $programId, string $moduleId, string $occurredAt): array
+    {
+        $instant = $this->instant($occurredAt);
+        $matches = [];
+
+        foreach ($this->assignments as $assignment) {
+            if ($assignment->programId !== $programId || $assignment->moduleId !== $moduleId) {
+                continue;
+            }
+
+            if ($this->instant($assignment->startsAt) > $instant) {
+                continue;
+            }
+
+            if ($assignment->endsAt !== null && $this->instant($assignment->endsAt) <= $instant) {
+                continue;
+            }
+
+            $matches[] = $this->copy($assignment);
+        }
+
+        return $matches;
+    }
+
+    public function listActiveForProgramModule(string $programId, string $moduleId): array
+    {
+        $matches = [];
+
+        foreach ($this->assignments as $assignment) {
+            if (
+                $assignment->programId === $programId
+                && $assignment->moduleId === $moduleId
+                && $assignment->isActive()
+            ) {
+                $matches[] = $this->copy($assignment);
+            }
+        }
+
+        return $matches;
     }
 
     public function paginateByRule(RuleAssignmentListQueryData $query): RuleAssignmentsPageData
@@ -161,5 +203,10 @@ final class InMemoryRuleAssignmentRepository implements RuleAssignmentRepository
         $copy = unserialize(serialize($assignment), ['allowed_classes' => true]);
 
         return $copy;
+    }
+
+    private function instant(string $value): string
+    {
+        return CarbonImmutable::parse($value)->utc()->format('Y-m-d\TH:i:s.u\Z');
     }
 }
