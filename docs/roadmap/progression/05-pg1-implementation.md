@@ -1,9 +1,10 @@
 # Progression PG1: plan de implementación
 
-Estado: **Sesión 1 completada; sesiones 2–5 pendientes**
+Estado: **Sesiones 1–2 completadas; sesiones 3–5 pendientes**
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
 [`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
-primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1
+primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1;
+núcleo y persistencia de evaluaciones/contribuciones en la sesión 2
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -89,7 +90,7 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 | Sesión | Alcance | Estado | Dependencia | Última evidencia |
 | --- | --- | --- | --- | --- |
 | 1 | M3 y fronteras inter-feature | Completada | Primer adapter M3 | 2026-09-17 — ver Evidencia sesión 1 |
-| 2 | Núcleo y persistencia | Pendiente | Sesión 1 | — |
+| 2 | Núcleo y persistencia | Completada | Sesión 1 | 2026-09-17 — ver Evidencia sesión 2 |
 | 3 | Evaluación pull-only | Pendiente | Sesiones 1 y 2 | — |
 | 4 | Consulta administrativa | Pendiente | Sesiones 1 a 3 | — |
 | 5 | Cierre integral | Pendiente | Sesiones 1 a 4 | — |
@@ -166,7 +167,7 @@ Fecha: 2026-09-17
 
 ## Sesión 2 — Núcleo y persistencia
 
-Estado: **Pendiente**
+Estado: **Completada**
 
 - Crear las migraciones y checks de `04-pg1-data-model.md`.
 - Implementar agregados inmutables de evaluación y contribución, enums de estado
@@ -181,7 +182,62 @@ PostgreSQL además prueba FKs, checks, unicidad y rollback.
 
 ### Evidencia
 
-Pendiente. Al cerrar, registrar archivos, migraciones, contratos y resultados de pruebas reales.
+Fecha: 2026-09-17
+
+**Migración**
+
+- `database/migrations/2026_09_17_140000_create_progression_tables.php`
+  — `progression_activity_evaluations` + `progression_contributions`
+  — FKs `RESTRICT` a `modules`, `subscriptions`, `plans`, `programs`, `rules`,
+    `rule_versions`, `rule_assignments`
+  — CHECKs de `status`, catálogo de `exclusion_reason`, forma accepted/excluded,
+    contexto obligatorio de accepted, orden de ventana, `strategy_type` y
+    `scope_type`
+  — índice único de idempotencia
+    `(module_id, source_activity_id, beneficiary_external_user_id)`
+  — índices administrativos y `evaluation_id UNIQUE` en contribuciones
+
+**Dominio**
+
+- Enums: `EvaluationStatus`, `ExclusionReason` (catálogo BDS cerrado),
+  `ContributionStrategyType`, `ContributionScopeType`
+- VOs: `ExactDecimal` (escala máx. 8, sin redondeo de entradas),
+  `ProgressionWindow` (`endsAt > startsAt`)
+- Agregados inmutables: `ActivityEvaluation` (`accepted` / `excluded`),
+  `Contribution` (`points = quantity × weight`)
+- Excepciones: `InvalidExactDecimalException`, `InvalidProgressionWindowException`,
+  `InvalidActivityEvaluationException`, `ActivityEvaluationNotFoundException`
+
+**Persistencia**
+
+- Contrato: `Contracts/Repositories/ActivityEvaluationRepositoryInterface`
+  (`transaction`, `findById`, `findByIdempotencyKey`, `record`)
+- InMemory: `Repositories/InMemory/InMemoryActivityEvaluationRepository`
+- PostgreSQL: `Repositories/PostgreSql/PostgreSqlActivityEvaluationRepository`
+  + records Eloquent internos; `record()` usa SAVEPOINT y trata
+  `UniqueConstraintViolationException` como reintento canónico
+- Factory: `Factories/ActivityEvaluationRepositoryFactory`
+- Config: `config/progression.php`; bindings en `ProgressionServiceProvider`
+
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
+
+- Contrato compartido: `tests/Contracts/ActivityEvaluationRepositoryContract.php`
+  — aceptación atómica, cada motivo de exclusión, idempotencia sin recálculo,
+    rollback de transacción externa
+- `tests/Feature/Progression/InMemoryActivityEvaluationRepositoryContractTest.php`
+- `tests/Feature/Progression/PostgreSqlActivityEvaluationRepositoryContractTest.php`
+- Constraints/FK/unicidad/rollback/colisión:
+  `tests/Feature/Progression/PostgreSqlActivityEvaluationConstraintTest.php`
+- Unitarios VO: `tests/Unit/Progression/ExactDecimalAndWindowTest.php`
+- Regresión sesión 1:
+  `tests/Feature/Progression/ProgressionActivityPortsIntegrationTest.php`
+- Resultados: 27 tests / 152 aserciones OK (Unit Progression + contract
+  InMemory/PostgreSQL + constraints + ports sesión 1)
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .` (grafo reconstruido)
+
+**Fuera de alcance (sesión 2):** evaluación pull-only, HTTP admin, runs,
+placement, FX, Rewards, Kafka.
 
 ## Sesión 3 — Evaluación pull-only
 

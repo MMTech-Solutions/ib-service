@@ -1,0 +1,7 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'repository' => env('PROGRESSION_REPOSITORY', 'postgresql'),
+];
