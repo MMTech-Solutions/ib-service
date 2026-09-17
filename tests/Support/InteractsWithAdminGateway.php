@@ -17,16 +17,20 @@ trait InteractsWithAdminGateway
         config()->set('rbac.gateway.internal_secret', 'test-gateway-secret');
         config()->set('rbac.fallback.enabled', false);
         $this->artisan('modules:sync')->assertExitCode(0);
-        DB::table('rbac_user_permission_snapshots')->insert([
-            'message_key' => 'snapshot-'.self::AUTHORIZED_SUB,
-            'sub' => self::AUTHORIZED_SUB,
-            'surface' => 'admin_panel',
-            'rev' => 1,
-            'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage'], JSON_THROW_ON_ERROR),
-            'roles' => '[]',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        DB::table('rbac_user_permission_snapshots')->updateOrInsert(
+            [
+                'sub' => self::AUTHORIZED_SUB,
+                'surface' => 'admin_panel',
+            ],
+            [
+                'message_key' => 'snapshot-'.self::AUTHORIZED_SUB,
+                'rev' => 1,
+                'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage'], JSON_THROW_ON_ERROR),
+                'roles' => '[]',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        );
     }
 
     protected function authorizedSub(): string

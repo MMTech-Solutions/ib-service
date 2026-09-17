@@ -56,6 +56,17 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         return $record === null ? null : $this->hydrate($record);
     }
 
+    public function hasOpenForPlan(string $planId): bool
+    {
+        return SubscriptionRecord::query()
+            ->where('plan_id', $planId)
+            ->whereIn('status', [
+                SubscriptionStatus::Pending->value,
+                SubscriptionStatus::Active->value,
+            ])
+            ->exists();
+    }
+
     public function resolvePlacementAt(string $subscriptionId, string $occurredAt): ?SubscriptionPlacement
     {
         $subscription = $this->findById($subscriptionId);

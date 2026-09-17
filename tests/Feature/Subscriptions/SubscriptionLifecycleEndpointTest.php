@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Subscriptions;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
-use App\Features\Subscriptions\Catalog\Enums\SubscriptionActorKind;
-use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -217,24 +215,15 @@ final class SubscriptionLifecycleEndpointTest extends TestCase
             ->assertJsonPath('data.changes.1.next_is_fixed', false)
             ->json('data');
 
-        $repository = app(SubscriptionRepositoryFactory::class)->make();
-        $aggregate = $repository->findById($unfixed['id']);
-        self::assertNotNull($aggregate);
-        $generateId = static fn (): string => (string) Str::uuid7();
-        $aggregate->fixPlacement(
-            programId: $secondProgram['id'],
-            placementId: $generateId(),
-            operationId: $generateId(),
-            actorKind: SubscriptionActorKind::Iam,
-            actorExternalUserId: $this->authorizedSub(),
-            reason: 'Hold placement',
-            generateId: $generateId,
-            now: now('UTC')->toISOString(),
-        );
-        $repository->save($aggregate, $unfixed['lock_version']);
-        $fixed = $this->gatewayJson('GET', "/api/ib/v1/admin/subscriptions/{$unfixed['id']}")
-            ->assertOk()
+        $fixed = $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$unfixed['id']}/placement/fix", [
+            'program_id' => $secondProgram['id'],
+            'lock_version' => $unfixed['lock_version'],
+            'reason' => 'Hold placement',
+        ])->assertOk()
             ->assertJsonPath('data.current_placement.is_fixed', true)
+            ->assertJsonPath('data.current_placement.program_id', $secondProgram['id'])
+            ->assertJsonPath('data.changes.2.action', 'fix_placement')
+            ->assertJsonPath('data.changes.2.reason', 'Hold placement')
             ->json('data');
 
         $movedFixed = $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$fixed['id']}/placement/change", [
@@ -247,24 +236,61 @@ final class SubscriptionLifecycleEndpointTest extends TestCase
             ->assertJsonPath('data.changes.3.next_is_fixed', true)
             ->json('data');
 
-        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$movedFixed['id']}/placement/change", [
+        $released = $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$movedFixed['id']}/placement/release", [
+            'lock_version' => $movedFixed['lock_version'],
+            'reason' => 'Resume progression',
+        ])->assertOk()
+            ->assertJsonPath('data.current_placement.is_fixed', false)
+            ->assertJsonPath('data.current_placement.program_id', $plan['program_id'])
+            ->assertJsonPath('data.changes.4.action', 'release_placement')
+            ->assertJsonPath('data.changes.4.previous_is_fixed', true)
+            ->assertJsonPath('data.changes.4.next_is_fixed', false)
+            ->json('data');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$released['id']}/placement/release", [
+            'lock_version' => $released['lock_version'],
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'SUBSCRIPTION_INVARIANT_VIOLATION');
+
+        $refixed = $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$released['id']}/placement/fix", [
             'program_id' => $secondProgram['id'],
-            'lock_version' => $fixed['lock_version'],
+            'lock_version' => $released['lock_version'],
+        ])->assertOk()
+            ->assertJsonPath('data.current_placement.is_fixed', true)
+            ->assertJsonPath('data.current_placement.program_id', $secondProgram['id'])
+            ->json('data');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/placement/change", [
+            'program_id' => $plan['program_id'],
+            'lock_version' => $released['lock_version'],
         ])->assertConflict()->assertJsonPath('error.code', 'SUBSCRIPTION_CONCURRENCY_CONFLICT');
 
-        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$movedFixed['id']}/cancel", [
-            'lock_version' => $fixed['lock_version'],
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/placement/fix", [
+            'program_id' => $plan['program_id'],
+            'lock_version' => $released['lock_version'],
         ])->assertConflict()->assertJsonPath('error.code', 'SUBSCRIPTION_CONCURRENCY_CONFLICT');
 
-        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$movedFixed['id']}/change-plan", [
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/placement/release", [
+            'lock_version' => $released['lock_version'],
+        ])->assertConflict()->assertJsonPath('error.code', 'SUBSCRIPTION_CONCURRENCY_CONFLICT');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/cancel", [
+            'lock_version' => $released['lock_version'],
+        ])->assertConflict()->assertJsonPath('error.code', 'SUBSCRIPTION_CONCURRENCY_CONFLICT');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/change-plan", [
             'plan_id' => $this->createActivePlan(requiresApproval: false, withProgram: true, code: 'lock-dest')['id'],
-            'lock_version' => $fixed['lock_version'],
+            'lock_version' => $released['lock_version'],
         ])->assertConflict()->assertJsonPath('error.code', 'SUBSCRIPTION_CONCURRENCY_CONFLICT');
 
         $foreign = $this->createActivePlan(requiresApproval: false, withProgram: true, code: 'foreign-program');
-        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$movedFixed['id']}/placement/change", [
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/placement/change", [
             'program_id' => $foreign['program_id'],
-            'lock_version' => $movedFixed['lock_version'],
+            'lock_version' => $refixed['lock_version'],
+        ])->assertNotFound()->assertJsonPath('error.code', 'PROGRAM_NOT_FOUND');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$refixed['id']}/placement/fix", [
+            'program_id' => $foreign['program_id'],
+            'lock_version' => $refixed['lock_version'],
         ])->assertNotFound()->assertJsonPath('error.code', 'PROGRAM_NOT_FOUND');
     }
 
@@ -284,6 +310,13 @@ final class SubscriptionLifecycleEndpointTest extends TestCase
         ]);
         $this->assertGatewayAuthGuards('POST', "/api/ib/v1/admin/subscriptions/{$active['id']}/placement/change", [
             'program_id' => $plan['program_id'],
+            'lock_version' => $active['lock_version'],
+        ]);
+        $this->assertGatewayAuthGuards('POST', "/api/ib/v1/admin/subscriptions/{$active['id']}/placement/fix", [
+            'program_id' => $plan['program_id'],
+            'lock_version' => $active['lock_version'],
+        ]);
+        $this->assertGatewayAuthGuards('POST', "/api/ib/v1/admin/subscriptions/{$active['id']}/placement/release", [
             'lock_version' => $active['lock_version'],
         ]);
     }

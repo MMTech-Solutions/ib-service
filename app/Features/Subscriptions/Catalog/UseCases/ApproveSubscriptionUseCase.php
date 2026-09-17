@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Subscriptions\Catalog\UseCases;
 
 use App\Features\Plans\Contracts\Data\V1\ResolvePlanSubscriptionContextQueryData;
+use App\Features\Plans\Contracts\Ports\Input\LockPlanRowsPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Data\V1\AssertProgramBelongsToPlanQueryData;
 use App\Features\Programs\Contracts\Data\V1\ResolveFirstProgramByPositionQueryData;
@@ -27,6 +28,7 @@ final class ApproveSubscriptionUseCase
         private readonly SubscriptionRepositoryFactory $repositoryFactory,
         private readonly ResolvePlanSubscriptionContextPort $planContext,
         private readonly ResolveProgramSubscriptionContextPort $programContext,
+        private readonly LockPlanRowsPort $lockPlanRows,
         private readonly AssertPlanEligibleForSubscriptionAction $assertPlanEligible,
         private readonly PresentSubscriptionAction $presentSubscription,
     ) {}
@@ -36,6 +38,17 @@ final class ApproveSubscriptionUseCase
         $repository = $this->repositoryFactory->make();
 
         return $repository->transaction(function () use ($repository, $command): SubscriptionDetailData {
+            $subscription = $repository->findById($command->subscriptionId);
+            if ($subscription === null) {
+                throw SubscriptionNotFoundException::forId($command->subscriptionId);
+            }
+
+            if ($subscription->status !== SubscriptionStatus::Pending) {
+                throw SubscriptionNotPendingException::forId($subscription->id);
+            }
+
+            $this->lockPlanRows->lockAscending([$subscription->planId]);
+
             $subscription = $repository->findById($command->subscriptionId);
             if ($subscription === null) {
                 throw SubscriptionNotFoundException::forId($command->subscriptionId);

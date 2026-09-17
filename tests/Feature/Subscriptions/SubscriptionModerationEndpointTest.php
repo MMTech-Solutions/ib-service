@@ -207,6 +207,15 @@ final class SubscriptionModerationEndpointTest extends TestCase
         $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$approvalPlan['id']}", [
             'reason' => 'Retired',
             'lock_version' => $deactivated['lock_version'],
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'PLAN_HAS_OPEN_SUBSCRIPTIONS');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$pending['id']}/reject", [
+            'reason' => 'Plan retiring',
+        ])->assertOk()->assertJsonPath('data.status', 'rejected');
+
+        $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$approvalPlan['id']}", [
+            'reason' => 'Retired',
+            'lock_version' => $deactivated['lock_version'],
         ])->assertNoContent();
 
         $anotherCustomer = $this->seedAuthorizedCustomer((string) Str::uuid7());

@@ -41,8 +41,10 @@ use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApproveSubscriptionCo
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\CancelSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionPlanController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionProgramController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\FixSubscriptionPlacementController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionsController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ReleaseSubscriptionPlacementController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowCurrentSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -108,6 +110,10 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.subscriptions.change-plan');
                 Route::post('subscriptions/{subscription}/placement/change', ChangeSubscriptionProgramController::class)
                     ->name('ib.v1.admin.subscriptions.placement.change');
+                Route::post('subscriptions/{subscription}/placement/fix', FixSubscriptionPlacementController::class)
+                    ->name('ib.v1.admin.subscriptions.placement.fix');
+                Route::post('subscriptions/{subscription}/placement/release', ReleaseSubscriptionPlacementController::class)
+                    ->name('ib.v1.admin.subscriptions.placement.release');
             });
 
         Route::prefix('customer')

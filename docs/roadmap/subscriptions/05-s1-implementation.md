@@ -1,10 +1,10 @@
 # Subscriptions S1: plan de implementación
 
-Estado: **En curso; sesión 4 completada**
+Estado: **Completada**
 Dependencias funcionales: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
 Entrega objetivo: S1 — Suscripciones y placement administrativo
-Última revisión: 2026-09-15
+Última revisión: 2026-09-16
 
 ## Propósito
 
@@ -139,7 +139,7 @@ integración futura.
 | 2 | Núcleo y persistencia | Completada | Sesión 1 |
 | 3 | Solicitud, consultas y moderación | Completada | Sesiones 1 y 2 |
 | 4 | Ciclo de vida administrativo | Completada | Sesiones 1 a 3 |
-| 5 | Fijación, concurrencia y cierre integral | No iniciada | Sesiones 1 a 4 |
+| 5 | Fijación, concurrencia y cierre integral | Completada | Sesiones 1 a 4 |
 
 ## Sesión 1 — Contextos de Plans y Programs
 
@@ -437,7 +437,7 @@ respetan la historia temporal y rechazan escrituras administrativas obsoletas.
 
 ## Sesión 5 — Fijación, concurrencia y cierre integral
 
-Estado: **No iniciada**
+Estado: **Completada**
 
 ### Objetivo
 
@@ -489,7 +489,34 @@ Solo entonces se actualizan este documento, el README de Subscriptions y el
 
 ### Evidencia
 
-Pendiente.
+- UseCases: `FixSubscriptionPlacementUseCase`,
+  `ReleaseSubscriptionPlacementUseCase`.
+- HTTP admin: `POST …/placement/fix`, `POST …/placement/release` con
+  `lock_version` obligatorio; motivo opcional.
+- Puerto Subscriptions → Plans: `HasOpenSubscriptionsForPlanPort` +
+  `HasOpenSubscriptionsForPlanQueryData`
+  (`HasOpenSubscriptionsForPlanUseCase`);
+  `SubscriptionRepositoryInterface::hasOpenForPlan()` en InMemory/PostgreSQL.
+- Archivo de plan: `ArchivePlanUseCase` bloquea el plan (`lockAscending`),
+  consulta abiertas vía puerto y rechaza con
+  `PlanCannotArchiveWithOpenSubscriptionsException`
+  (`PLAN_HAS_OPEN_SUBSCRIPTIONS`).
+- Locks de serialización: `ApplyForSubscriptionUseCase` y
+  `ApproveSubscriptionUseCase` bloquean el plan destino antes de mutar;
+  `ChangeSubscriptionPlanUseCase` ya bloqueaba origen/destino en orden
+  ascendente.
+- Postman Administration/Subscriptions: fix placement y release placement;
+  colección v2.1 válida (47 requests) contrastada con
+  `route:list --except-vendor` y `/up`.
+- Tests ejecutados (228 passed, 1412 assertions — suite completa del servicio
+  sobre PostgreSQL real), con foco de sesión 5:
+  `SubscriptionLifecycleEndpointTest` (fix/release/RBAC/`lock_version`),
+  `SubscriptionArchiveAndConcurrencyTest` (archivo con abiertas, lock timeout
+  de plan/suscripción, historia contigua),
+  `SubscriptionModerationEndpointTest` (archivo tras rechazar pendiente),
+  suite contractual InMemory/PostgreSQL y constraints,
+  `PlanCatalogEndpointTest`, `tests/Architecture`.
+- Pint (`vendor/bin/pint --dirty`) y `graphify update .` aplicados.
 
 ## Auditoría final recomendada
 

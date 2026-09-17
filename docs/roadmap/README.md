@@ -16,7 +16,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Plans`](plans/README.md) | P1 completado | Extensión de aprobación requerida por Subscriptions S1 | 2026-09-15 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
 | [`Rules`](rules/README.md) | Completado | R1 y R2 completados | 2026-09-15 |
-| [`Subscriptions`](subscriptions/README.md) | S1 en curso | Sesión 4 completada; siguiente sesión 5 | 2026-09-15 |
+| [`Subscriptions`](subscriptions/README.md) | S1 completada | Suscripciones y placement administrativo | 2026-09-16 |
 
 ## Secuencia entre features
 
@@ -59,10 +59,11 @@ flowchart LR
 - `Programs P2` implementa el ladder vivo de umbrales. No publica ni
   versiona programas. Rules y Subscriptions abren inventario tras P2.
 - `Subscriptions` conserva una única suscripción abierta global por usuario,
-  historia terminal y placement libre o fijado. Las sesiones 1–4 de S1 están
-  implementadas (contextos, persistencia, solicitud/moderación y ciclo de vida
-  administrativo); faltan fijación, carreras de archivo y el cierre integral
-  de la sesión 5 antes de habilitar la capacidad o abrir Progression y Rewards.
+  historia terminal y placement libre o fijado. S1 está implementada de extremo
+  a extremo (contextos, persistencia, solicitud/moderación, ciclo de vida,
+  fijación y salvaguarda de archivo), con permisos, Postman y suite PostgreSQL
+  verificados. Progression y Rewards pueden consumir ese contexto sin reabrir
+  S1 para contratos especulativos.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

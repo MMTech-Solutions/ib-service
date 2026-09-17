@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Subscriptions\Catalog\UseCases;
 
 use App\Features\Plans\Contracts\Data\V1\ResolvePlanSubscriptionContextQueryData;
+use App\Features\Plans\Contracts\Ports\Input\LockPlanRowsPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Data\V1\ResolveFirstProgramByPositionQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
@@ -25,6 +26,7 @@ final class ApplyForSubscriptionUseCase
         private readonly SubscriptionRepositoryFactory $repositoryFactory,
         private readonly ResolvePlanSubscriptionContextPort $planContext,
         private readonly ResolveProgramSubscriptionContextPort $programContext,
+        private readonly LockPlanRowsPort $lockPlanRows,
         private readonly AssertPlanEligibleForSubscriptionAction $assertPlanEligible,
         private readonly PresentSubscriptionAction $presentSubscription,
     ) {}
@@ -34,6 +36,8 @@ final class ApplyForSubscriptionUseCase
         $repository = $this->repositoryFactory->make();
 
         return $repository->transaction(function () use ($repository, $command): SubscriptionData {
+            $this->lockPlanRows->lockAscending([$command->planId]);
+
             if ($repository->findOpenByExternalUserId($command->externalUserId) !== null) {
                 throw DuplicateOpenSubscriptionException::forUser($command->externalUserId);
             }

@@ -62,6 +62,17 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
         return null;
     }
 
+    public function hasOpenForPlan(string $planId): bool
+    {
+        foreach ($this->subscriptions as $subscription) {
+            if ($subscription->planId === $planId && $subscription->status->isOpen()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function resolvePlacementAt(string $subscriptionId, string $occurredAt): ?SubscriptionPlacement
     {
         $subscription = $this->findById($subscriptionId);

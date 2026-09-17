@@ -1270,6 +1270,52 @@
                                 "description": "Changes the program of an active subscription within the same plan while preserving fixed/unfixed placement condition. lock_version is required."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Fix placement",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"program_id\": \"{{PROGRAM_ID}}\",\n  \"lock_version\": 1,\n  \"reason\": \"Hold placement\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placement/fix",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "placement", "fix"]
+                                },
+                                "description": "Fixes placement on the current or another program of the same plan. Closes and opens contiguous intervals. lock_version is required."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Release placement",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"lock_version\": 1,\n  \"reason\": \"Resume progression\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placement/release",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "subscriptions", "{{SUBSCRIPTION_ID}}", "placement", "release"]
+                                },
+                                "description": "Releases a fixed placement without changing the program. lock_version is required."
+                            },
+                            "response": []
                         }
                     ]
                 }

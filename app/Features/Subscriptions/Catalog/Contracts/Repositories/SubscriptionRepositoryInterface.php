@@ -18,6 +18,8 @@ interface SubscriptionRepositoryInterface
 
     public function findOpenByExternalUserId(string $externalUserId): ?Subscription;
 
+    public function hasOpenForPlan(string $planId): bool;
+
     public function resolvePlacementAt(string $subscriptionId, string $occurredAt): ?SubscriptionPlacement;
 
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData;

@@ -40,9 +40,8 @@ sustituir los BDS ni las reglas técnicas.
   administrativo y ladder vivo de umbrales).
 - [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,
   versiones y asignaciones históricas).
-- [`subscriptions/`](roadmap/subscriptions/README.md): inventario, dominio y
-  modelo de datos S1 completados para suscripciones, placement y fijación
-  administrativa; la implementación es la etapa siguiente.
+- [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
+  (suscripciones, placement, fijación y salvaguarda de archivo).
 
 ## Jerarquía de autoridad
 

@@ -92,6 +92,15 @@ abstract class SubscriptionRepositoryContract extends TestCase
         self::assertSame(SubscriptionStatus::Active, $open->status);
     }
 
+    public function test_it_reports_open_subscriptions_for_a_plan(): void
+    {
+        $repository = $this->repository();
+        self::assertFalse($repository->hasOpenForPlan($this->planId()));
+
+        $repository->create($this->pendingSubscription());
+        self::assertTrue($repository->hasOpenForPlan($this->planId()));
+    }
+
     public function test_it_rejects_replacing_the_same_subscription_twice(): void
     {
         $repository = $this->repository();
