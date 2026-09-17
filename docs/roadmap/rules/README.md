@@ -81,5 +81,6 @@ feature no calcula contribuciones ni consume el puerto desde Progression aún.
 
 ## Próximo paso
 
-Ninguno en Rules para desbloquear PG1 sesión 3: P0.1 está cerrada. Quedan
-P0.2 (Subscriptions) y P0.3 (Plans) en el prerrequisito P0 de Progression.
+Ninguno en Rules para desbloquear PG1 sesión 3: P0.1 está cerrada. Queda
+P0.3 (Plans) en el prerrequisito P0 de Progression (P0.2 Subscriptions también
+cerrada).

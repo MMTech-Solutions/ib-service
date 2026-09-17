@@ -1,9 +1,9 @@
 # Roadmap del feature Subscriptions
 
-Estado: **S1 completada**
+Estado: **S1 completada; extensión P0.2 de Progression completada**
 Dependencias satisfechas: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
-Última revisión: 2026-09-16
+Última revisión: 2026-09-17
 
 ## Objetivo
 
@@ -73,8 +73,27 @@ flowchart LR
 - Ventanas, actividad tardía y reversas propias de Progression o Rewards.
 - Sistema transversal de registro de acciones y configuración persistida de
   dominios.
-- Contratos públicos de Subscriptions para Progression o Rewards (se diseñan
-  con su primer consumidor real).
+- Contratos públicos de Subscriptions para Rewards (se diseñan con su primer
+  consumidor real). La extensión P0.2 para Progression ya está publicada.
+
+## Extensión requerida por Progression
+
+[`Progression`](../progression/README.md) es el primer consumidor real del
+contexto histórico de suscripción y placement.
+
+### P0.2 — Completada (2026-09-17)
+
+- Puerto Input: `ResolveSubscriptionContextPort`
+- Data V1: `ResolveSubscriptionContextQueryData`, `SubscriptionContextData`,
+  `ResolveSubscriptionContextResultData`
+- Binding en `SubscriptionsServiceProvider`; implementación en Catalog
+- Semántica histórica por `occurred_at` con intervalo semiabierto de placement
+- Evidencia y pruebas: ver
+  [`../progression/05-pg1-implementation.md`](../progression/05-pg1-implementation.md)
+  (sección Evidencia P0.2)
+
+La evaluación de puntos sigue perteneciendo a Progression (sesión 3). Este
+feature no evalúa actividad ni consume el puerto desde Progression aún.
 
 ## Referencias canónicas
 
@@ -85,6 +104,5 @@ flowchart LR
 
 ## Próximo paso
 
-S1 está cerrada. Continuar en [`Progression`](../progression/README.md) como
-primer consumidor real del contexto de suscripción y placement; no ampliar S1
-con contratos especulativos ni con elementos declarados fuera de alcance.
+Ninguno en Subscriptions para desbloquear PG1 sesión 3: P0.2 está cerrada.
+Queda P0.3 (Plans) en el prerrequisito P0 de Progression.

@@ -1,12 +1,12 @@
 # Progression PG1: plan de implementación
 
-Estado: **Sesiones 1–2 completadas; P0.1 completada; P0.2–P0.3 y sesión 3 bloqueados; sesiones 4–5 pendientes**
+Estado: **Sesiones 1–2 completadas; P0.1–P0.2 completadas; P0.3 y sesión 3 bloqueados; sesiones 4–5 pendientes**
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
 [`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
 primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1;
 núcleo y persistencia de evaluaciones/contribuciones en la sesión 2;
-P0.1 (Rules) completada; sesión 3 bloqueada por P0.2 (Subscriptions) y
-P0.3 (Plans) pendientes
+P0.1 (Rules) y P0.2 (Subscriptions) completadas; sesión 3 bloqueada por P0.3
+(Plans) pendiente
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -94,7 +94,7 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 
 | Sesión | Alcance | Estado | Dependencia | Última evidencia |
 | --- | --- | --- | --- | --- |
-| P0 | Contextos proveedores de Progression | Bloqueada | Extensiones en Rules, Subscriptions y Plans | 2026-09-17 — P0.1 Completada; P0.2–P0.3 pendientes; ver Evidencia P0 |
+| P0 | Contextos proveedores de Progression | Bloqueada | Extensiones en Rules, Subscriptions y Plans | 2026-09-17 — P0.1–P0.2 Completadas; P0.3 pendiente; ver Evidencia P0 |
 | 1 | M3 y fronteras inter-feature | Completada | Primer adapter M3 | 2026-09-17 — ver Evidencia sesión 1 |
 | 2 | Núcleo y persistencia | Completada | Sesión 1 | 2026-09-17 — ver Evidencia sesión 2 |
 | 3 | Evaluación pull-only | Bloqueada | P0 y sesiones 1–2 | 2026-09-17 — ver Evidencia sesión 3 |
@@ -114,7 +114,7 @@ puertos Input y Data V1 públicos.
 | Subentrega | Feature propietario | Contrato / extensión requerida | Estado | Criterio de salida |
 | --- | --- | --- | --- | --- |
 | P0.1 | Rules | Puerto Input + Data V1 que resuelva, en `occurred_at`, la asignación, regla y versión `points_per_quantity_unit` aplicable a programa, módulo, métrica y unidad; validar `BR-RULE-016`. | Completada | Puerto versionado, binding y pruebas del feature; devuelve contexto o ausencia tipada sin exponer modelos internos. |
-| P0.2 | Subscriptions | Puerto Input + Data V1 que resuelva para el beneficiario, en `occurred_at`, suscripción, programa, placement y condición de fijación. | Pendiente | Puerto versionado, binding y pruebas históricas por instante; sin repositories o Eloquent expuestos. |
+| P0.2 | Subscriptions | Puerto Input + Data V1 que resuelva para el beneficiario, en `occurred_at`, suscripción, programa, placement y condición de fijación. | Completada | Puerto versionado, binding y pruebas históricas por instante; sin repositories o Eloquent expuestos. |
 | P0.3 | Plans | Implementar el período de progresión obligatorio de `BR-PLAN-018` y exponer en una frontera consumible por Progression el período y el estado operativo del plan. | Pendiente | Migración/reglas, compatibilidad de contratos y pruebas de período/estado; no se rompe V1 existente. |
 
 Criterio de salida de P0: P0.1, P0.2 y P0.3 están `Completada`, con contratos
@@ -169,9 +169,48 @@ Fecha: 2026-09-17
 **Fuera de alcance P0.1:** consumo del puerto desde Progression, evaluación
 pull-only, P0.2, P0.3, sesión 3.
 
-#### P0.2 / P0.3
+#### P0.2 — Subscriptions (Completada)
 
-Siguen pendientes. La sesión 3 permanece bloqueada hasta completarlos.
+**Contrato público**
+
+- Puerto: `app/Features/Subscriptions/Contracts/Ports/Input/ResolveSubscriptionContextPort.php`
+- Data V1:
+  - `ResolveSubscriptionContextQueryData` (`external_user_id`, `occurred_at`)
+  - `SubscriptionContextData` (`subscription_id`, `plan_id`, `program_id`,
+    `placement_id`, `placement_condition`)
+  - `ResolveSubscriptionContextResultData` (contexto o ausencia tipada)
+- Excepción contractual: `AmbiguousSubscriptionContextException`
+- Binding: `SubscriptionsServiceProvider` → `ResolveSubscriptionContextPort`
+- Implementación: `Catalog/UseCases/ResolveSubscriptionContextUseCase`
+  + `ResolveSubscriptionContextMatchesAction`
+- Semántica histórica: intervalo semiabierto `[effective_from, effective_until)`
+  (`BR-SUBSCRIPTION-011`); ausencia tipada si no hay placement que cubra el
+  instante (p. ej. `pending` o fuera de vigencia)
+- Repositorio: `listPlacementContextsAt` (InMemory + PostgreSQL) además de
+  `resolvePlacementAt`
+- Sin exposición de Eloquent, repositories ni DTOs internos al consumidor
+
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
+
+- `tests/Feature/Subscriptions/ResolveSubscriptionContextPortTest.php`
+  — resolución histórica, frontera en `effective_until`, fijación, historia
+  tras cancelar, ausencia en `pending`
+- Contract subscriptions (incluye `listPlacementContextsAt`):
+  `InMemorySubscriptionRepositoryContractTest`,
+  `PostgreSqlSubscriptionRepositoryContractTest`
+- Regresión lifecycle HTTP: `SubscriptionLifecycleEndpointTest`
+- Arquitectura: `UserContextArchitectureTest` (puerto + Data V1)
+- Regresión Progression sesión 1: `ProgressionActivityPortsIntegrationTest`
+- Resultados acotados P0.2: **47 tests / 450 aserciones OK**
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .` (grafo reconstruido)
+
+**Fuera de alcance P0.2:** consumo del puerto desde Progression, evaluación
+pull-only, P0.3, sesión 3.
+
+#### P0.3
+
+Sigue pendiente. La sesión 3 permanece bloqueada hasta completarlo.
 ## Sesión 1 — M3 y fronteras inter-feature
 
 Estado: **Completada**
@@ -352,28 +391,16 @@ Fecha: 2026-09-17
 
 No se implementó el caso de uso de evaluación: faltan fronteras publicadas
 que la sesión exige y el protocolo prohíbe inventar. Hallazgos contrastados
-con Graphify, roadmaps de proveedores y código real:
+con Graphify, roadmaps de proveedores y código real (actualizado 2026-09-17
+tras cerrar P0.1 y P0.2):
 
-1. **Rules — sin puerto Input de lectura/evaluación**
-   - Sesión 1 dejó explícito que no se inventó el puerto; `rules/README.md`
-     marca la extensión como pendiente junto a PG1.
-   - No existe `app/Features/Rules/Contracts/Ports/Input/*`.
-   - Sin contrato tipado no se puede resolver asignación/versión
-     `points_per_quantity_unit` vigente en `occurred_at` (necesarias para
-     `accepted` y para `no_applicable_rule` / `unit_mismatch`).
-   - `BR-RULE-016` / unicidad por métrica/unidad entre reglas distintas
-     sigue sin validarse en Rules (README Rules).
+1. **Rules — P0.1 Completada**
+   - Puerto `ResolvePointsContributionContextPort` publicado; ya no bloquea.
 
-2. **Subscriptions — sin puerto público de contexto en `occurred_at`**
-   - Solo está publicado `HasOpenSubscriptionsForPlanPort` (booleano).
-   - S1 documentó que la resolución de placement por instante vive en el
-     repository interno y que el contrato inter-feature se diseña con el
-     primer consumidor real; ese puerto **aún no está definido ni publicado**.
-   - Sin él no hay forma contractual de obtener suscripción, programa y
-     fijación del beneficiario en `occurred_at` (`no_active_subscription`,
-     `placement_fixed`) sin importar modelos/repos de Subscriptions.
+2. **Subscriptions — P0.2 Completada**
+   - Puerto `ResolveSubscriptionContextPort` publicado; ya no bloquea.
 
-3. **Plans — período de progresión obligatorio ausente (`BR-PLAN-018`)**
+3. **Plans — período de progresión obligatorio ausente (`BR-PLAN-018`) — P0.3 pendiente**
    - `plans/README.md`: extensión pendiente; el campo no está implementado.
    - `PlanContextData` no expone período ni `is_active` operativo de
      progresión; sin período no se puede derivar la ventana UTC de la
@@ -382,19 +409,20 @@ con Graphify, roadmaps de proveedores y código real:
 **Qué no se hizo (conforme al protocolo)**
 
 - Ningún UseCase de evaluación pull-only.
-- Ningún puerto, Data V1, adapter ni decisión inventada en Rules,
-  Subscriptions o Plans.
 - Ningún avance de sesión 4 (HTTP admin) ni 5.
-- Sin cambios de PHP; no aplica Pint ni `graphify update .`.
-- PG1 no se declara completada; `progression/README.md` no se actualiza.
+- Sin cambios de PHP en el intento original de sesión 3; no aplica Pint ni
+  `graphify update .` de esa sesión.
+- PG1 no se declara completada; `progression/README.md` no se actualiza al
+  cierre integral.
 
 **Desbloqueo requerido antes de reintentar la sesión 3**
 
-Completar P0.1, P0.2 y P0.3 con la evidencia exigida en el prerrequisito P0.
-No basta con crear interfaces: cada proveedor debe publicar el contrato,
-conectarlo a una implementación y demostrar la semántica temporal con pruebas.
+Completar P0.3 (Plans) con la evidencia exigida en el prerrequisito P0.
+P0.1 y P0.2 ya están `Completada`. No basta con crear interfaces: el
+proveedor debe publicar el contrato, conectarlo a una implementación y
+demostrar la semántica con pruebas.
 
-Tras esas dependencias, reabrir la sesión 3 sin inventar contratos y cumplir
+Tras P0.3, reabrir la sesión 3 sin inventar contratos y cumplir
 el criterio de salida (una evidencia durable por actividad y beneficiario).
 
 ## Sesión 4 — Consulta administrativa

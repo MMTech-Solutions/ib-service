@@ -22,6 +22,16 @@ interface SubscriptionRepositoryInterface
 
     public function resolvePlacementAt(string $subscriptionId, string $occurredAt): ?SubscriptionPlacement;
 
+    /**
+     * Resolves placement intervals that cover `occurredAt` for a beneficiary.
+     *
+     * Uses the semi-open interval `[effective_from, effective_until)` already
+     * owned by each placement (`BR-SUBSCRIPTION-011`).
+     *
+     * @return list<array{subscription: Subscription, placement: SubscriptionPlacement}>
+     */
+    public function listPlacementContextsAt(string $externalUserId, string $occurredAt): array;
+
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData;
 
     public function create(Subscription $subscription): void;

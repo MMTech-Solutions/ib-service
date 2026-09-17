@@ -77,6 +77,47 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         return $subscription->placementAt($occurredAt);
     }
 
+    public function listPlacementContextsAt(string $externalUserId, string $occurredAt): array
+    {
+        $records = SubscriptionRecord::query()
+            ->where('external_user_id', $externalUserId)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $matches = [];
+
+        foreach ($records as $record) {
+            $subscription = $this->hydrate($record);
+            $placement = $subscription->placementAt($occurredAt);
+            if ($placement === null) {
+                continue;
+            }
+
+            $matches[] = [
+                'subscription' => $subscription,
+                'placement' => $placement,
+            ];
+        }
+
+        usort(
+            $matches,
+            static function (array $left, array $right): int {
+                $fromCompare = strcmp(
+                    $left['placement']->effectiveFrom,
+                    $right['placement']->effectiveFrom,
+                );
+                if ($fromCompare !== 0) {
+                    return $fromCompare;
+                }
+
+                return strcmp($left['placement']->id, $right['placement']->id);
+            },
+        );
+
+        return $matches;
+    }
+
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData
     {
         $builder = SubscriptionRecord::query()

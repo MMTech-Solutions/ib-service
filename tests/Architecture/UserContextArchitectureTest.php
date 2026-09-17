@@ -118,7 +118,19 @@ final class UserContextArchitectureTest extends TestCase
         );
         self::assertFalse(
             File::isDirectory(app_path('Features/Subscriptions/Catalog/Contracts/Data')),
-            'Subscriptions has no inter-feature consumer yet; Data objects belong in DTOs.',
+            'Subscriptions keeps internal Catalog Data in DTOs; public Data lives in Subscriptions/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Subscriptions/Contracts/Data/V1/HasOpenSubscriptionsForPlanQueryData.php')),
+            'Subscriptions publishes HasOpenSubscriptionsForPlanQueryData in Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Subscriptions/Contracts/Data/V1/SubscriptionContextData.php')),
+            'P0.2 publishes SubscriptionContextData in Subscriptions/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Subscriptions/Contracts/Ports/Input/ResolveSubscriptionContextPort.php')),
+            'P0.2 publishes ResolveSubscriptionContextPort for Progression.',
         );
         self::assertFalse(
             File::isDirectory(app_path('Features/Rules/Assignments/Contracts/Data')),
@@ -142,6 +154,7 @@ final class UserContextArchitectureTest extends TestCase
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramSubscriptionContextPort.php'),
             app_path('Features/Rules/Contracts/Ports/Input/ResolvePointsContributionContextPort.php'),
+            app_path('Features/Subscriptions/Contracts/Ports/Input/ResolveSubscriptionContextPort.php'),
         ];
 
         foreach ($ports as $portPath) {

@@ -85,6 +85,44 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
         return $placement === null ? null : unserialize(serialize($placement), ['allowed_classes' => true]);
     }
 
+    public function listPlacementContextsAt(string $externalUserId, string $occurredAt): array
+    {
+        $matches = [];
+
+        foreach ($this->subscriptions as $subscription) {
+            if ($subscription->externalUserId !== $externalUserId) {
+                continue;
+            }
+
+            $placement = $subscription->placementAt($occurredAt);
+            if ($placement === null) {
+                continue;
+            }
+
+            $matches[] = [
+                'subscription' => $this->copy($subscription),
+                'placement' => unserialize(serialize($placement), ['allowed_classes' => true]),
+            ];
+        }
+
+        usort(
+            $matches,
+            static function (array $left, array $right): int {
+                $fromCompare = strcmp(
+                    $left['placement']->effectiveFrom,
+                    $right['placement']->effectiveFrom,
+                );
+                if ($fromCompare !== 0) {
+                    return $fromCompare;
+                }
+
+                return strcmp($left['placement']->id, $right['placement']->id);
+            },
+        );
+
+        return $matches;
+    }
+
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData
     {
         $filtered = array_values(array_filter(

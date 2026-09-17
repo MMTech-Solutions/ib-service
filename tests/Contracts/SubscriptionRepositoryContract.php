@@ -272,6 +272,37 @@ abstract class SubscriptionRepositoryContract extends TestCase
         );
         self::assertNotNull($beforeBoundary);
         self::assertSame($this->programId(), $beforeBoundary->programId);
+
+        $contextsDuringSecond = $repository->listPlacementContextsAt(
+            $active->externalUserId,
+            $t2->addMinute()->toISOString(),
+        );
+        self::assertCount(1, $contextsDuringSecond);
+        self::assertSame($active->id, $contextsDuringSecond[0]['subscription']->id);
+        self::assertSame($this->alternateProgramId(), $contextsDuringSecond[0]['placement']->programId);
+
+        $contextsDuringFirst = $repository->listPlacementContextsAt(
+            $active->externalUserId,
+            $t2->subSecond()->toISOString(),
+        );
+        self::assertCount(1, $contextsDuringFirst);
+        self::assertSame($this->programId(), $contextsDuringFirst[0]['placement']->programId);
+
+        $contextsWhileFixed = $repository->listPlacementContextsAt(
+            $active->externalUserId,
+            $t3->addMinute()->toISOString(),
+        );
+        self::assertCount(1, $contextsWhileFixed);
+        self::assertTrue($contextsWhileFixed[0]['placement']->isFixed());
+        self::assertSame($this->programId(), $contextsWhileFixed[0]['placement']->programId);
+
+        self::assertSame(
+            [],
+            $repository->listPlacementContextsAt(
+                $active->externalUserId,
+                $t1->subSecond()->toISOString(),
+            ),
+        );
     }
 
     public function test_release_placement_keeps_program_and_change_program_preserves_fixed_condition(): void
