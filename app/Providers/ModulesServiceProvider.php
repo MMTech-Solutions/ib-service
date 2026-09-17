@@ -9,7 +9,10 @@ use App\Features\Modules\Catalog\Contracts\Repositories\ModuleReferenceGuardInte
 use App\Features\Modules\Catalog\Repositories\InMemory\InMemoryModuleRepository;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\PostgreSqlModuleRepository;
 use App\Features\Modules\Catalog\Services\Adapters\PlanModuleReferenceGuard;
+use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
+use App\Features\Modules\Catalog\UseCases\ListProgressionActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveModulesUseCase;
+use App\Features\Modules\Contracts\Ports\Input\ListProgressionActivitiesPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +26,8 @@ final class ModulesServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolveModulesPort::class, ResolveModulesUseCase::class);
+        $this->app->singleton(ListProgressionActivitiesPort::class, ListProgressionActivitiesUseCase::class);
+        $this->app->singleton(ModuleActivityRejectionEvidence::class);
         $this->app->singleton(ModuleReferenceGuardInterface::class, PlanModuleReferenceGuard::class);
         $this->app->singleton(
             'modules.repositories.memory',

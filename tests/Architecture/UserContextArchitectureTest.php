@@ -76,6 +76,14 @@ final class UserContextArchitectureTest extends TestCase
             File::exists(app_path('Features/Modules/Contracts/Data/V1/ModuleSummaryData.php')),
             'P1 publishes ModuleSummaryData in Modules/Contracts/Data/V1.',
         );
+        self::assertTrue(
+            File::exists(app_path('Features/Modules/Contracts/Data/V1/ProgressionActivityData.php')),
+            'M3 publishes ProgressionActivityData in Modules/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Modules/Contracts/Ports/Input/ListProgressionActivitiesPort.php')),
+            'M3 publishes ListProgressionActivitiesPort for Progression.',
+        );
         self::assertFalse(
             File::isDirectory(app_path('Features/Plans/Catalog/Contracts/Data')),
             'Plans P1 has no inter-feature consumer; its Data objects belong in DTOs.',

@@ -1,8 +1,9 @@
 # Progression PG1: plan de implementación
 
-Estado: **Preparado; bloqueado por la implementación de Modules M3**
+Estado: **Sesión 1 completada; sesiones 2–5 pendientes**
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
-[`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md)
+[`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
+primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -87,14 +88,14 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 
 | Sesión | Alcance | Estado | Dependencia | Última evidencia |
 | --- | --- | --- | --- | --- |
-| 1 | M3 y fronteras inter-feature | Bloqueada | Primer adapter M3 | — |
+| 1 | M3 y fronteras inter-feature | Completada | Primer adapter M3 | 2026-09-17 — ver Evidencia sesión 1 |
 | 2 | Núcleo y persistencia | Pendiente | Sesión 1 | — |
 | 3 | Evaluación pull-only | Pendiente | Sesiones 1 y 2 | — |
 | 4 | Consulta administrativa | Pendiente | Sesiones 1 a 3 | — |
 | 5 | Cierre integral | Pendiente | Sesiones 1 a 4 | — |
 ## Sesión 1 — M3 y fronteras inter-feature
 
-Estado: **Bloqueada por adapter M3**
+Estado: **Completada**
 
 - Implementar en Modules el puerto y Data V1 definidos por M3, con su adapter
   inicial, paginación/cursor, validación y evidencia de módulo inactivo.
@@ -110,7 +111,58 @@ normalizada paginada a Progression y cubre los estados `running`, `paused` e
 
 ### Evidencia
 
-Pendiente. Al cerrar, registrar archivos, migraciones, contratos y resultados de pruebas reales.
+Fecha: 2026-09-17
+
+**Modules M3**
+
+- Puerto: `app/Features/Modules/Contracts/Ports/Input/ListProgressionActivitiesPort.php`
+- Data V1: `ListProgressionActivitiesQueryData`, `ProgressionActivityData`,
+  `ListProgressionActivitiesResultData`
+- Excepciones contractuales: `InvalidProgressionActivityQueryException`,
+  `UnsupportedProgressionActivityCapabilityException`
+- UseCase: `Catalog/UseCases/ListProgressionActivitiesUseCase.php`
+- Allowlist + factory: `Catalog/Factories/ModuleActivitySourceFactory.php`
+  (solo `deposits`; `closed_trading_volume` sin adapter no se consulta)
+- Adapter inicial con fixtures:
+  `Sources/Broker/Services/Adapters/FixtureBrokerDepositsActivityAdapter.php`
+- Cursor opaco: `Catalog/Support/ProgressionActivityCursor.php`
+- Evidencia técnica de rechazo inactivo (log + recorder en memoria de proceso;
+  forma durable de BR-MODULE-015 sigue pendiente en BDS):
+  `Catalog/Services/ModuleActivityRejectionEvidence.php`
+- Límites técnicos: `config/modules.php` (`activity.*`)
+- Binding: `ModulesServiceProvider` → `ListProgressionActivitiesPort`
+
+**Progression — fronteras**
+
+- Feature nuevo bajo `app/Features/Progression/`
+- Puerto de salida: `Contracts/Ports/Output/FetchProgressionActivitiesPort.php`
+- Data propia: `FetchProgressionActivitiesQueryData`, `NormalizedActivityData`,
+  `FetchProgressionActivitiesResultData`
+- Adapter: `Services/Adapters/ModulesFetchProgressionActivitiesAdapter.php`
+  (solo Contracts de Modules)
+- Consumo de contratos publicados existentes vía
+  `Services/ProgressionInterFeatureGateways.php`:
+  `ResolvePlanContextPort`, `ResolvePlanSubscriptionContextPort`,
+  `ResolveProgramContextPort`, `ResolveProgramSubscriptionContextPort`,
+  `HasOpenSubscriptionsForPlanPort`
+- Rules: **sin puerto Input publicado** para lectura/evaluación; no se inventó
+  contrato (extensión pendiente documentada en `rules/README.md`). Queda para
+  la sesión de evaluación cuando se defina el puerto especializado.
+- Provider: `ProgressionServiceProvider` registrado en `bootstrap/providers.php`
+
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
+
+- `tests/Feature/Progression/ProgressionActivityPortsIntegrationTest.php`
+  — running (paginación + cursor), paused (consulta sin rechazo), inactive
+  (sin invocar provider + evidencia), gateways inter-feature, cursor opaco
+- Arquitectura actualizada:
+  `tests/Architecture/UserContextArchitectureTest.php` (contratos M3)
+- Resultados: Progression 5 tests / 34 aserciones OK; Modules + Progression +
+  Architecture 31 tests / 149 aserciones OK
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .` (grafo reconstruido)
+
+**Migraciones:** ninguna (sesión 1 no toca persistencia de evaluaciones).
 
 ## Sesión 2 — Núcleo y persistencia
 

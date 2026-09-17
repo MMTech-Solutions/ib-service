@@ -1,6 +1,6 @@
 # Modules M3: contrato de actividad normalizada para Progression
 
-Estado: **Contrato listo; implementación pendiente**
+Estado: **Puerto V1 y primer adapter (`deposits`) implementados con Progression PG1 sesión 1**
 Consumidor real: `Progression PG1`
 Última revisión: 2026-09-17
 
