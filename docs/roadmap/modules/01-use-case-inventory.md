@@ -40,7 +40,7 @@ un endpoint o una transacción con el mismo nombre.
 | Consumo | Obtener módulos seleccionables para un plan | `Plans` recibe solo los objetos contractuales exigidos por su primer caso de uso. | Plans P1 | Aceptado |
 | Consumo | Verificar la condición de un módulo | El consumidor real obtiene la condición necesaria antes de actuar. | Plans P1 | Aceptado |
 | Fuentes | Consultar símbolos admitidos por una fuente | Se obtienen instrumentos normalizados sin revelar el proveedor. | M2 | Pendiente de consumidor |
-| Fuentes | Consultar actividad normalizada | Se obtienen contribuciones o hechos utilizables por otros features. | M3 | Pendiente de consumidor |
+| Fuentes | Consultar actividad normalizada | Se obtienen contribuciones o hechos utilizables por otros features. | M3 | Pendiente; consumidor real: Progression PG1 |
 | Fuentes | Cambiar el proveedor de una capacidad | El consumidor conserva su puerto aunque cambie Broker por Trading Account Service. | M4 | Pendiente de adapter |
 
 `M1` a `M4` son entregas propias de Modules definidas en

@@ -43,7 +43,7 @@ crear una clase, endpoint, contrato o transacción homónimos.
 | Progresión | Recibir actividad durante la fijación | La actividad se excluye definitivamente del progreso y no se recupera al liberar. | Progression | Aceptado; implementación posterior |
 | Progresión | Evaluar después de liberar | El siguiente run usa solo actividad elegible ocurrida después de la liberación. | Progression | Aceptado; implementación posterior |
 | Rewards | Evaluar actividad durante la fijación | Rewards opera con el programa fijado y las reglas vigentes. | Rewards | Aceptado; implementación posterior |
-| Historia | Procesar actividad tardía | Se usa la suscripción, plan y placement vigentes cuando ocurrió la actividad. | Progression / Rewards | Aceptado; política temporal posterior |
+| Historia | Procesar actividad tardía | Se usa la suscripción, plan y placement vigentes cuando ocurrió la actividad; en Progression la tardía queda en evaluación sin puntos. | Progression / Rewards | Aceptado; política cerrada en Progression BDS v0.4 para puntos |
 | Historia | Completar rewards después de terminar | Los rewards originados continúan hasta settlement con su suscripción histórica. | Rewards | Aceptado; implementación posterior |
 
 ## Decisiones cerradas
@@ -76,7 +76,8 @@ crear una clase, endpoint, contrato o transacción homónimos.
 ## Decisiones pendientes
 
 - Tratamiento de suscripciones existentes ante versiones futuras del plan.
-- Ventanas y correcciones temporales de actividad tardía en los consumidores.
+- Política de reversas sobre actividad o contribuciones ya registradas
+  (pertenece a Progression/Rewards; diferida fuera de PG1/PG2).
 
 ## Criterios de salida
 

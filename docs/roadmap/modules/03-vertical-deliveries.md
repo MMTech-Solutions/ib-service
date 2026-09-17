@@ -76,12 +76,14 @@ por módulo y contexto sin exponer IDs internos de Broker al consumidor.
 
 ### M3 — Fuentes de actividad
 
-Introduce capacidades para consultar o consumir actividad normalizada necesaria
-para progresión y recompensas. Los adaptadores concretos pueden usar Broker,
-PropFirm, Copy Trading o Trading Account Service.
+M3 publica para Progression una consulta pull-only paginada y versionada de
+actividad normalizada. El contrato, campos, cursor, operatividad y límites de
+seguridad están definidos en
+[`06-m3-progression-activity-contract.md`](06-m3-progression-activity-contract.md).
 
-Criterio de aceptación preliminar: un consumidor obtiene hechos contractuales
-equivalentes aunque cambie el proveedor externo.
+Criterio de aceptación: Progression obtiene hechos contractuales equivalentes
+para una capability soportada aunque cambie el proveedor externo; un módulo
+inactivo no realiza consulta externa y deja evidencia técnica.
 
 ### M4 — Sustitución y endurecimiento operativo
 

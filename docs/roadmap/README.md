@@ -12,11 +12,12 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | Completado | M1 completado; próximo M2 condicionado a consumidor | 2026-09-11 |
-| [`Plans`](plans/README.md) | P1 completado | Extensión de aprobación requerida por Subscriptions S1 | 2026-09-15 |
-| [`Programs`](programs/README.md) | PR1 y P2 completados | Ladder vivo de umbrales | 2026-09-14 |
-| [`Rules`](rules/README.md) | Completado | R1 y R2 completados | 2026-09-15 |
+| [`Modules`](modules/README.md) | M1 completado | M3: contrato de actividad definido; adapter pendiente | 2026-09-17 |
+| [`Plans`](plans/README.md) | P1 completado | Extensión: período de progresión obligatorio | 2026-09-17 |
+| [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
+| [`Rules`](rules/README.md) | R1 y R2 completados | Extensión: unicidad por métrica/unidad | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 completada | Suscripciones y placement administrativo | 2026-09-16 |
+| [`Progression`](progression/README.md) | Modelo de datos PG1 completado | Plan de implementación preparado; bloqueado por adapter M3 | 2026-09-17 |
 
 ## Secuencia entre features
 
@@ -32,18 +33,21 @@ Plans P1
 Programs PR1
     ↓
 Programs P2  (ladder vivo de umbrales)
-    ├──→ Rules R1 ──────────────┐
-    └──→ Subscriptions/placement ┤──→ Progression
-                                 └──→ Rewards
+    ├──→ Rules R1/R2 ─────────────┐
+    └──→ Subscriptions S1 ────────┤──→ Progression PG1 → PG2
+                                  └──→ Rewards
+Modules M3 (actividad) ───────────→ Progression PG1
 ```
 
 ```mermaid
 flowchart LR
     PR1["Programs PR1 completado"] --> P2["Programs P2: ladder vivo"]
-    P2 --> Rules["Rules R1"]
-    P2 --> Subs["Subscriptions y placement"]
-    Rules --> Progression["Progression"]
+    P2 --> Rules["Rules R1/R2"]
+    P2 --> Subs["Subscriptions S1"]
+    Rules --> Progression["Progression PG1"]
     Subs --> Progression
+    ModulesM3["Modules M3"] --> Progression
+    Progression --> PG2["Progression PG2"]
     Rules --> Rewards["Rewards"]
     Subs --> Rewards
 ```
@@ -64,6 +68,10 @@ flowchart LR
   fijación y salvaguarda de archivo), con permisos, Postman y suite PostgreSQL
   verificados. Progression y Rewards pueden consumir ese contexto sin reabrir
   S1 para contratos especulativos.
+- `Progression` está en descubrimiento: PG1 cubre evaluación y contribuciones
+  con actividad pull-only vía Modules M3; PG2 cubre runs y placement. Las
+  extensiones de período en Plans, umbral `0` en Programs y unicidad por
+  métrica/unidad en Rules se diseñan con ese consumidor.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

@@ -17,7 +17,7 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
-Última revisión: 2026-09-11.
+Última revisión: 2026-09-17.
 
 ## Decisiones confirmadas
 
@@ -92,7 +92,10 @@ posterga hasta que esos contratos y el modelo base estén estables.
 - [`architecture.md`](../../rules/architecture.md)
 - [`integrations.md`](../../rules/integrations.md)
 
-## Próximo paso
+## M3 abierto
 
-[`Plans P1`](../plans/README.md) ya consume el puerto público mínimo. M2 sigue
-condicionado a un consumidor real de `EvaluateActivity`.
+[`Progression PG1`](../progression/README.md) es el consumidor real de M3. El
+contrato se define en [`06-m3-progression-activity-contract.md`](06-m3-progression-activity-contract.md)
+y su implementación queda pendiente del primer adapter de actividad. M2 permanece
+condicionado a un consumidor real de símbolos; no debe asociarse a
+`EvaluateActivity` ni a la actividad normalizada.

@@ -1,7 +1,7 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.13
-- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan; S1 cierra las reglas de solicitud, aprobación, suscripción, placement y fijación administrativa
+- **Versión:** 0.14
+- **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan; S1 cierra las reglas de solicitud, aprobación, suscripción, placement y fijación administrativa; Progression cierra el período obligatorio del plan, el umbral cero del primer programa y el retiro inmediato de módulos
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
 
@@ -30,6 +30,7 @@ Un Plan IB es el producto al que se suscribe un usuario. El plan define qué mó
 | Archivo del plan | Retiro lógico e irreversible en esta fase de un plan inactivo. Conserva identidad, código y vinculaciones. |
 | Desactivación automática del plan | Paso a inactivo cuando un plan activo queda sin módulos operativos porque el catálogo desactivó módulos. |
 | Requisito de aprobación | Configuración del plan que determina si una nueva solicitud necesita decisión administrativa antes de activarse. |
+| Período de progresión | Configuración obligatoria del plan que define la duración y alineación de cada ventana de progresión: `daily`, `weekly` o `monthly`, en UTC. Todo plan la declara desde su alta. |
 | Suscripción | Registro histórico que comienza con la solicitud de adhesión del usuario a un plan y conserva su ciclo completo. |
 | Suscripción abierta | Suscripción `pending` o `active`. Un usuario solo puede tener una abierta globalmente. |
 | Suscripción pendiente | Solicitud que espera aprobación o rechazo administrativo y todavía no tiene placement. |
@@ -78,6 +79,9 @@ erDiagram
 | BR-PLAN-015 | Solo un plan inactivo puede archivarse. El archivo conserva las vinculaciones y no se revierte en esta fase. |
 | BR-PLAN-016 | Un cambio de disponibilidad del plan es atribuible: actor administrativo, o actor de sistema con la causa que lo originó. |
 | BR-PLAN-017 | Cada plan determina si una nueva solicitud de suscripción requiere aprobación administrativa. El valor vigente al solicitar queda asociado a esa solicitud; cambiarlo solo afecta solicitudes posteriores. |
+| BR-PLAN-018 | Cada plan declara un período de progresión obligatorio (`daily`, `weekly` o `monthly`, UTC). No existe plan sin período. |
+| BR-PLAN-019 | Un cambio del período de progresión del plan rige desde la siguiente ventana; la ventana abierta conserva la configuración con la que inició. |
+| BR-PLAN-020 | Retirar un módulo de un plan con suscripciones activas deja de habilitarlo para nueva progresión o recompensa desde el instante del retiro. Las contribuciones y recompensas ya originadas permanecen válidas. |
 | BR-MODULE-001 | IB mantiene un catálogo duradero y autoritativo de los módulos que reconoce. |
 | BR-MODULE-002 | Cada módulo tiene una identidad estable, una disponibilidad, un estado de procesamiento y un conjunto explícito de capacidades implementadas. |
 | BR-MODULE-003 | Una nueva vinculación de plan solo puede referenciar un módulo activo y reconocido por el catálogo. |
@@ -110,6 +114,7 @@ erDiagram
 | BR-PROGRAM-012 | El intervalo efectivo del programa en posición `i` es `[umbral_i, umbral_{i+1})`. El del último programa es `[umbral_n, ∞)`. Los intervalos son contiguos y no se solapan. |
 | BR-PROGRAM-013 | El placement por progresión sitúa al IB en el programa de mayor posición del plan tal que `puntos >= umbral_de_entrada` de ese programa. |
 | BR-PROGRAM-014 | El umbral de entrada es mutable. Un cambio válido del ladder afecta a las evaluaciones posteriores que lo lean; no se conserva un snapshot de umbral por usuario, placement ni run. |
+| BR-PROGRAM-015 | El primer programa del ladder de un plan declara siempre umbral de entrada `0`. |
 | BR-SUBSCRIPTION-001 | Una suscripción activa es requisito para tener placement y para que nueva actividad origine progresión o recompensas. La terminación posterior no invalida actividad, contribuciones o recompensas originadas mientras estaba activa. |
 | BR-SUBSCRIPTION-002 | Cambiar de programa no sustituye ni recrea la suscripción al plan. |
 | BR-SUBSCRIPTION-003 | Un usuario IB puede tener como máximo una suscripción abierta en todo el sistema: `pending` o `active`. Puede conservar cualquier cantidad de suscripciones `rejected` o `ended`. |
@@ -139,7 +144,9 @@ erDiagram
 El ladder no usa un par min-max por programa. Un solo umbral de entrada por
 nivel, ordenado de forma estrictamente creciente, produce el mismo resultado
 sin solapes ni casos especiales en el último programa. El umbral vive en el
-programa y se lee vigente en cada evaluación posterior.
+programa y se lee vigente en cada evaluación posterior. El primer programa
+siempre parte de `0`, de modo que cualquier cantidad de puntos del período —
+incluida cero— tiene un programa objetivo.
 
 Ejemplo con tres programas:
 
@@ -213,6 +220,7 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Plan archivado.
 - Plan publicado.
 - Requisito de aprobación del plan modificado.
+- Período de progresión del plan definido o modificado.
 - Programa creado o editado dentro de un plan.
 - Programas de un plan reordenados.
 - Módulos seleccionados o retirados de un programa.
@@ -237,8 +245,6 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 
 ## Decisiones pendientes
 
-- Política al retirar un módulo de un plan con suscripciones activas.
 - Reglas para publicar una nueva versión del plan y aplicarla a suscripciones existentes.
-- Tratamiento y reanudación de actividad acumulada mientras un cálculo permanece pausado.
 - Forma concreta de evidencia auditable de eventos rechazados por inactividad del módulo (BR-MODULE-015).
 - Restauración de un plan archivado.

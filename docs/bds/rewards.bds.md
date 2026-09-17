@@ -1,19 +1,21 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.5
-- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`
+- **Versión:** 0.6
+- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`; Progression reutiliza el catálogo de reglas para contribuciones por puntos
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
 ## Contexto
 
-CPA, volumen, PnL y futuras modalidades utilizan un pipeline común de evaluación, auditoría y pago. Las diferencias se expresan mediante estrategias y configuraciones versionadas. Una regla puede compartirse entre varios programas del mismo plan sin duplicar su definición.
+CPA, volumen, PnL, puntos de progresión y futuras modalidades utilizan un pipeline común de evaluación y auditoría. Las diferencias se expresan mediante estrategias y configuraciones versionadas. Una regla puede compartirse entre varios programas del mismo plan sin duplicar su definición.
+
+El catálogo de reglas —identidad, versiones publicadas e inmutables y asignaciones históricas— es único para Progression y Rewards. Progression consume estrategias de contribución; Rewards consume estrategias económicas. Ambos conservan la versión aplicada en sus resultados.
 
 ## Glosario
 
 | Concepto | Definición |
 | --- | --- |
-| Regla | Política reutilizable que identifica una estrategia de recompensa. Tiene un nombre único dentro del plan y un slug estable derivado de su nombre inicial. |
+| Regla | Política reutilizable que identifica una estrategia. Tiene un nombre único dentro del plan y un slug estable derivado de su nombre inicial. Puede destinarse a progresión o a recompensa según su tipo de estrategia. |
 | Versión de regla | Configuración publicada e inmutable de una regla. |
 | Asignación | Relación histórica que establece en qué programa, módulo, vigencia y scope aplica una versión de regla. |
 | Asignación activa | Asignación cuyo intervalo de vigencia está abierto (`ends_at` nulo). |
@@ -34,6 +36,7 @@ erDiagram
     PROGRAM_MODULE_SELECTION ||--o{ RULE_ASSIGNMENT : constrains
     RULE_VERSION ||--o{ RULE_ASSIGNMENT : reused_by
     RULE_ASSIGNMENT ||--o{ REWARD : produces
+    RULE_ASSIGNMENT ||--o{ CONTRIBUTION : converts
     CPA_CONTEXT ||--o| REWARD : pays_once
 ```
 
@@ -46,16 +49,17 @@ erDiagram
 | BR-RULE-003 | Una misma versión puede asignarse a múltiples combinaciones de programa y módulo del mismo plan. |
 | BR-RULE-004 | La asignación determina el programa, módulo, vigencia y scope de instrumentos donde aplica la versión. |
 | BR-RULE-005 | Una regla no puede utilizar un módulo que el plan no tenga habilitado. |
-| BR-RULE-006 | Un cambio de versión no altera recompensas ni contextos calculados con versiones anteriores. |
+| BR-RULE-006 | Un cambio de versión no altera recompensas, contribuciones ni contextos calculados con versiones anteriores. |
 | BR-RULE-007 | La configuración de una versión debe ser válida para el tipo de estrategia declarado antes de publicarse. |
 | BR-RULE-008 | Toda regla tiene un nombre obligatorio y único dentro de su plan, una descripción opcional y un slug único derivado del nombre inicial. El slug permanece estable aunque cambie el nombre; una colisión de nombre o slug impide crear o renombrar la regla. |
 | BR-RULE-009 | Publicar una versión no cambia automáticamente las asignaciones existentes. Cada asignación selecciona deliberadamente una versión publicada, y sustituirla por otra versión es una decisión explícita. |
 | BR-RULE-010 | Una asignación solo puede referenciar un módulo habilitado por el plan y seleccionado por el programa receptor. |
 | BR-RULE-011 | Una asignación selecciona una versión publicada de la misma regla. El identificador de versión de una asignación histórica no se modifica. |
 | BR-RULE-012 | La vigencia de una asignación es el intervalo semiabierto `[starts_at, ends_at)`. Una asignación activa tiene `ends_at` nulo. Crear una asignación la activa de inmediato. Un reemplazo o retiro en el mismo instante puede dejar `ends_at = starts_at` (intervalo vacío). |
-| BR-RULE-013 | En un instante dado existe como máximo una asignación activa por combinación de regla, programa y módulo. Distintas reglas pueden coexistir en el mismo programa y módulo. |
+| BR-RULE-013 | En un instante dado existe como máximo una asignación activa por combinación de regla, programa y módulo. Distintas reglas pueden coexistir en el mismo programa y módulo cuando no violan BR-RULE-016. |
 | BR-RULE-014 | Reemplazar la versión de una asignación cierra la vigente (`ends_at = ahora`) y crea otra activa con la nueva versión en la misma operación. Retirar solo cierra la vigente. |
 | BR-RULE-015 | En esta fase el scope de una asignación es siempre `all`. Un scope instrumental explícito requiere el catálogo de instrumentos del módulo. |
+| BR-RULE-016 | Para la estrategia `points_per_quantity_unit`, en un instante dado existe como máximo una asignación activa por combinación de programa, módulo y métrica o unidad. El mismo tipo puede repetirse en ese programa y módulo solo con métricas o unidades distintas. |
 | BR-REWARD-001 | CPA, volumen y PnL comparten la orquestación de contexto, elegibilidad, idempotencia, auditoría y solicitud de pago. |
 | BR-REWARD-002 | Cada estrategia declara los hechos o métricas que necesita; compartir pipeline no obliga a compartir el mismo input. |
 | BR-REWARD-003 | Una recompensa conserva plan, programa, módulo, asignación, versión de regla, inputs y resultado utilizados. |
@@ -97,7 +101,7 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 
 - Estados y transiciones definitivos de una recompensa.
 - Política de reintentos, reversas y compensaciones financieras.
-- Prioridad cuando múltiples reglas coinciden con la misma actividad.
+- Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
 - Capacidades mínimas que cada estrategia exige a los módulos proveedores.
 - Fórmulas definitivas de CPA, volumen, PnL y distribución multinivel.

@@ -85,7 +85,6 @@ flowchart LR
 
 ## Próximo paso
 
-S1 está cerrada. El siguiente avance del dominio depende de Progression y
-Rewards como consumidores reales del contexto de suscripción y placement; no
-ampliar S1 con contratos especulativos ni con elementos declarados fuera de
-alcance.
+S1 está cerrada. Continuar en [`Progression`](../progression/README.md) como
+primer consumidor real del contexto de suscripción y placement; no ampliar S1
+con contratos especulativos ni con elementos declarados fuera de alcance.

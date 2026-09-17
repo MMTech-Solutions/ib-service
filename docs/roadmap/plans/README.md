@@ -1,8 +1,8 @@
 # Roadmap del feature Plans
 
-Estado: **P1 completado; `requires_approval` y puerto de suscripción añadidos (Subscriptions S1 sesión 1)**
+Estado: **P1 completado; extensión de Progression pendiente**
 Dependencia satisfecha: `Modules M1` completado
-Última revisión: 2026-09-15
+Última revisión: 2026-09-17
 
 ## Posición en la secuencia
 
@@ -37,7 +37,18 @@ vigente se fija al solicitar y sus cambios solo afectan solicitudes futuras
 `requires_approval` y el puerto `ResolvePlanSubscriptionContextPort` sin
 alterar de forma incompatible el V1 usado por Programs y Rules.
 
+## Extensión requerida por Progression
+
+Progression exige que cada plan declare un **período de progresión**
+obligatorio (`daily`, `weekly` o `monthly`, UTC). El campo es `NOT NULL` desde
+el alta: no existe plan sin período ni semántica de ausencia. Un cambio rige
+desde la siguiente ventana (`BR-PLAN-018`, `BR-PLAN-019`).
+
+Esta extensión aún no está implementada; se diseña junto con
+[`Progression`](../progression/README.md) y no reabre P1 como entrega
+independiente.
+
 ## Próximo paso
 
-Ninguno dentro de Plans para la sesión 1 de Subscriptions. Continuar el
-resto de S1 desde el roadmap de Subscriptions.
+Registrar e implementar el período obligatorio del plan cuando Progression
+avance a modelo de dominio o a la vertical que lo consuma.

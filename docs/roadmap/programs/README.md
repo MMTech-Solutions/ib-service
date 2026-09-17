@@ -1,8 +1,8 @@
 # Roadmap del feature Programs
 
-Estado: **PR1 y P2 completados**
+Estado: **PR1 y P2 completados; extensión de Progression pendiente**
 Dependencia satisfecha: `Plans P1` completado
-Última revisión: 2026-09-14
+Última revisión: 2026-09-17
 
 ## Posición en la secuencia
 
@@ -55,6 +55,15 @@ Umbral de entrada vivo y validación atómica del ladder del plan.
 - `BR-PROGRAM-003` y `BR-PROGRAM-010`–`014`: ladder vivo, umbral mutable.
 - PR1 origina `ResolvePlanContextPort` y `PlanContextData` V1 en `Plans`.
 
+## Extensión requerida por Progression
+
+`BR-PROGRAM-015` exige que el primer programa del ladder declare siempre
+umbral de entrada `0`. P2 valida umbrales no negativos y estrictamente
+crecientes, pero **el código vigente aún no impone el cero del primer
+nivel**. La alineación se realizará junto con
+[`Progression`](../progression/README.md); no se presenta P2 como ya
+cumplido respecto a esta regla.
+
 ## Fuera de P2
 
 - Publicación o versionado de programas o planes.
@@ -65,5 +74,6 @@ Umbral de entrada vivo y validación atómica del ladder del plan.
 
 ## Próximo paso
 
-Ninguno dentro de Programs. El roadmap continúa en Rules R1 y en
-suscripciones/placement, que leen el ladder vivo.
+Alinear la validación del ladder con `BR-PROGRAM-015` cuando Progression
+avance. Mientras tanto, el roadmap continúa en Rules y Subscriptions ya
+cerrados, y en Progression.

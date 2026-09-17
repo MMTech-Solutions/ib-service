@@ -35,13 +35,16 @@ sustituir los BDS ni las reglas técnicas.
 - [`modules/`](roadmap/modules/README.md): fase inicial del catálogo de módulos,
   capacidades y control operativo.
 - [`plans/`](roadmap/plans/README.md): primer consumidor inter-feature de
-  Modules; P1 completado y extensión de aprobación requerida por Subscriptions.
+  Modules; P1 completado; extensión de período de progresión pendiente.
 - [`programs/`](roadmap/programs/README.md): PR1 y P2 completados (catálogo
-  administrativo y ladder vivo de umbrales).
+  administrativo y ladder vivo de umbrales); extensión de umbral `0` pendiente.
 - [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,
-  versiones y asignaciones históricas).
+  versiones y asignaciones históricas); extensión de unicidad por métrica
+  pendiente.
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
   (suscripciones, placement, fijación y salvaguarda de archivo).
+- [`progression/`](roadmap/progression/README.md): inventario y modelo de
+  dominio PG1 completados; entregas verticales pendientes (PG2 diferido).
 
 ## Jerarquía de autoridad
 

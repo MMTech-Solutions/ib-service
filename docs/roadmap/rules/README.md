@@ -1,8 +1,8 @@
 # Roadmap del feature Rules
 
-Estado: **R1 y R2 completados**
+Estado: **R1 y R2 completados; extensión de Progression pendiente**
 Dependencia satisfecha: `Programs P2` completado
-Última revisión: 2026-09-15
+Última revisión: 2026-09-17
 
 ## Posición en la secuencia
 
@@ -50,14 +50,26 @@ scope `all` y vigencia inmediata.
 - R2 origina `ResolveProgramContextPort` para validar programa y módulo
   seleccionado.
 
+## Extensión requerida por Progression
+
+[`Progression`](../progression/README.md) es el primer consumidor real de
+lectura y evaluación de las asignaciones ya implementadas. Además,
+`BR-RULE-016` / `BR-POINTS-016` exigen como máximo una asignación activa
+`points_per_quantity_unit` por combinación de programa, módulo y métrica o
+unidad. R2 garantiza hoy una asignación activa por regla + programa + módulo,
+pero **aún no valida la unicidad por métrica/unidad** entre reglas distintas
+del mismo tipo. Esa extensión se diseña con Progression; no reabre R2 como
+entrega independiente.
+
 ## Fuera de R2
 
-- Evaluación, recompensas, CPA, Progression y Kafka.
+- Evaluación, recompensas, CPA y Kafka (la evaluación de progresión pertenece
+  a Progression).
 - Scope instrumental explícito (Modules M2).
-- Precedencia entre reglas concurrentes.
+- Precedencia entre reglas de recompensa concurrentes.
 - Estrategias distintas de `points_per_quantity_unit`.
 
 ## Próximo paso
 
-Ninguno dentro de Rules. El roadmap continúa en Subscriptions/placement y,
-cuando ambos estén listos, en Progression y Rewards.
+Exponer el puerto de lectura/evaluación y la unicidad por métrica/unidad
+junto con Progression PG1. Subscriptions S1 ya está cerrada.
