@@ -17,7 +17,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
-| [`Progression`](progression/README.md) | Sesiones 1–2 y P0 completadas | PG1: sesión 3 pendiente | 2026-09-17 |
+| [`Progression`](progression/README.md) | Sesiones 1–4 y P0 completadas | PG1: sesión 5 pendiente | 2026-09-17 |
 
 ## Secuencia entre features
 

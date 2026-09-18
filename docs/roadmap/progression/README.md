@@ -1,10 +1,10 @@
 # Roadmap del feature Progression
 
-Estado: **Sesiones 1–2 y P0 completadas; sesión 3 pendiente**
+Estado: **Sesiones 1–4 y P0 completadas; sesión 5 pendiente**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
-`Modules M3` (contrato + adapter deposits), Progression sesiones 1–2, Rules P0.1,
+`Modules M3` (contrato + adapter deposits), Progression sesiones 1–4, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
-Dependencia de desbloqueo de sesión 3: ninguna (P0 completa)
+Dependencia de desbloqueo de sesión 5: ninguna (sesiones 1–4 completas)
 Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
 Última revisión: 2026-09-17
 
@@ -43,7 +43,7 @@ excluida) y contribuciones auditables. No ejecuta runs ni mueve placement.
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para PG1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para PG1 |
 | 4. Modelo de datos | [`04-pg1-data-model.md`](04-pg1-data-model.md) | Completado para PG1 |
-| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–2 y P0 Completadas; sesión 3 Pendiente |
+| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–4 y P0 Completadas; sesión 5 Pendiente |
 
 ## Segunda entrega: PG2
 
@@ -113,7 +113,6 @@ de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
 
 ## Próximo paso
 
-Ejecutar la sesión 3 (evaluación pull-only) según
-[`05-pg1-implementation.md`](05-pg1-implementation.md), consumiendo los puertos
-P0.1–P0.3 ya publicados. No declarar PG1 completada hasta cerrar las sesiones
-3–5.
+Ejecutar la sesión 5 (cierre integral) según
+[`05-pg1-implementation.md`](05-pg1-implementation.md). No declarar PG1
+completada hasta cerrar la sesión 5.

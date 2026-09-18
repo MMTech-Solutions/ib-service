@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Contracts\Repositories;
 
+use App\Features\Progression\DTOs\ActivityEvaluationAggregatePageData;
+use App\Features\Progression\DTOs\ActivityEvaluationListQueryData;
 use App\Features\Progression\Models\ActivityEvaluation;
 use Closure;
 
@@ -18,6 +20,8 @@ interface ActivityEvaluationRepositoryInterface
         string $sourceActivityId,
         string $beneficiaryExternalUserId,
     ): ?ActivityEvaluation;
+
+    public function paginate(ActivityEvaluationListQueryData $query): ActivityEvaluationAggregatePageData;
 
     /**
      * Persiste de forma atómica una evaluación y su contribución opcional.

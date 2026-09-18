@@ -1318,6 +1318,57 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Progression",
+                    "item": [
+                        {
+                            "name": "List activity evaluations",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/activity-evaluations?page=1&per_page=100&plan_id={{PLAN_ID}}&subscription_id={{SUBSCRIPTION_ID}}&status=excluded&exclusion_reason=no_applicable_rule&occurred_at_from=2026-09-17T00:00:00Z&occurred_at_to=2026-09-17T23:59:59Z",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "activity-evaluations"],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "plan_id", "value": "{{PLAN_ID}}", "description": "Filter by plan UUID.", "disabled": true},
+                                        {"key": "subscription_id", "value": "{{SUBSCRIPTION_ID}}", "description": "Filter by subscription UUID.", "disabled": true},
+                                        {"key": "status", "value": "excluded", "description": "Filter by evaluation status: accepted or excluded.", "disabled": true},
+                                        {"key": "exclusion_reason", "value": "no_applicable_rule", "description": "Filter by closed exclusion reason catalog.", "disabled": true},
+                                        {"key": "occurred_at_from", "value": "2026-09-17T00:00:00Z", "description": "Inclusive lower bound for occurred_at.", "disabled": true},
+                                        {"key": "occurred_at_to", "value": "2026-09-17T23:59:59Z", "description": "Inclusive upper bound for occurred_at.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on the admin_panel surface. Returns activity evaluations as data[] with nested contribution when accepted. Filters and pagination live in meta. exclusion_explanation is generated for excluded rows and is never persisted."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show activity evaluation",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/activity-evaluations/{{ACTIVITY_EVALUATION_ID}}",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "activity-evaluations", "{{ACTIVITY_EVALUATION_ID}}"]
+                                },
+                                "description": "Requires ib.progression.read. Returns one evaluation with contribution when accepted, or exclusion_reason and generated exclusion_explanation when excluded. No customer surface."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
@@ -1447,6 +1498,11 @@
         },
         {
             "key": "MODULE_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "ACTIVITY_EVALUATION_ID",
             "value": "",
             "type": "string"
         },

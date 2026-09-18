@@ -1,12 +1,12 @@
 # Progression PG1: plan de implementación
 
-Estado: **Sesiones 1–3 y P0.1–P0.3 completadas; sesiones 4–5 pendientes**
+Estado: **Sesiones 1–4 y P0.1–P0.3 completadas; sesión 5 pendiente**
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
 [`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
 primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1;
 núcleo y persistencia de evaluaciones/contribuciones en la sesión 2;
 P0.1 (Rules), P0.2 (Subscriptions) y P0.3 (Plans) completadas; sesión 3
-(evaluación pull-only) completada
+(evaluación pull-only) completada; sesión 4 (consulta administrativa) completada
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -98,7 +98,7 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 | 1 | M3 y fronteras inter-feature | Completada | Primer adapter M3 | 2026-09-17 — ver Evidencia sesión 1 |
 | 2 | Núcleo y persistencia | Completada | Sesión 1 | 2026-09-17 — ver Evidencia sesión 2 |
 | 3 | Evaluación pull-only | Completada | P0 y sesiones 1–2 | 2026-09-17 — ver Evidencia sesión 3 |
-| 4 | Consulta administrativa | Pendiente | Sesiones 1 a 3 | — |
+| 4 | Consulta administrativa | Completada | Sesiones 1 a 3 | 2026-09-17 — ver Evidencia sesión 4 |
 | 5 | Cierre integral | Pendiente | Sesiones 1 a 4 | — |
 
 ## Prerrequisito P0 — Contextos proveedores de Progression
@@ -474,7 +474,7 @@ Rewards, Kafka como vía primaria, `late_activity` efectivo (PG2).
 
 ## Sesión 4 — Consulta administrativa
 
-Estado: **Pendiente**
+Estado: **Completada**
 
 - Exponer listado y detalle administrativos de evaluaciones y contribuciones,
   con paginación, filtros `plan_id`, `subscription_id`, estado, motivo y rango
@@ -491,7 +491,61 @@ de aceptaciones y exclusiones; una identidad customer no puede consultarlos.
 
 ### Evidencia
 
-Pendiente. Al cerrar, registrar archivos, migraciones, contratos y resultados de pruebas reales.
+Fecha: 2026-09-17
+
+**Dependencias verificadas**
+
+- Sesiones 1–3 `Completada` (evidencia previa en este documento).
+- P0.1–P0.3 `Completada`.
+- `.ai/rules/`: no existe en el repositorio.
+
+**HTTP y autorización**
+
+- Rutas admin:
+  - `GET /api/ib/v1/admin/activity-evaluations`
+  - `GET /api/ib/v1/admin/activity-evaluations/{activity_evaluation}`
+- Permiso: `AdminProgressionPermission::Read` = `ib.progression.read`
+  (`admin_panel` únicamente; sin superficie customer).
+- FormRequests / Commands / Controllers / UseCases bajo
+  `app/Features/Progression/Http/V1/` y `UseCases/`.
+- Presentación: `Actions/PresentActivityEvaluationAction` +
+  `Support/ExclusionExplanation` (textos del catálogo cerrado de
+  `03-vertical-deliveries.md`; no persistidos).
+- Envelope: `data` es array/objeto; `meta.filters` y `meta.pagination`.
+
+**Persistencia de lectura**
+
+- `ActivityEvaluationRepositoryInterface::paginate(...)`
+- Implementaciones InMemory y PostgreSQL (orden
+  `occurred_at DESC, id DESC`; filtros
+  `plan_id`, `subscription_id`, `status`, `exclusion_reason`,
+  `occurred_at_from` / `occurred_at_to`).
+- `ActivityEvaluationNotFoundException::forId(...)`.
+
+**RBAC / Postman**
+
+- `LocalRbacSnapshotSeeder` y `InteractsWithAdminGateway` incluyen
+  `ib.progression.read`.
+- Postman: carpeta `Administration/Progression` (List / Show) + variable
+  `ACTIVITY_EVALUATION_ID`.
+- `php artisan route:list --path=activity-evaluations --except-vendor`: 2 rutas.
+- Colección Postman: JSON válido.
+
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
+
+- `tests/Feature/Progression/ActivityEvaluationEndpointTest.php`
+  (listado, filtros, show accepted/excluded, 404, auth admin, rechazo customer).
+- Regresión Progression Feature + Unit: **38 tests / 282 aserciones OK**.
+- Contract InMemory/PostgreSQL: OK (incluye `paginate` en el contrato de
+  interfaz).
+- `LocalRbacSnapshotSeederTest`: OK.
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .`
+
+**Migraciones:** ninguna (reutiliza tablas de sesión 2).
+
+**Fuera de alcance (sesión 4):** runs, placement automático, FX, Rewards,
+Kafka, sesión 5 (cierre integral), PG2.
 
 ## Sesión 5 — Cierre integral
 

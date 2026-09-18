@@ -25,7 +25,7 @@ trait InteractsWithAdminGateway
             [
                 'message_key' => 'snapshot-'.self::AUTHORIZED_SUB,
                 'rev' => 1,
-                'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage'], JSON_THROW_ON_ERROR),
+                'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage', 'ib.progression.read'], JSON_THROW_ON_ERROR),
                 'roles' => '[]',
                 'created_at' => now(),
                 'updated_at' => now(),

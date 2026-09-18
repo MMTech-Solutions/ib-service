@@ -8,6 +8,15 @@ use App\Support\Exceptions\ApiException;
 
 final class ActivityEvaluationNotFoundException extends ApiException
 {
+    public static function forId(string $id): self
+    {
+        return new self(
+            'PROGRESSION_EVALUATION_NOT_FOUND',
+            "Activity evaluation [{$id}] was not found.",
+            404,
+        );
+    }
+
     public static function forIdempotencyKey(
         string $moduleId,
         string $sourceActivityId,

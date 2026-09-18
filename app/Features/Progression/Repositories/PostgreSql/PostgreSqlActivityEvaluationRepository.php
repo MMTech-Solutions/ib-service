@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Features\Progression\Repositories\PostgreSql;
 
 use App\Features\Progression\Contracts\Repositories\ActivityEvaluationRepositoryInterface;
+use App\Features\Progression\DTOs\ActivityEvaluationAggregatePageData;
+use App\Features\Progression\DTOs\ActivityEvaluationListQueryData;
 use App\Features\Progression\Enums\ContributionScopeType;
 use App\Features\Progression\Enums\ContributionStrategyType;
 use App\Features\Progression\Enums\EvaluationStatus;
@@ -52,6 +54,45 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
             ->first();
 
         return $record === null ? null : $this->hydrate($record);
+    }
+
+    public function paginate(ActivityEvaluationListQueryData $query): ActivityEvaluationAggregatePageData
+    {
+        $builder = ActivityEvaluationRecord::query()
+            ->with('contribution')
+            ->when($query->planId !== null, fn ($builder) => $builder->where('plan_id', $query->planId))
+            ->when(
+                $query->subscriptionId !== null,
+                fn ($builder) => $builder->where('subscription_id', $query->subscriptionId),
+            )
+            ->when($query->status !== null, fn ($builder) => $builder->where('status', $query->status->value))
+            ->when(
+                $query->exclusionReason !== null,
+                fn ($builder) => $builder->where('exclusion_reason', $query->exclusionReason->value),
+            )
+            ->when(
+                $query->occurredAtFrom !== null,
+                fn ($builder) => $builder->where('occurred_at', '>=', $query->occurredAtFrom),
+            )
+            ->when(
+                $query->occurredAtTo !== null,
+                fn ($builder) => $builder->where('occurred_at', '<=', $query->occurredAtTo),
+            )
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id');
+
+        $paginator = $builder->paginate($query->perPage, ['*'], 'page', $query->page);
+        $evaluations = collect($paginator->items())
+            ->map(fn (ActivityEvaluationRecord $record): ActivityEvaluation => $this->hydrate($record))
+            ->all();
+
+        return new ActivityEvaluationAggregatePageData(
+            evaluations: $evaluations,
+            currentPage: $paginator->currentPage(),
+            perPage: $paginator->perPage(),
+            total: $paginator->total(),
+            lastPage: $paginator->lastPage(),
+        );
     }
 
     public function record(ActivityEvaluation $evaluation): ActivityEvaluation

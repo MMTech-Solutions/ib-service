@@ -22,6 +22,8 @@ use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
+use App\Features\Progression\Http\V1\Controllers\ListActivityEvaluationsController;
+use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ShowRuleAssignmentController;
@@ -114,6 +116,10 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.subscriptions.placement.fix');
                 Route::post('subscriptions/{subscription}/placement/release', ReleaseSubscriptionPlacementController::class)
                     ->name('ib.v1.admin.subscriptions.placement.release');
+                Route::get('activity-evaluations', ListActivityEvaluationsController::class)
+                    ->name('ib.v1.admin.activity-evaluations.index');
+                Route::get('activity-evaluations/{activity_evaluation}', ShowActivityEvaluationController::class)
+                    ->name('ib.v1.admin.activity-evaluations.show');
             });
 
         Route::prefix('customer')
