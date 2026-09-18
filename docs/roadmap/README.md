@@ -17,7 +17,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
-| [`Progression`](progression/README.md) | Sesiones 1–4 y P0 completadas | PG1: sesión 5 pendiente | 2026-09-17 |
+| [`Progression`](progression/README.md) | PG1 Completada | PG2: runs y placement (pendiente de planificación) | 2026-09-17 |
 
 ## Secuencia entre features
 
@@ -68,10 +68,8 @@ flowchart LR
   fijación y salvaguarda de archivo), con permisos, Postman y suite PostgreSQL
   verificados. Progression y Rewards pueden consumir ese contexto sin reabrir
   S1 para contratos especulativos.
-- `Progression` tiene sesiones 1–2 de PG1 completadas y P0.1 (Rules) cerrado.
-  La sesión 3 sigue bloqueada por P0.2 (Subscriptions) y P0.3 (Plans). PG2
-  cubre runs y placement. El umbral `0` en Programs permanece como extensión
-  aparte.
+- `Progression` PG1 está completada (sesiones 1–5 y P0). PG2 cubre runs y
+  placement. El umbral `0` en Programs permanece como extensión aparte.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

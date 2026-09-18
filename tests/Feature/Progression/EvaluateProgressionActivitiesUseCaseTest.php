@@ -23,6 +23,7 @@ use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPor
 use App\Features\Rules\Services\Strategies\PointsPerQuantityUnitStrategy;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Support\InteractsWithAdminGateway;
 use Tests\Support\InteractsWithCustomerGateway;
@@ -302,6 +303,93 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame(ExclusionReason::ModuleNotSelected, $result->evaluations[0]->exclusionReason);
         self::assertSame($fixture['subscription_id'], $result->evaluations[0]->subscriptionId);
         self::assertSame($fixture['program_id'], $result->evaluations[0]->programId);
+
+        CarbonImmutable::setTestNow();
+    }
+
+    public function test_plan_reactivation_does_not_backfill_inactive_period_and_does_not_mutate_placement(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
+
+        $placementBefore = DB::table('subscription_placements')
+            ->where('subscription_id', $fixture['subscription_id'])
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->first();
+        self::assertNotNull($placementBefore);
+
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T14:00:00.000000Z'));
+        $plan = $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$fixture['plan_id']}")->assertOk()->json('data');
+        $deactivated = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/deactivate", [
+            'reason' => 'Halt progression',
+            'lock_version' => $plan['lock_version'],
+        ])->assertOk()->json('data');
+
+        $this->stubActivities([$this->activity(
+            moduleId: $fixture['module_id'],
+            sourceActivityId: 'while-inactive',
+            beneficiary: $this->customerSub,
+            quantity: '10',
+            unit: 'usd',
+            occurredAt: '2026-09-10T14:30:00.000000Z',
+        )]);
+        $skipped = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+        self::assertSame(EvaluateProgressionActivitiesResult::OUTCOME_SKIPPED_PLAN_INACTIVE, $skipped->outcome);
+        self::assertSame([], $skipped->evaluations);
+
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T15:00:00.000000Z'));
+        $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/activate", [
+            'reason' => 'Resume progression',
+            'lock_version' => $deactivated['lock_version'],
+        ])->assertOk();
+
+        $this->stubActivities([$this->activity(
+            moduleId: $fixture['module_id'],
+            sourceActivityId: 'while-inactive',
+            beneficiary: $this->customerSub,
+            quantity: '10',
+            unit: 'usd',
+            occurredAt: '2026-09-10T14:30:00.000000Z',
+        )]);
+        $backfill = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+        self::assertSame(EvaluateProgressionActivitiesResult::OUTCOME_EVALUATED, $backfill->outcome);
+        self::assertCount(1, $backfill->evaluations);
+        self::assertTrue($backfill->evaluations[0]->isExcluded());
+        self::assertSame(ExclusionReason::PlanInactive, $backfill->evaluations[0]->exclusionReason);
+        self::assertNull($backfill->evaluations[0]->contribution);
+
+        $this->stubActivities([$this->activity(
+            moduleId: $fixture['module_id'],
+            sourceActivityId: 'after-reactivation',
+            beneficiary: $this->customerSub,
+            quantity: '100',
+            unit: 'usd',
+            occurredAt: '2026-09-10T15:30:00.000000Z',
+        )]);
+        $accepted = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute(new EvaluateProgressionActivitiesData(
+            plan_id: $fixture['plan_id'],
+            module_id: $fixture['module_id'],
+            occurred_from: '2026-09-10T15:00:00.000000Z',
+            occurred_until: '2026-09-11T00:00:00.000000Z',
+        ));
+        self::assertSame(EvaluateProgressionActivitiesResult::OUTCOME_EVALUATED, $accepted->outcome);
+        self::assertCount(1, $accepted->evaluations);
+        self::assertTrue($accepted->evaluations[0]->isAccepted());
+        self::assertSame('10', $accepted->evaluations[0]->contribution?->points->value());
+
+        $placementAfter = DB::table('subscription_placements')
+            ->where('subscription_id', $fixture['subscription_id'])
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->first();
+        self::assertNotNull($placementAfter);
+        self::assertSame($placementBefore->id, $placementAfter->id);
+        self::assertSame($placementBefore->program_id, $placementAfter->program_id);
+        self::assertSame($placementBefore->is_fixed, $placementAfter->is_fixed);
+        self::assertSame(
+            1,
+            DB::table('subscription_placements')->where('subscription_id', $fixture['subscription_id'])->count(),
+        );
 
         CarbonImmutable::setTestNow();
     }

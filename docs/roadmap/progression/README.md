@@ -1,10 +1,10 @@
 # Roadmap del feature Progression
 
-Estado: **Sesiones 1–4 y P0 completadas; sesión 5 pendiente**
+Estado: **PG1 Completada**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
-`Modules M3` (contrato + adapter deposits), Progression sesiones 1–4, Rules P0.1,
+`Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
-Dependencia de desbloqueo de sesión 5: ninguna (sesiones 1–4 completas)
+Dependencia de desbloqueo: ninguna
 Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
 Última revisión: 2026-09-17
 
@@ -43,7 +43,7 @@ excluida) y contribuciones auditables. No ejecuta runs ni mueve placement.
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para PG1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para PG1 |
 | 4. Modelo de datos | [`04-pg1-data-model.md`](04-pg1-data-model.md) | Completado para PG1 |
-| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–4 y P0 Completadas; sesión 5 Pendiente |
+| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | PG1 Completada (sesiones 1–5 y P0) |
 
 ## Segunda entrega: PG2
 
@@ -113,6 +113,6 @@ de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
 
 ## Próximo paso
 
-Ejecutar la sesión 5 (cierre integral) según
-[`05-pg1-implementation.md`](05-pg1-implementation.md). No declarar PG1
-completada hasta cerrar la sesión 5.
+PG1 está cerrada. Planificar PG2 (`06-second-delivery-planning.md` y el ciclo
+07–11) para runs por plan/ventana y placement automático. No reabrir PG1 salvo
+un defecto que bloquee PG2.

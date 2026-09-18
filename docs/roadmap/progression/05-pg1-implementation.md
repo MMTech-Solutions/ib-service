@@ -1,12 +1,13 @@
 # Progression PG1: plan de implementación
 
-Estado: **Sesiones 1–4 y P0.1–P0.3 completadas; sesión 5 pendiente**
+Estado: **PG1 Completada** (sesiones 1–5 y P0.1–P0.3)
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
 [`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
 primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1;
 núcleo y persistencia de evaluaciones/contribuciones en la sesión 2;
 P0.1 (Rules), P0.2 (Subscriptions) y P0.3 (Plans) completadas; sesión 3
-(evaluación pull-only) completada; sesión 4 (consulta administrativa) completada
+(evaluación pull-only) completada; sesión 4 (consulta administrativa) completada;
+sesión 5 (cierre integral) completada
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -99,7 +100,7 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 | 2 | Núcleo y persistencia | Completada | Sesión 1 | 2026-09-17 — ver Evidencia sesión 2 |
 | 3 | Evaluación pull-only | Completada | P0 y sesiones 1–2 | 2026-09-17 — ver Evidencia sesión 3 |
 | 4 | Consulta administrativa | Completada | Sesiones 1 a 3 | 2026-09-17 — ver Evidencia sesión 4 |
-| 5 | Cierre integral | Pendiente | Sesiones 1 a 4 | — |
+| 5 | Cierre integral | Completada | Sesiones 1 a 4 | 2026-09-17 — ver Evidencia sesión 5 |
 
 ## Prerrequisito P0 — Contextos proveedores de Progression
 
@@ -549,7 +550,7 @@ Kafka, sesión 5 (cierre integral), PG2.
 
 ## Sesión 5 — Cierre integral
 
-Estado: **Pendiente**
+Estado: **Completada**
 
 - Ejecutar la suite contractual contra memoria y PostgreSQL, tests de casos de
   uso, HTTP, autorización, paginación y Postman JSON válido.
@@ -560,8 +561,66 @@ Estado: **Pendiente**
 
 ### Evidencia
 
-Pendiente. Al cerrar, registrar las suites completas, la validación de Postman,
-Pint, Graphify y la evidencia que permite cambiar el estado global de PG1.
+Fecha: 2026-09-17
+
+**Dependencias verificadas**
+
+- Sesiones 1–4 `Completada` (evidencia previa en este documento).
+- P0.1–P0.3 `Completada`.
+- `.ai/rules/`: no existe en el repositorio.
+
+**Pruebas nuevas de cierre**
+
+- `tests/Feature/Progression/ProgressionConcurrencyAndClosureTest.php`
+  — carrera real de idempotencia con segunda conexión `pgsql_racing` que
+    sostiene el índice único sin commit; el `record()` concurrente recibe
+    timeout de lock; tras el commit del ganador, el reintento canónico no
+    recalcula ni duplica evaluación/contribución.
+  — ausencia de tablas `progression_runs`, `progression_run_results` y
+    `progression_window_closures` (PG1 sin runs).
+- `EvaluateProgressionActivitiesUseCaseTest::test_plan_reactivation_does_not_backfill_inactive_period_and_does_not_mutate_placement`
+  — plan inactivo → `skipped_plan_inactive` sin evaluaciones;
+  — tras reactivar, actividad ocurrida en la ventana inactiva →
+    `excluded`/`plan_inactive` sin contribución (sin backfill);
+  — actividad posterior a la reactivación → `accepted` con puntos;
+  — `subscription_placements` inalterado (sin mutación automática de placement).
+
+**Cobertura revalidada (sesiones 1–4)**
+
+- Contract InMemory + PostgreSQL (`ActivityEvaluationRepositoryContract`).
+- Constraints PostgreSQL: rollback atómico de contribución fallida, colisión
+  canónica, FKs/CHECKs (`PostgreSqlActivityEvaluationConstraintTest`).
+- Evaluación pull-only: aceptación idempotente, catálogo de exclusiones, pausa
+  (`deferred_module_paused` / `window_closed_after_pause`), plan inactivo.
+- HTTP admin: listado/filtros/show, permiso `ib.progression.read`, rechazo
+  customer (`ActivityEvaluationEndpointTest`).
+- Puertos M3 / gateways (`ProgressionActivityPortsIntegrationTest`).
+
+**Postman y rutas**
+
+- `php artisan route:list --path=activity-evaluations --except-vendor`: 2 rutas.
+- `ib-service.postman_collection.json`: JSON válido; carpeta
+  `Administration/Progression` presente.
+
+**Resultados reales (PostgreSQL `_testing` / PHPUnit)**
+
+- Progression Feature + Unit: **41 tests / 324 aserciones OK**.
+- Constraint + RBAC afín acotado: **11 tests / 31 aserciones OK**.
+- Pint: `vendor/bin/pint --dirty --format agent` → passed.
+- Graphify: `graphify update .` (grafo reconstruido).
+
+**Migraciones:** ninguna (sesión 5 no altera el esquema de PG1).
+
+**Archivos tocados en la sesión 5**
+
+- `tests/Feature/Progression/ProgressionConcurrencyAndClosureTest.php` (nuevo)
+- `tests/Feature/Progression/EvaluateProgressionActivitiesUseCaseTest.php`
+- `docs/roadmap/progression/05-pg1-implementation.md`
+- `docs/roadmap/progression/README.md`
+- `docs/roadmap/README.md`
+
+**Fuera de alcance (sesión 5 / PG1):** runs, placement automático, FX, Rewards,
+Kafka como vía primaria, PG2.
 
 ## Directiva reutilizable para Cursor Auto
 
