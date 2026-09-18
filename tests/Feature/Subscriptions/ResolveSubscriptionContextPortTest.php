@@ -181,6 +181,7 @@ final class ResolveSubscriptionContextPortTest extends TestCase
             'code' => $code,
             'name' => ucfirst($code),
             'module_ids' => [$this->brokerId()],
+            'progression_period' => 'monthly',
             'requires_approval' => $requiresApproval,
         ])->assertCreated()->json('data');
 

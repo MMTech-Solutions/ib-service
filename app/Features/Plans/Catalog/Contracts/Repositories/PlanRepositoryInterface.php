@@ -29,6 +29,8 @@ interface PlanRepositoryInterface
 
     public function appendOperationalChange(PlanOperationalChange $change): void;
 
+    public function findLastOperationalChangeAtOrBefore(string $planId, string $occurredAt): ?PlanOperationalChange;
+
     public function paginate(PlanListQueryData $query): PlanAggregatePageData;
 
     public function isModuleReferenced(string $moduleId): bool;

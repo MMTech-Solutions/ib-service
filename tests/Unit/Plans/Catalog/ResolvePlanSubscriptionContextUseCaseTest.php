@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Plans\Catalog;
 
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Models\Plan;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPlanRepository;
@@ -31,6 +32,7 @@ final class ResolvePlanSubscriptionContextUseCaseTest extends TestCase
             moduleIds: [],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $now,
+            progressionPeriod: PlanProgressionPeriod::Monthly,
             requiresApproval: false,
         );
         $plan->isActive = true;
@@ -60,6 +62,7 @@ final class ResolvePlanSubscriptionContextUseCaseTest extends TestCase
             moduleIds: [],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $now,
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
         $archived = Plan::create(
             id: (string) Str::uuid7(),
@@ -69,6 +72,7 @@ final class ResolvePlanSubscriptionContextUseCaseTest extends TestCase
             moduleIds: [],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $now,
+            progressionPeriod: PlanProgressionPeriod::Weekly,
             requiresApproval: true,
         );
         $archived->archive($now);

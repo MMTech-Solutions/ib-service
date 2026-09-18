@@ -13,11 +13,11 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | M1 completado | M3: contrato de actividad definido; adapter pendiente | 2026-09-17 |
-| [`Plans`](plans/README.md) | P1 completado | Extensión: período de progresión obligatorio | 2026-09-17 |
+| [`Plans`](plans/README.md) | P1 + P0.3 completados | Extensión Progression publicada | 2026-09-17 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
-| [`Subscriptions`](subscriptions/README.md) | S1 completada | Extensión P0.2: contexto en `occurred_at` pendiente | 2026-09-16 |
-| [`Progression`](progression/README.md) | Sesiones 1–2 completadas; P0.1 hecha | PG1: P0.2–P0.3 y sesión 3 bloqueados | 2026-09-17 |
+| [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
+| [`Progression`](progression/README.md) | Sesiones 1–2 y P0 completadas | PG1: sesión 3 pendiente | 2026-09-17 |
 
 ## Secuencia entre features
 

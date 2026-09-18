@@ -104,6 +104,36 @@ final class InMemoryPlanRepository implements PlanRepositoryInterface
         $this->changes[] = unserialize(serialize($change), ['allowed_classes' => true]);
     }
 
+    public function findLastOperationalChangeAtOrBefore(string $planId, string $occurredAt): ?PlanOperationalChange
+    {
+        $matches = array_values(array_filter(
+            $this->changes,
+            static fn (PlanOperationalChange $change): bool => $change->planId === $planId
+                && $change->occurredAt <= $occurredAt,
+        ));
+
+        if ($matches === []) {
+            return null;
+        }
+
+        usort(
+            $matches,
+            static function (PlanOperationalChange $a, PlanOperationalChange $b): int {
+                $byTime = $b->occurredAt <=> $a->occurredAt;
+                if ($byTime !== 0) {
+                    return $byTime;
+                }
+
+                return $b->id <=> $a->id;
+            },
+        );
+
+        /** @var PlanOperationalChange $selected */
+        $selected = unserialize(serialize($matches[0]), ['allowed_classes' => true]);
+
+        return $selected;
+    }
+
     public function paginate(PlanListQueryData $query): PlanAggregatePageData
     {
         $filtered = array_values(array_filter($this->plans, static function (Plan $plan) use ($query): bool {

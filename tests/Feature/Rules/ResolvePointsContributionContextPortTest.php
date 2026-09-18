@@ -284,6 +284,7 @@ final class ResolvePointsContributionContextPortTest extends TestCase
             'code' => 'points-plan',
             'name' => 'Points Plan',
             'module_ids' => [$moduleId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [

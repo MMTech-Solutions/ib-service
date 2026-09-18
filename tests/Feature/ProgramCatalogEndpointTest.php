@@ -27,6 +27,7 @@ final class ProgramCatalogEndpointTest extends TestCase
             'code' => 'mix',
             'name' => 'Mix',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $created = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
@@ -103,6 +104,7 @@ final class ProgramCatalogEndpointTest extends TestCase
             'code' => 'mix',
             'name' => 'Mix',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $unknownModule = '01993ac2-8750-73fd-b102-ba24fb06d8be';
@@ -119,6 +121,7 @@ final class ProgramCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
@@ -164,6 +167,7 @@ final class ProgramCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
@@ -188,6 +192,7 @@ final class ProgramCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
@@ -201,6 +206,7 @@ final class ProgramCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $basic = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [

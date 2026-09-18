@@ -9,6 +9,7 @@ use App\Features\Plans\Catalog\Contracts\Repositories\PlanRepositoryInterface;
 use App\Features\Plans\Catalog\DTOs\PlanListQueryData;
 use App\Features\Plans\Catalog\Enums\PlanActorKind;
 use App\Features\Plans\Catalog\Enums\PlanOperationalAction;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Exceptions\DuplicatePlanCodeException;
 use App\Features\Plans\Catalog\Exceptions\PlanConcurrencyException;
 use App\Features\Plans\Catalog\Models\Plan;
@@ -42,6 +43,7 @@ abstract class PlanRepositoryContract extends TestCase
         self::assertSame($plan->code, $storedById->code);
         self::assertFalse($storedById->isActive);
         self::assertTrue($storedById->requiresApproval);
+        self::assertSame(PlanProgressionPeriod::Monthly, $storedById->progressionPeriod);
         self::assertSame($this->moduleIds(), $storedById->moduleIds());
 
         $page = $repository->paginate(new PlanListQueryData(search: 'MI'));
@@ -136,6 +138,67 @@ abstract class PlanRepositoryContract extends TestCase
         self::assertSame(['active-plan'], $found);
     }
 
+    public function test_it_resolves_the_last_operational_change_at_or_before_an_instant(): void
+    {
+        $repository = $this->repository();
+        $plan = $this->plan('history-plan', $this->moduleIds());
+        $repository->create($plan);
+
+        self::assertNull(
+            $repository->findLastOperationalChangeAtOrBefore($plan->id, '2026-09-10T12:00:00.000000Z'),
+        );
+
+        $activate = new PlanOperationalChange(
+            id: (string) Str::uuid7(),
+            planId: $plan->id,
+            action: PlanOperationalAction::Activate,
+            actorKind: PlanActorKind::Iam,
+            actorIamId: (string) Str::uuid7(),
+            reason: 'Ready',
+            previousIsActive: false,
+            nextIsActive: true,
+            causeEventId: null,
+            causeModuleId: null,
+            initiatingActorIamId: null,
+            occurredAt: '2026-09-10T10:00:00.000000Z',
+        );
+        $repository->appendOperationalChange($activate);
+
+        $atActivation = $repository->findLastOperationalChangeAtOrBefore($plan->id, $activate->occurredAt);
+        self::assertNotNull($atActivation);
+        self::assertTrue($atActivation->nextIsActive);
+
+        $deactivate = new PlanOperationalChange(
+            id: (string) Str::uuid7(),
+            planId: $plan->id,
+            action: PlanOperationalAction::Deactivate,
+            actorKind: PlanActorKind::Iam,
+            actorIamId: (string) Str::uuid7(),
+            reason: 'Pause',
+            previousIsActive: true,
+            nextIsActive: false,
+            causeEventId: null,
+            causeModuleId: null,
+            initiatingActorIamId: null,
+            occurredAt: '2026-09-11T10:00:00.000000Z',
+        );
+        $repository->appendOperationalChange($deactivate);
+
+        $beforeDeactivate = $repository->findLastOperationalChangeAtOrBefore(
+            $plan->id,
+            '2026-09-11T09:59:59.000000Z',
+        );
+        self::assertNotNull($beforeDeactivate);
+        self::assertTrue($beforeDeactivate->nextIsActive);
+
+        $afterDeactivate = $repository->findLastOperationalChangeAtOrBefore(
+            $plan->id,
+            '2026-09-11T10:00:00.000000Z',
+        );
+        self::assertNotNull($afterDeactivate);
+        self::assertFalse($afterDeactivate->nextIsActive);
+    }
+
     /**
      * @param  list<string>  $moduleIds
      */
@@ -149,6 +212,7 @@ abstract class PlanRepositoryContract extends TestCase
             moduleIds: $moduleIds,
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $this->now(),
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
     }
 

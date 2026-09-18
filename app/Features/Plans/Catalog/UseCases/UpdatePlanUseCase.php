@@ -7,6 +7,7 @@ namespace App\Features\Plans\Catalog\UseCases;
 use App\Features\Plans\Catalog\Actions\AssertPlanModuleSelectionAction;
 use App\Features\Plans\Catalog\Actions\PresentPlanAction;
 use App\Features\Plans\Catalog\DTOs\PlanDetailData;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Exceptions\PlanConcurrencyException;
 use App\Features\Plans\Catalog\Exceptions\PlanNotFoundException;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
@@ -57,6 +58,12 @@ final class UpdatePlanUseCase
 
             if ($command->hasRequiresApproval) {
                 $changed = $plan->updateRequiresApproval((bool) $command->requiresApproval, $now) || $changed;
+            }
+
+            if ($command->hasProgressionPeriod) {
+                /** @var PlanProgressionPeriod $period */
+                $period = $command->progressionPeriod;
+                $changed = $plan->updateProgressionPeriod($period, $now) || $changed;
             }
 
             if ($changed) {

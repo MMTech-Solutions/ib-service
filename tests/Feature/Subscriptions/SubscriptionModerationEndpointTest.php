@@ -168,6 +168,7 @@ final class SubscriptionModerationEndpointTest extends TestCase
             'code' => 'inactive-plan',
             'name' => 'Inactive',
             'module_ids' => [$this->brokerId()],
+            'progression_period' => 'monthly',
             'requires_approval' => false,
         ])->assertCreated()->json('data');
 
@@ -276,6 +277,7 @@ final class SubscriptionModerationEndpointTest extends TestCase
             'code' => $code,
             'name' => ucfirst($code),
             'module_ids' => [$this->brokerId()],
+            'progression_period' => 'monthly',
             'requires_approval' => $requiresApproval,
         ])->assertCreated()->json('data');
 

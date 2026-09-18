@@ -99,6 +99,7 @@ final class RuleAssignmentEndpointTest extends TestCase
             'code' => 'other',
             'name' => 'Other',
             'module_ids' => [$fixture['module_id']],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
         $foreignProgram = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$otherPlan['id']}/programs", [
             'code' => 'foreign',
@@ -278,6 +279,7 @@ final class RuleAssignmentEndpointTest extends TestCase
             'code' => 'mix',
             'name' => 'Mix',
             'module_ids' => [$moduleId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [

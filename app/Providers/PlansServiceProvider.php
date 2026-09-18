@@ -12,10 +12,12 @@ use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPlanRepository;
 use App\Features\Plans\Catalog\UseCases\IsModuleReferencedUseCase;
 use App\Features\Plans\Catalog\UseCases\LockPlanRowsUseCase;
 use App\Features\Plans\Catalog\UseCases\ResolvePlanContextUseCase;
+use App\Features\Plans\Catalog\UseCases\ResolvePlanProgressionContextUseCase;
 use App\Features\Plans\Catalog\UseCases\ResolvePlanSubscriptionContextUseCase;
 use App\Features\Plans\Contracts\Ports\Input\IsModuleReferencedPort;
 use App\Features\Plans\Contracts\Ports\Input\LockPlanRowsPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
+use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +31,7 @@ final class PlansServiceProvider extends ServiceProvider
     {
         $this->app->singleton(IsModuleReferencedPort::class, IsModuleReferencedUseCase::class);
         $this->app->singleton(ResolvePlanContextPort::class, ResolvePlanContextUseCase::class);
+        $this->app->singleton(ResolvePlanProgressionContextPort::class, ResolvePlanProgressionContextUseCase::class);
         $this->app->singleton(ResolvePlanSubscriptionContextPort::class, ResolvePlanSubscriptionContextUseCase::class);
         $this->app->singleton(LockPlanRowsPort::class, LockPlanRowsUseCase::class);
         $this->app->singleton(

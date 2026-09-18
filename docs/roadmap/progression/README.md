@@ -1,12 +1,11 @@
 # Roadmap del feature Progression
 
-Estado: **Sesiones 1–2 de PG1 completadas; P0.1–P0.2 hechas; implementación bloqueada por P0.3**
+Estado: **Sesiones 1–2 y P0 completadas; sesión 3 pendiente**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–2, Rules P0.1,
-Subscriptions P0.2
-Dependencia de desbloqueo de sesión 3: P0.3 (Plans)
-Extensiones pendientes en proveedores: período obligatorio en Plans (P0.3);
-umbral `0` del primer programa en Programs
+Subscriptions P0.2, Plans P0.3
+Dependencia de desbloqueo de sesión 3: ninguna (P0 completa)
+Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
 Última revisión: 2026-09-17
 
 ## Objetivo
@@ -44,7 +43,7 @@ excluida) y contribuciones auditables. No ejecuta runs ni mueve placement.
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para PG1 |
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para PG1 |
 | 4. Modelo de datos | [`04-pg1-data-model.md`](04-pg1-data-model.md) | Completado para PG1 |
-| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–2 y P0.1–P0.2 Completadas; P0.3 y sesión 3 Bloqueadas |
+| 5. Implementación y contract tests | [`05-pg1-implementation.md`](05-pg1-implementation.md) | Sesiones 1–2 y P0 Completadas; sesión 3 Pendiente |
 
 ## Segunda entrega: PG2
 
@@ -114,6 +113,7 @@ de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
 
 ## Próximo paso
 
-Completar P0.3 (Plans) según
-[`05-pg1-implementation.md`](05-pg1-implementation.md). Solo entonces reabrir
-la sesión 3 de evaluación pull-only.
+Ejecutar la sesión 3 (evaluación pull-only) según
+[`05-pg1-implementation.md`](05-pg1-implementation.md), consumiendo los puertos
+P0.1–P0.3 ya publicados. No declarar PG1 completada hasta cerrar las sesiones
+3–5.

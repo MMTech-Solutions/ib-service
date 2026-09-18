@@ -7,6 +7,9 @@ namespace App\Features\Plans\Catalog\Repositories\PostgreSql;
 use App\Features\Plans\Catalog\Contracts\Repositories\PlanRepositoryInterface;
 use App\Features\Plans\Catalog\DTOs\PlanAggregatePageData;
 use App\Features\Plans\Catalog\DTOs\PlanListQueryData;
+use App\Features\Plans\Catalog\Enums\PlanActorKind;
+use App\Features\Plans\Catalog\Enums\PlanOperationalAction;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Exceptions\DuplicatePlanCodeException;
 use App\Features\Plans\Catalog\Exceptions\PlanConcurrencyException;
 use App\Features\Plans\Catalog\Models\Plan;
@@ -85,6 +88,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
                 'description' => $plan->description,
                 'is_active' => $plan->isActive,
                 'requires_approval' => $plan->requiresApproval,
+                'progression_period' => $plan->progressionPeriod->value,
                 'lock_version' => $nextLockVersion,
                 'updated_at' => $plan->updatedAt,
                 'deleted_at' => $plan->deletedAt,
@@ -114,6 +118,37 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
             'initiating_actor_iam_id' => $change->initiatingActorIamId,
             'occurred_at' => $change->occurredAt,
         ]);
+    }
+
+    public function findLastOperationalChangeAtOrBefore(string $planId, string $occurredAt): ?PlanOperationalChange
+    {
+        $record = PlanOperationalChangeRecord::query()
+            ->where('plan_id', $planId)
+            ->where('occurred_at', '<=', $occurredAt)
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($record === null) {
+            return null;
+        }
+
+        return new PlanOperationalChange(
+            id: (string) $record->id,
+            planId: (string) $record->plan_id,
+            action: PlanOperationalAction::from((string) $record->action),
+            actorKind: PlanActorKind::from((string) $record->actor_kind),
+            actorIamId: $record->actor_iam_id === null ? null : (string) $record->actor_iam_id,
+            reason: (string) $record->reason,
+            previousIsActive: (bool) $record->previous_is_active,
+            nextIsActive: (bool) $record->next_is_active,
+            causeEventId: $record->cause_event_id === null ? null : (string) $record->cause_event_id,
+            causeModuleId: $record->cause_module_id === null ? null : (string) $record->cause_module_id,
+            initiatingActorIamId: $record->initiating_actor_iam_id === null
+                ? null
+                : (string) $record->initiating_actor_iam_id,
+            occurredAt: $record->occurred_at->utc()->toISOString(),
+        );
     }
 
     public function paginate(PlanListQueryData $query): PlanAggregatePageData
@@ -185,6 +220,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
             description: $record->description === null ? null : (string) $record->description,
             isActive: (bool) $record->is_active,
             requiresApproval: (bool) $record->requires_approval,
+            progressionPeriod: PlanProgressionPeriod::from((string) $record->progression_period),
             lockVersion: (int) $record->lock_version,
             bindings: $record->bindings->map(
                 static fn (PlanModuleBindingRecord $binding): PlanModuleBinding => new PlanModuleBinding(
@@ -210,6 +246,7 @@ final class PostgreSqlPlanRepository implements PlanRepositoryInterface
             'description' => $plan->description,
             'is_active' => $plan->isActive,
             'requires_approval' => $plan->requiresApproval,
+            'progression_period' => $plan->progressionPeriod->value,
             'lock_version' => $plan->lockVersion,
             'created_at' => $plan->createdAt,
             'updated_at' => $plan->updatedAt,

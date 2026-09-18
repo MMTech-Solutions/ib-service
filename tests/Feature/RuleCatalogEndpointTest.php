@@ -25,6 +25,7 @@ final class RuleCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $created = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/rules", [
@@ -138,6 +139,7 @@ final class RuleCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $rule = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/rules", [
@@ -159,6 +161,7 @@ final class RuleCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $rule = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/rules", [
@@ -201,6 +204,7 @@ final class RuleCatalogEndpointTest extends TestCase
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $rule = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/rules", [

@@ -105,6 +105,14 @@ final class UserContextArchitectureTest extends TestCase
             'Plans publishes AssertEnabledModuleIdsQueryData in Contracts/Data/V1.',
         );
         self::assertTrue(
+            File::exists(app_path('Features/Plans/Contracts/Data/V1/PlanProgressionContextData.php')),
+            'P0.3 publishes PlanProgressionContextData in Plans/Contracts/Data/V1.',
+        );
+        self::assertTrue(
+            File::exists(app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanProgressionContextPort.php')),
+            'P0.3 publishes ResolvePlanProgressionContextPort for Progression.',
+        );
+        self::assertTrue(
             File::exists(app_path('Features/Programs/Contracts/Data/V1/ResolveProgramContextQueryData.php')),
             'Programs publishes ResolveProgramContextQueryData in Contracts/Data/V1.',
         );
@@ -150,6 +158,7 @@ final class UserContextArchitectureTest extends TestCase
     {
         $ports = [
             app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanContextPort.php'),
+            app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanProgressionContextPort.php'),
             app_path('Features/Plans/Contracts/Ports/Input/ResolvePlanSubscriptionContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramContextPort.php'),
             app_path('Features/Programs/Contracts/Ports/Input/ResolveProgramSubscriptionContextPort.php'),

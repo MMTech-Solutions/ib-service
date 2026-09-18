@@ -1,12 +1,12 @@
 # Progression PG1: plan de implementación
 
-Estado: **Sesiones 1–2 completadas; P0.1–P0.2 completadas; P0.3 y sesión 3 bloqueados; sesiones 4–5 pendientes**
+Estado: **Sesiones 1–3 y P0.1–P0.3 completadas; sesiones 4–5 pendientes**
 Dependencias: `01`–`04` de PG1 completados; contrato M3 definido en
 [`06-m3-progression-activity-contract.md`](../modules/06-m3-progression-activity-contract.md);
 primer adapter M3 (`deposits` vía fixtures) implementado en la sesión 1;
 núcleo y persistencia de evaluaciones/contribuciones en la sesión 2;
-P0.1 (Rules) y P0.2 (Subscriptions) completadas; sesión 3 bloqueada por P0.3
-(Plans) pendiente
+P0.1 (Rules), P0.2 (Subscriptions) y P0.3 (Plans) completadas; sesión 3
+(evaluación pull-only) completada
 Última revisión: 2026-09-17
 
 ## Propósito
@@ -94,16 +94,16 @@ resuelve por conveniencia: la sesión se detiene y se registra como bloqueada.
 
 | Sesión | Alcance | Estado | Dependencia | Última evidencia |
 | --- | --- | --- | --- | --- |
-| P0 | Contextos proveedores de Progression | Bloqueada | Extensiones en Rules, Subscriptions y Plans | 2026-09-17 — P0.1–P0.2 Completadas; P0.3 pendiente; ver Evidencia P0 |
+| P0 | Contextos proveedores de Progression | Completada | Extensiones en Rules, Subscriptions y Plans | 2026-09-17 — P0.1–P0.3 Completadas; ver Evidencia P0 |
 | 1 | M3 y fronteras inter-feature | Completada | Primer adapter M3 | 2026-09-17 — ver Evidencia sesión 1 |
 | 2 | Núcleo y persistencia | Completada | Sesión 1 | 2026-09-17 — ver Evidencia sesión 2 |
-| 3 | Evaluación pull-only | Bloqueada | P0 y sesiones 1–2 | 2026-09-17 — ver Evidencia sesión 3 |
+| 3 | Evaluación pull-only | Completada | P0 y sesiones 1–2 | 2026-09-17 — ver Evidencia sesión 3 |
 | 4 | Consulta administrativa | Pendiente | Sesiones 1 a 3 | — |
 | 5 | Cierre integral | Pendiente | Sesiones 1 a 4 | — |
 
 ## Prerrequisito P0 — Contextos proveedores de Progression
 
-Estado: **Bloqueada**
+Estado: **Completada**
 
 P0 no es una entrega parcial de PG1 ni autoriza a calcular puntos. Agrupa las
 extensiones mínimas que deben publicar los features propietarios para que la
@@ -115,7 +115,7 @@ puertos Input y Data V1 públicos.
 | --- | --- | --- | --- | --- |
 | P0.1 | Rules | Puerto Input + Data V1 que resuelva, en `occurred_at`, la asignación, regla y versión `points_per_quantity_unit` aplicable a programa, módulo, métrica y unidad; validar `BR-RULE-016`. | Completada | Puerto versionado, binding y pruebas del feature; devuelve contexto o ausencia tipada sin exponer modelos internos. |
 | P0.2 | Subscriptions | Puerto Input + Data V1 que resuelva para el beneficiario, en `occurred_at`, suscripción, programa, placement y condición de fijación. | Completada | Puerto versionado, binding y pruebas históricas por instante; sin repositories o Eloquent expuestos. |
-| P0.3 | Plans | Implementar el período de progresión obligatorio de `BR-PLAN-018` y exponer en una frontera consumible por Progression el período y el estado operativo del plan. | Pendiente | Migración/reglas, compatibilidad de contratos y pruebas de período/estado; no se rompe V1 existente. |
+| P0.3 | Plans | Implementar el período de progresión obligatorio de `BR-PLAN-018` y exponer en una frontera consumible por Progression el período y el estado operativo del plan. | Completada | Migración/reglas, compatibilidad de contratos y pruebas de período/estado; no se rompe V1 existente. |
 
 Criterio de salida de P0: P0.1, P0.2 y P0.3 están `Completada`, con contratos
 publicados, implementaciones del feature propietario y pruebas reales. Entonces
@@ -208,9 +208,55 @@ pull-only, P0.2, P0.3, sesión 3.
 **Fuera de alcance P0.2:** consumo del puerto desde Progression, evaluación
 pull-only, P0.3, sesión 3.
 
-#### P0.3
+#### P0.3 — Plans (Completada)
 
-Sigue pendiente. La sesión 3 permanece bloqueada hasta completarlo.
+**Contrato público**
+
+- Puerto: `app/Features/Plans/Contracts/Ports/Input/ResolvePlanProgressionContextPort.php`
+- Data V1:
+  - `ResolvePlanProgressionContextQueryData` (`plan_id`, `occurred_at`)
+  - `PlanProgressionContextData` (`plan_id`, `is_active`, `progression_period`)
+- Binding: `PlansServiceProvider` → `ResolvePlanProgressionContextPort`
+- Implementación: `Catalog/UseCases/ResolvePlanProgressionContextUseCase`
+- Semántica histórica de `is_active`: último `plan_operational_changes` con
+  `occurred_at <= query.occurred_at` (`next_is_active`); sin cambio previo el
+  plan nace inactivo (`BR-PLAN-007`)
+- `progression_period` vigente del plan (`daily` / `weekly` / `monthly`); no se
+  inventó historial de versiones del período (`BR-PLAN-019` rige en el
+  consumidor de ventanas)
+- `PlanContextData` / `ResolvePlanContextPort` V1 intactos (frontera
+  especializada nueva)
+
+**Persistencia y escritura administrativa**
+
+- Migración: `2026_09_17_180000_add_progression_period_to_plans_table.php`
+  — columna `NOT NULL`, check PostgreSQL, backfill `monthly` de filas previas,
+  sin default permanente
+- Enum: `PlanProgressionPeriod`
+- HTTP: `progression_period` obligatorio en create; opcional en update
+- DTOs/API: `PlanData` / `PlanDetailData` exponen `progression_period`
+- Repositorio: `findLastOperationalChangeAtOrBefore` (InMemory + PostgreSQL)
+- Postman: create/update de planes actualizados
+
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
+
+- `tests/Feature/Plans/ResolvePlanProgressionContextPortTest.php`
+  — estado histórico, período, validación de create, plan inexistente
+- Contract plans (incluye historial operativo):
+  `InMemoryPlanRepositoryContractTest`,
+  `PostgreSqlPlanRepositoryContractTest`
+- Regresión HTTP: `PlanCatalogEndpointTest`
+- Arquitectura: `UserContextArchitectureTest` (puerto + Data V1)
+- Regresión Progression sesión 1: `ProgressionActivityPortsIntegrationTest`
+- Regresión afín: Program/Rule/Subscription endpoints y puertos P0.1/P0.2
+- Resultados acotados P0.3: **51 tests / 400 aserciones OK**; regresión extra
+  Program/Rule/Subscription lifecycle **23 tests / 388 aserciones OK**
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .` (grafo reconstruido)
+
+**Fuera de alcance P0.3:** consumo del puerto desde Progression, evaluación
+pull-only, sesión 3, historial versionado del período, runs, FX, Rewards.
+
 ## Sesión 1 — M3 y fronteras inter-feature
 
 Estado: **Completada**
@@ -358,7 +404,7 @@ placement, FX, Rewards, Kafka.
 
 ## Sesión 3 — Evaluación pull-only
 
-Estado: **Bloqueada**
+Estado: **Completada**
 
 - Crear el caso de uso interno que recorre páginas M3 y evalúa cada hecho.
 - Resolver contexto en `occurred_at`, ventana UTC, suscripción, placement,
@@ -376,54 +422,55 @@ una única evidencia durable por actividad y beneficiario.
 
 Fecha: 2026-09-17
 
-**Dependencias de sesión 2 (verificadas, no inventadas)**
+**Dependencias verificadas**
 
-- Estado y evidencia de sesión 2 en este documento: Completada.
-- Regresión ejecutada antes de cualquier cambio de código:
-  `InMemoryActivityEvaluationRepositoryContractTest`,
-  `PostgreSqlActivityEvaluationRepositoryContractTest`,
-  `PostgreSqlActivityEvaluationConstraintTest`,
-  `ExactDecimalAndWindowTest`,
-  `ProgressionActivityPortsIntegrationTest`
-  → **27 tests / 152 aserciones OK** (PostgreSQL `_testing` / PHPUnit).
+- P0.1–P0.3 `Completada` (puertos Rules, Subscriptions, Plans).
+- Sesiones 1–2 `Completada`.
+- Regresión previa + suite Progression tras el cambio: **34 tests / 239 aserciones OK**.
 
-**Causa del bloqueo (contratos / extensiones externas ausentes)**
+**Caso de uso y decisión**
 
-No se implementó el caso de uso de evaluación: faltan fronteras publicadas
-que la sesión exige y el protocolo prohíbe inventar. Hallazgos contrastados
-con Graphify, roadmaps de proveedores y código real (actualizado 2026-09-17
-tras cerrar P0.1 y P0.2):
+- Input: `DTOs/EvaluateProgressionActivitiesData.php`
+- Resultado: `DTOs/EvaluateProgressionActivitiesResult.php`
+  (`evaluated` | `skipped_plan_inactive` | `deferred_module_paused` |
+  `rejected_module_inactive`)
+- UseCase: `UseCases/EvaluateProgressionActivitiesUseCase.php`
+  — comprueba plan activo antes de consultar M3; pagina actividad; no evalúa
+  si el módulo está `paused` o `inactive`; idempotencia vía
+  `findByIdempotencyKey` + `record`
+- Acción: `Actions/BuildActivityEvaluationDecisionAction.php`
+  — suscripción/placement (P0.2), plan/período/ventana (P0.3),
+  módulo activo, habilitado en plan, seleccionado en programa, regla (P0.1),
+  revalidación `is_active` antes de aceptar
+- Ventana UTC: `Support/DeriveProgressionWindowFromPeriod.php`
+  (`daily` / `weekly` / `monthly`)
+- Gateways actualizados: `Services/ProgressionInterFeatureGateways.php`
+  (+ `ResolvePlanProgressionContextPort`, `ResolveSubscriptionContextPort`,
+  `ResolvePointsContributionContextPort`)
 
-1. **Rules — P0.1 Completada**
-   - Puerto `ResolvePointsContributionContextPort` publicado; ya no bloquea.
+**Motivos cubiertos en pruebas**
 
-2. **Subscriptions — P0.2 Completada**
-   - Puerto `ResolveSubscriptionContextPort` publicado; ya no bloquea.
+- `accepted` + contribución atómica e idempotente
+- `no_active_subscription`, `placement_fixed`, `no_applicable_rule`,
+  `unit_mismatch` (contexto Rules con unidad distinta), `scale_exceeded`,
+  `module_not_selected`, `window_closed_after_pause` (`resuming_after_pause`)
+- Plan inactivo al inicio → `skipped_plan_inactive` (sin consulta diferida)
+- Módulo `paused` → `deferred_module_paused` (actividad permanece en origen)
 
-3. **Plans — período de progresión obligatorio ausente (`BR-PLAN-018`) — P0.3 pendiente**
-   - `plans/README.md`: extensión pendiente; el campo no está implementado.
-   - `PlanContextData` no expone período ni `is_active` operativo de
-     progresión; sin período no se puede derivar la ventana UTC de la
-     evaluación.
+**Pruebas (PostgreSQL `_testing` / PHPUnit)**
 
-**Qué no se hizo (conforme al protocolo)**
+- `tests/Feature/Progression/EvaluateProgressionActivitiesUseCaseTest.php`
+- `tests/Unit/Progression/DeriveProgressionWindowFromPeriodTest.php`
+- Gateways: `ProgressionActivityPortsIntegrationTest`
+- Regresión sesión 2: contract InMemory/PostgreSQL, constraints, ExactDecimal
+- Resultados Progression: **34 tests / 239 aserciones OK**
+- Pint: `vendor/bin/pint --dirty --format agent`
+- Graphify: `graphify update .` (grafo reconstruido)
 
-- Ningún UseCase de evaluación pull-only.
-- Ningún avance de sesión 4 (HTTP admin) ni 5.
-- Sin cambios de PHP en el intento original de sesión 3; no aplica Pint ni
-  `graphify update .` de esa sesión.
-- PG1 no se declara completada; `progression/README.md` no se actualiza al
-  cierre integral.
+**Migraciones:** ninguna (reutiliza tablas de sesión 2).
 
-**Desbloqueo requerido antes de reintentar la sesión 3**
-
-Completar P0.3 (Plans) con la evidencia exigida en el prerrequisito P0.
-P0.1 y P0.2 ya están `Completada`. No basta con crear interfaces: el
-proveedor debe publicar el contrato, conectarlo a una implementación y
-demostrar la semántica con pruebas.
-
-Tras P0.3, reabrir la sesión 3 sin inventar contratos y cumplir
-el criterio de salida (una evidencia durable por actividad y beneficiario).
+**Fuera de alcance (sesión 3):** HTTP admin, runs, placement automático, FX,
+Rewards, Kafka como vía primaria, `late_activity` efectivo (PG2).
 
 ## Sesión 4 — Consulta administrativa
 

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Features\Plans\Catalog\Http\V1\Requests;
 
 use App\Features\Plans\Catalog\Enums\AdminPlanPermission;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\SharedFeatures\User\Context\UserContext;
 use App\SharedFeatures\User\Context\UserSurface;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StorePlanRequest extends FormRequest
 {
@@ -26,6 +28,7 @@ final class StorePlanRequest extends FormRequest
             'module_ids' => ['sometimes', 'array', 'max:50'],
             'module_ids.*' => ['uuid', 'distinct'],
             'requires_approval' => ['sometimes', 'boolean'],
+            'progression_period' => ['required', 'string', Rule::enum(PlanProgressionPeriod::class)],
             'is_active' => ['prohibited'],
             'lock_version' => ['prohibited'],
         ];

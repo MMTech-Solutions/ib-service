@@ -13,13 +13,16 @@ use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
 use App\Features\Modules\Catalog\Support\ProgressionActivityCursor;
 use App\Features\Modules\Sources\Broker\Services\Adapters\FixtureBrokerDepositsActivityAdapter;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
+use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Progression\Contracts\Data\V1\FetchProgressionActivitiesQueryData;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
+use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
+use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -134,9 +137,12 @@ final class ProgressionActivityPortsIntegrationTest extends TestCase
         self::assertInstanceOf(FetchProgressionActivitiesPort::class, $gateways->activities());
         self::assertInstanceOf(ResolvePlanContextPort::class, $gateways->planContext());
         self::assertInstanceOf(ResolvePlanSubscriptionContextPort::class, $gateways->planSubscriptionContext());
+        self::assertInstanceOf(ResolvePlanProgressionContextPort::class, $gateways->planProgressionContext());
         self::assertInstanceOf(ResolveProgramContextPort::class, $gateways->programContext());
         self::assertInstanceOf(ResolveProgramSubscriptionContextPort::class, $gateways->programSubscriptionContext());
         self::assertInstanceOf(HasOpenSubscriptionsForPlanPort::class, $gateways->openSubscriptionsForPlan());
+        self::assertInstanceOf(ResolveSubscriptionContextPort::class, $gateways->subscriptionContext());
+        self::assertInstanceOf(ResolvePointsContributionContextPort::class, $gateways->pointsContributionContext());
         self::assertTrue(
             is_file(app_path('Features/Rules/Contracts/Ports/Input/ResolvePointsContributionContextPort.php')),
             'P0.1 publishes ResolvePointsContributionContextPort in Rules.',

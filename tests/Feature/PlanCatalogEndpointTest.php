@@ -31,9 +31,11 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'mix',
             'name' => 'Mix',
             'description' => 'Mixed activity',
+            'progression_period' => 'monthly',
         ])->assertCreated()
             ->assertJsonPath('data.is_active', false)
             ->assertJsonPath('data.requires_approval', true)
+            ->assertJsonPath('data.progression_period', 'monthly')
             ->assertJsonPath('data.modules', [])
             ->json('data');
 
@@ -78,6 +80,7 @@ final class PlanCatalogEndpointTest extends TestCase
         $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix again',
+            'progression_period' => 'monthly',
         ])->assertConflict()->assertJsonPath('error.code', 'PLAN_CODE_CONFLICT');
         $this->assertDatabaseHas('plan_module_bindings', [
             'plan_id' => $created['id'],
@@ -92,12 +95,14 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'broker-plan',
             'name' => 'Broker',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'invalid-plan',
             'name' => 'Invalid',
             'module_ids' => ['01993ac2-8750-73fd-b102-ba24fb06d8be'],
+            'progression_period' => 'monthly',
         ])->assertNotFound()->assertJsonPath('error.code', 'MODULE_NOT_FOUND');
 
         DB::table('modules')->where('id', $brokerId)->update(['is_active' => false, 'lock_version' => 2]);
@@ -105,6 +110,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'inactive-bind',
             'name' => 'Inactive bind',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertUnprocessable()->assertJsonPath('error.code', 'MODULE_INACTIVE');
 
         $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$created['id']}", [
@@ -121,6 +127,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'broker-plan',
             'name' => 'Broker',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
@@ -160,6 +167,7 @@ final class PlanCatalogEndpointTest extends TestCase
         $this->assertGatewayAuthGuards('POST', '/api/ib/v1/admin/plans', [
             'code' => 'mix',
             'name' => 'Mix',
+            'progression_period' => 'monthly',
         ]);
     }
 
@@ -168,6 +176,7 @@ final class PlanCatalogEndpointTest extends TestCase
         $created = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'empty',
             'name' => 'Empty',
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
@@ -204,6 +213,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'paused-ok',
             'name' => 'Paused ok',
             'module_ids' => [$brokerId],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$created['id']}/activate", [
@@ -219,6 +229,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'legacy-plan',
             'name' => 'Legacy',
             'module_ids' => [(string) $legacy->id],
+            'progression_period' => 'monthly',
         ])->assertCreated()->json('data');
 
         $this->gatewayJson('DELETE', "/api/ib/v1/admin/plans/{$created['id']}", [
@@ -235,6 +246,7 @@ final class PlanCatalogEndpointTest extends TestCase
         $omitted = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'approval-default',
             'name' => 'Approval default',
+            'progression_period' => 'monthly',
         ])->assertCreated()
             ->assertJsonPath('data.requires_approval', true)
             ->json('data');
@@ -243,6 +255,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'code' => 'approval-false',
             'name' => 'Approval false',
             'requires_approval' => false,
+            'progression_period' => 'monthly',
         ])->assertCreated()
             ->assertJsonPath('data.requires_approval', false)
             ->json('data');
@@ -278,6 +291,7 @@ final class PlanCatalogEndpointTest extends TestCase
             'name' => 'Legacy approval',
             'description' => null,
             'is_active' => false,
+            'progression_period' => 'monthly',
             'lock_version' => 4,
             'created_at' => $createdAt,
             'updated_at' => $updatedAt,

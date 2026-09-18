@@ -8,6 +8,7 @@ use App\Features\Modules\Contracts\Data\V1\ModuleSummaryData;
 use App\Features\Plans\Catalog\DTOs\PlanData;
 use App\Features\Plans\Catalog\DTOs\PlanDetailData;
 use App\Features\Plans\Catalog\DTOs\PlanModuleBindingData;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotActivateException;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotArchiveWhenActiveException;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotClearBindingsWhenActiveException;
@@ -25,6 +26,7 @@ final class Plan
         public ?string $description,
         public bool $isActive,
         public bool $requiresApproval,
+        public PlanProgressionPeriod $progressionPeriod,
         public int $lockVersion,
         public array $bindings,
         public readonly string $createdAt,
@@ -43,6 +45,7 @@ final class Plan
         array $moduleIds,
         Closure $generateId,
         string $now,
+        PlanProgressionPeriod $progressionPeriod,
         bool $requiresApproval = true,
     ): self {
         $plan = new self(
@@ -52,6 +55,7 @@ final class Plan
             description: $description,
             isActive: false,
             requiresApproval: $requiresApproval,
+            progressionPeriod: $progressionPeriod,
             lockVersion: 1,
             bindings: [],
             createdAt: $now,
@@ -83,6 +87,18 @@ final class Plan
         }
 
         $this->requiresApproval = $requiresApproval;
+        $this->updatedAt = $now;
+
+        return true;
+    }
+
+    public function updateProgressionPeriod(PlanProgressionPeriod $progressionPeriod, string $now): bool
+    {
+        if ($this->progressionPeriod === $progressionPeriod) {
+            return false;
+        }
+
+        $this->progressionPeriod = $progressionPeriod;
         $this->updatedAt = $now;
 
         return true;
@@ -211,6 +227,7 @@ final class Plan
             description: $this->description,
             is_active: $this->isActive,
             requires_approval: $this->requiresApproval,
+            progression_period: $this->progressionPeriod->value,
             lock_version: $this->lockVersion,
             modules: $this->moduleData($modulesById),
             created_at: $this->createdAt,
@@ -232,6 +249,7 @@ final class Plan
             description: $list->description,
             is_active: $list->is_active,
             requires_approval: $list->requires_approval,
+            progression_period: $list->progression_period,
             lock_version: $list->lock_version,
             modules: $list->modules,
             created_at: $list->created_at,

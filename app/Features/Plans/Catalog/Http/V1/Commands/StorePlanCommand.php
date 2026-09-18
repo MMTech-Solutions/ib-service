@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Plans\Catalog\Http\V1\Commands;
 
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Http\V1\Requests\StorePlanRequest;
 use Spatie\LaravelData\Data;
 
@@ -18,6 +19,7 @@ final class StorePlanCommand extends Data
         public readonly ?string $description,
         public readonly array $moduleIds,
         public readonly bool $requiresApproval,
+        public readonly PlanProgressionPeriod $progressionPeriod,
     ) {}
 
     public static function fromRequest(StorePlanRequest $request): self
@@ -34,6 +36,7 @@ final class StorePlanCommand extends Data
             requiresApproval: array_key_exists('requires_approval', $validated)
                 ? (bool) $validated['requires_approval']
                 : true,
+            progressionPeriod: PlanProgressionPeriod::from((string) $validated['progression_period']),
         );
     }
 }

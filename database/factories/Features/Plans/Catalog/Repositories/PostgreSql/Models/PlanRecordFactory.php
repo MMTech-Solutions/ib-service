@@ -25,6 +25,7 @@ final class PlanRecordFactory extends Factory
             'description' => fake()->sentence(),
             'is_active' => false,
             'requires_approval' => true,
+            'progression_period' => 'monthly',
             'lock_version' => 1,
             'created_at' => $now,
             'updated_at' => $now,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Plans\Catalog;
 
 use App\Features\Modules\Contracts\Data\V1\ModuleSummaryData;
+use App\Features\Plans\Catalog\Enums\PlanProgressionPeriod;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotActivateException;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotArchiveWhenActiveException;
 use App\Features\Plans\Catalog\Exceptions\PlanCannotClearBindingsWhenActiveException;
@@ -24,6 +25,7 @@ final class PlanStateTransitionsTest extends TestCase
             moduleIds: [],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: '2026-09-14T00:00:00.000000Z',
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
 
         self::assertFalse($plan->isActive);
@@ -44,6 +46,7 @@ final class PlanStateTransitionsTest extends TestCase
             moduleIds: [$moduleId],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: '2026-09-14T00:00:00.000000Z',
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
 
         $this->expectException(PlanCannotActivateException::class);
@@ -63,6 +66,7 @@ final class PlanStateTransitionsTest extends TestCase
             moduleIds: [$moduleId],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: '2026-09-14T00:00:00.000000Z',
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
 
         self::assertTrue($plan->activate([
@@ -85,6 +89,7 @@ final class PlanStateTransitionsTest extends TestCase
             moduleIds: [$moduleId],
             generateId: static fn (): string => (string) Str::uuid7(),
             now: '2026-09-14T00:00:00.000000Z',
+            progressionPeriod: PlanProgressionPeriod::Monthly,
         );
         $plan->activate([
             new ModuleSummaryData($moduleId, 'broker', 'Broker', true, 'running'),
