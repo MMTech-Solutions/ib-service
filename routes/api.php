@@ -23,6 +23,24 @@ use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\DeletePaymentTemplateController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\DeletePaymentTemplateVersionController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\ListPaymentTemplatesController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\PublishPaymentTemplateVersionController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\ShowPaymentTemplateController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\StorePaymentTemplateController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\StorePaymentTemplateVersionController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\UpdatePaymentTemplateController;
+use App\Features\Programs\PaymentTemplates\Http\V1\Controllers\UpdatePaymentTemplateVersionController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\DeleteProgressionTemplateController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\DeleteProgressionTemplateVersionController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\ListProgressionTemplatesController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\PublishProgressionTemplateVersionController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\ShowProgressionTemplateController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\StoreProgressionTemplateController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\StoreProgressionTemplateVersionController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateController;
+use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateVersionController;
 use App\Features\Progression\Http\V1\Controllers\ListActivityEvaluationsController;
 use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
@@ -60,6 +78,24 @@ Route::prefix('ib/v1')
     ->group(function (): void {
         Route::prefix('admin')
             ->group(function (): void {
+                Route::get('payment-templates', ListPaymentTemplatesController::class)->name('ib.v1.admin.payment-templates.index');
+                Route::post('payment-templates', StorePaymentTemplateController::class)->name('ib.v1.admin.payment-templates.store');
+                Route::get('payment-templates/{paymentTemplate}', ShowPaymentTemplateController::class)->name('ib.v1.admin.payment-templates.show');
+                Route::patch('payment-templates/{paymentTemplate}', UpdatePaymentTemplateController::class)->name('ib.v1.admin.payment-templates.update');
+                Route::delete('payment-templates/{paymentTemplate}', DeletePaymentTemplateController::class)->name('ib.v1.admin.payment-templates.destroy');
+                Route::post('payment-templates/{paymentTemplate}/versions', StorePaymentTemplateVersionController::class)->name('ib.v1.admin.payment-templates.versions.store');
+                Route::patch('payment-templates/{paymentTemplate}/versions/{version}', UpdatePaymentTemplateVersionController::class)->name('ib.v1.admin.payment-templates.versions.update');
+                Route::post('payment-templates/{paymentTemplate}/versions/{version}/publish', PublishPaymentTemplateVersionController::class)->name('ib.v1.admin.payment-templates.versions.publish');
+                Route::delete('payment-templates/{paymentTemplate}/versions/{version}', DeletePaymentTemplateVersionController::class)->name('ib.v1.admin.payment-templates.versions.destroy');
+                Route::get('progression-templates', ListProgressionTemplatesController::class)->name('ib.v1.admin.progression-templates.index');
+                Route::post('progression-templates', StoreProgressionTemplateController::class)->name('ib.v1.admin.progression-templates.store');
+                Route::get('progression-templates/{progressionTemplate}', ShowProgressionTemplateController::class)->name('ib.v1.admin.progression-templates.show');
+                Route::patch('progression-templates/{progressionTemplate}', UpdateProgressionTemplateController::class)->name('ib.v1.admin.progression-templates.update');
+                Route::delete('progression-templates/{progressionTemplate}', DeleteProgressionTemplateController::class)->name('ib.v1.admin.progression-templates.destroy');
+                Route::post('progression-templates/{progressionTemplate}/versions', StoreProgressionTemplateVersionController::class)->name('ib.v1.admin.progression-templates.versions.store');
+                Route::patch('progression-templates/{progressionTemplate}/versions/{version}', UpdateProgressionTemplateVersionController::class)->name('ib.v1.admin.progression-templates.versions.update');
+                Route::post('progression-templates/{progressionTemplate}/versions/{version}/publish', PublishProgressionTemplateVersionController::class)->name('ib.v1.admin.progression-templates.versions.publish');
+                Route::delete('progression-templates/{progressionTemplate}/versions/{version}', DeleteProgressionTemplateVersionController::class)->name('ib.v1.admin.progression-templates.versions.destroy');
                 Route::get('modules', ListModulesController::class)->name('ib.v1.admin.modules.index');
                 Route::get('modules/{module}/catalog/{type}', ListInstrumentCatalogController::class)
                     ->name('ib.v1.admin.modules.catalog.index');

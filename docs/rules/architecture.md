@@ -404,6 +404,8 @@ Features/<Feature>/Contracts/Data/V1/ModuleSummaryData.php
 ### UseCases
 
 - Son los puntos de entrada de aplicación para una intención completa.
+- Cada UseCase representa una sola capacidad o flujo de aplicación nombrable. No agrupa un CRUD ni expone métodos públicos para intenciones independientes.
+- Todo UseCase expone un único método público `execute(...)`. Sus dependencias, la transacción local y las decisiones de aplicación pertenecen a ese flujo; los helpers permanecen privados o se extraen a Actions/Services con una responsabilidad propia.
 - Orquestan Actions, Services internos, factories, repositories obtenidos mediante factories y puertos de otros features.
 - No contienen lógica HTTP.
 - Un UseCase nunca invoca otro UseCase.
