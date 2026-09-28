@@ -77,3 +77,7 @@ cumplido respecto a esta regla.
 Alinear la validación del ladder con `BR-PROGRAM-015` cuando Progression
 avance. Mientras tanto, el roadmap continúa en Rules y Subscriptions ya
 cerrados, y en Progression.
+
+## Configuración de símbolos
+
+Programs incorpora configuraciones versionadas por símbolo y módulo. Los usos de progresión, volumen y CPA son acumulables; las configuraciones de volumen conservan el tipo y valor de comisión y la moneda del server group. Las plantillas tienen ABM independiente del plan: cada plan vincula explícitamente una versión publicada, que luego referencia la configuración del programa para conservar el contexto histórico.

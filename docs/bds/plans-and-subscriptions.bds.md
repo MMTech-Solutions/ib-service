@@ -9,6 +9,8 @@
 
 Un Plan IB es el producto al que se suscribe un usuario. El plan define qué módulos pueden generar actividad recompensable y contiene programas que representan niveles de crecimiento. Los módulos son independientes: la indisponibilidad o ausencia de uno no debe impedir que los restantes contribuyan.
 
+Los programas pueden seleccionar símbolos de sus módulos habilitados. Cada selección conserva su contexto de origen y puede usarse simultáneamente para progresión, volumen y CPA. Las plantillas son catálogos independientes y reutilizables; el plan selecciona explícitamente la versión que habilita para sus programas.
+
 ## Glosario
 
 | Concepto | Definición |

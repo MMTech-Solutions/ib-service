@@ -18,6 +18,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 Completada | PG2: runs y placement (pendiente de planificación) | 2026-09-17 |
+| [`Rewards`](rewards/README.md) | RWD1 inventariado; vertical CPA bloqueada | Fórmula CPA y contratos Auth/Finance pendientes | 2026-09-17 |
 
 ## Secuencia entre features
 

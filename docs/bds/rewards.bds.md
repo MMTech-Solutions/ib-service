@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.6
-- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`; Progression reutiliza el catálogo de reglas para contribuciones por puntos
+- **Versión:** 0.7
+- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`; Rewards inicia su inventario CPA con ledger propio de IB
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -21,7 +21,8 @@ El catálogo de reglas —identidad, versiones publicadas e inmutables y asignac
 | Asignación activa | Asignación cuyo intervalo de vigencia está abierto (`ends_at` nulo). |
 | Scope de instrumentos | Alcance de instrumentos en el que aplica la asignación. En esta fase el único valor admitido es `all` (todos los instrumentos del módulo). |
 | Estrategia | Tipo de cálculo que interpreta una configuración válida y produce una evaluación. |
-| Recompensa | Obligación calculada a favor de un beneficiario. |
+| Recompensa | Obligación calculada a favor de un beneficiario, registrada en el ledger propio de IB con su causa, snapshot y estado. |
+| Ledger de recompensas | Registro autoritativo de IB para las obligaciones de recompensa. Conserva su causa y snapshot; su estado refleja el ciclo informado por Finance. |
 | Settlement | Confirmación de que la operación financiera solicitada fue asentada. |
 | Contexto CPA | Snapshot que fija referido, plan, programa, asignación, versión de regla, scope y condiciones aplicables a una adquisición. |
 
@@ -67,12 +68,16 @@ erDiagram
 | BR-REWARD-005 | IB es fuente de verdad de por qué existe una recompensa; el dominio financiero es fuente de verdad de si el dinero fue asentado. |
 | BR-REWARD-006 | El procesamiento pausado de un módulo detiene sus nuevos cálculos y pagos sin modificar reglas ni snapshots publicados. |
 | BR-REWARD-007 | Pausar o desactivar un módulo no revierte automáticamente recompensas ya calculadas ni settlements confirmados. |
+| BR-REWARD-008 | Una recompensa nace en estado `pending` en el ledger de IB y solo transiciona a `settled` cuando Finance confirma que la transacción fue asentada. La causa y el snapshot de la recompensa no se sustituyen durante esa transición. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
-| BR-CPA-001 | Al capturar una adquisición CPA se fija el usuario referido y el contexto vigente que determina por qué programa se pagará, incluida la asignación y la versión de regla aplicable. |
+| BR-CPA-001 | Al recibir una adquisición CPA se fija el usuario referido, el IB y el contexto vigente que determina por qué programa se pagará, incluida la asignación y la versión de regla aplicable. El contexto se captura al recibir el hecho; no se presupone un instante de ocurrencia aportado por el productor. |
 | BR-CPA-002 | La progresión posterior del IB y la publicación de nuevas versiones no cambian el programa, asignación, versión de regla, scope o condiciones congeladas en el contexto CPA. |
 | BR-CPA-003 | Una misma adquisición no puede pagarse nuevamente por el solo hecho de que el IB cambie de programa. |
+| BR-CPA-004 | La captura CPA es idempotente por el par usuario referido e IB. Las redeliveries del mismo hecho no crean otro contexto ni otra recompensa. |
+| BR-CPA-005 | El contexto CPA conserva el conjunto de símbolos marcados para CPA del programa en el instante de captura. Cambios posteriores de programa, regla o símbolos no modifican ese snapshot. |
+| BR-CPA-006 | Un programa puede tener como máximo una asociación CPA activa a una versión publicada de regla `cpa_fixed_amount`. |
 
 ## Ejemplo de reutilización CPA
 
@@ -95,11 +100,11 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Actividad aceptada para evaluación.
 - Recompensa calculada.
 - Pago solicitado.
-- Pago confirmado, fallido o revertido.
+- Reward asentada.
 
 ## Decisiones pendientes
 
-- Estados y transiciones definitivos de una recompensa.
+- Estados distintos de `pending` y `settled`, y sus transiciones definitivas.
 - Política de reintentos, reversas y compensaciones financieras.
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.

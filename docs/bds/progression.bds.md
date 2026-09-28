@@ -1,13 +1,13 @@
 # Progresión multi-módulo por puntos — BDS
 
-- **Versión:** 0.6
-- **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, unicidad de reglas y catálogo inicial de motivos de exclusión para PG1/PG2
+- **Versión:** 0.7
+- **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, ponderación por nivel y catálogo inicial de motivos de exclusión para PG1/PG2
 
 **Propósito:** normalizar actividades heterogéneas para que todos los módulos habilitados puedan contribuir al crecimiento del IB.
 
 ## Contexto
 
-Broker, Copy Trading, Prop Firm y Hedge Fund no producen una misma unidad de actividad. La progresión convierte cantidades nativas —lotes, depósitos, compras de challenge u otras métricas— a puntos sin dimensión. Un run evalúa los puntos aplicables y determina si el usuario sube, baja o permanece en su programa.
+Broker, Copy Trading, Prop Firm y Hedge Fund no producen una misma unidad de actividad. La progresión convierte cantidades nativas —lotes, depósitos, compras de challenge u otras métricas— a puntos sin dimensión. La actividad de la red interna del IB puede aportar puntos al IB beneficiario según el nivel de distribución. Un run evalúa los puntos aplicables y determina si el usuario sube, baja o permanece en su programa.
 
 Los puntos solo representan progreso. No son dinero, saldo, recompensa canjeable ni obligación financiera.
 
@@ -19,8 +19,11 @@ La conversión a puntos reutiliza el catálogo de reglas del plan: identidad, ve
 | --- | --- |
 | Métrica nativa | Cantidad emitida por un módulo en su unidad original. |
 | Regla de contribución | Regla del catálogo del plan cuya estrategia convierte una métrica nativa en puntos de progresión. En esta fase la estrategia aplicable es `points_per_quantity_unit`. |
-| Ponderación | Proporción que determina cuántos puntos aporta una unidad de la métrica. |
-| Contribución | Hecho auditable que registra la actividad aceptada, la regla y versión aplicadas y los puntos obtenidos. |
+| Red interna | Downline de un IB formada por sus referidos directos e indirectos. La actividad propia del IB no pertenece a su red para progresión. |
+| Nivel de distribución | Distancia entre el IB beneficiario y el referido fuente: el referido directo ocupa el nivel `0`; cada salto adicional incrementa el nivel en uno. |
+| Ponderación (`weight`) | Proporción configurada para un nivel de distribución que determina cuántos puntos aporta una unidad elegible de la actividad del referido. |
+| Plantilla de progresión | Configuración versionada de niveles de distribución y sus `weight`, asociable a un símbolo habilitado para progresión. Es independiente de las plantillas de pago. |
+| Contribución | Hecho auditable que registra la actividad aceptada, el referido fuente, el IB beneficiario, el nivel, la configuración aplicada y los puntos obtenidos. |
 | Evaluación de actividad | Registro durable del resultado de procesar una actividad para progresión: aceptada con contribución, o excluida con motivo. |
 | Puntos de progresión | Unidad común utilizada exclusivamente para evaluar placement. |
 | Período de progresión | Configuración obligatoria del plan que define la duración y alineación de cada ventana: `daily`, `weekly` o `monthly`, en UTC. |
@@ -38,6 +41,7 @@ erDiagram
     PLAN ||--o{ SUBSCRIPTION : receives
     PLAN ||--|{ PROGRAM : contains
     PLAN ||--o{ PROGRESSION_RUN : evaluates
+    SUBSCRIPTION ||--o{ REFERRAL_NETWORK_LINK : benefits_from
     SUBSCRIPTION ||--o{ ACTIVITY_EVALUATION : receives
     ACTIVITY_EVALUATION ||--o| CONTRIBUTION : may_produce
     RULE_ASSIGNMENT ||--o{ CONTRIBUTION : converts
@@ -50,12 +54,13 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    A[Actividad de módulo] --> B[Evaluación durable]
-    B -->|aceptada| C[Contribución en puntos]
-    B -->|excluida| D[Motivo auditable]
-    C --> E[Run del plan y ventana]
-    E --> F[Resultado por suscripción]
-    F --> G[Sube, baja o permanece]
+    A[Actividad de referido] --> B[Resolver red en occurred_at]
+    B --> C[Evaluación durable por beneficiario]
+    C -->|aceptada| D[Contribución en puntos]
+    C -->|excluida| E[Motivo auditable]
+    D --> F[Run del plan y ventana]
+    F --> G[Resultado por suscripción]
+    G --> H[Sube, baja o permanece]
 ```
 
 ## Reglas de dominio
@@ -64,21 +69,21 @@ flowchart LR
 | --- | --- |
 | BR-POINTS-001 | Toda contribución conserva la métrica nativa, su unidad, la regla aplicada y los puntos resultantes. |
 | BR-POINTS-002 | Los puntos se utilizan únicamente para progresión; nunca se pagan ni se incorporan a un balance financiero. |
-| BR-POINTS-003 | Solo los módulos habilitados por el plan y seleccionados por el programa vigente al ocurrir la actividad pueden aportar puntos. Un programa sin selecciones no genera puntos. |
-| BR-POINTS-004 | Una regla de contribución identifica el módulo, tipo de métrica, ponderación y, cuando corresponde, scope de instrumentos. |
+| BR-POINTS-003 | Solo los módulos habilitados por el plan y seleccionados por el programa vigente del IB beneficiario al ocurrir la actividad pueden aportar puntos. Un programa sin selecciones no genera puntos. |
+| BR-POINTS-004 | Una regla de contribución identifica el módulo, tipo de métrica y, cuando corresponde, scope de instrumentos. La plantilla de progresión seleccionada por el símbolo define la ponderación (`weight`) del nivel de distribución. |
 | BR-POINTS-005 | Un instrumento con el mismo nombre comercial en módulos distintos conserva bindings independientes y puede tener ponderaciones diferentes. |
 | BR-POINTS-006 | Una actividad solo produce contribución si satisface el módulo, la métrica y el scope configurados por la regla. |
 | BR-POINTS-007 | La conversión utiliza aritmética decimal exacta. Cantidades, ponderaciones y puntos admiten como máximo ocho decimales; una entrada con mayor escala se rechaza y no se redondea en silencio. |
-| BR-POINTS-008 | Toda contribución es idempotente respecto a la actividad fuente, beneficiario y versión de regla. |
-| BR-POINTS-009 | Una contribución registrada no se recalcula silenciosamente cuando cambia una ponderación; las nuevas condiciones requieren otra versión de regla. |
+| BR-POINTS-008 | Toda contribución es idempotente respecto a la actividad fuente, IB beneficiario, nivel de distribución, versión de regla y versión de plantilla. |
+| BR-POINTS-009 | Una contribución registrada no se recalcula silenciosamente cuando cambia una ponderación, plantilla, símbolo o red; las nuevas condiciones requieren otra versión de configuración y solo afectan actividad posterior. |
 | BR-POINTS-010 | Un run puede mantener, subir o bajar el placement según los puntos y umbrales aplicables. |
 | BR-POINTS-011 | Todos los módulos de un plan mixto contribuyen mediante el mismo ledger y mecanismo de evaluación, aunque utilicen métricas y ponderaciones diferentes. |
 | BR-POINTS-012 | El procesamiento pausado de un módulo impide calcular nuevas contribuciones suyas aunque las selecciones y umbrales del programa permanezcan vigentes. |
 | BR-POINTS-013 | La actividad del módulo consultada durante una pausa se conserva. Al reanudar se procesa solo si su ventana original sigue abierta; si la ventana ya cerró, permanece en evaluación sin puntos. |
 | BR-POINTS-014 | Un módulo inactivo no consulta actividad y no genera contribuciones nuevas. |
-| BR-POINTS-015 | La suscripción, el placement y la asignación o versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. Los umbrales del ladder se leen vigentes al ejecutar el run. |
+| BR-POINTS-015 | La red, nivel, suscripción, placement, símbolo, plantilla, asignación y versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. Los umbrales del ladder se leen vigentes al ejecutar el run. |
 | BR-POINTS-016 | Existe como máximo una asignación activa de estrategia `points_per_quantity_unit` por combinación de programa, módulo y métrica o unidad. El mismo tipo de estrategia puede repetirse en el módulo solo para métricas o unidades distintas. |
-| BR-POINTS-017 | Una misma actividad no recibe dos ponderaciones para la misma métrica. El total de la ventana suma contribuciones válidas de métricas y módulos distintos. |
+| BR-POINTS-017 | Una misma actividad puede contribuir a distintos IB beneficiarios de la red, pero recibe como máximo una ponderación por combinación de beneficiario, nivel, símbolo y métrica. El total de la ventana suma contribuciones válidas de métricas y módulos distintos. |
 | BR-POINTS-018 | Cada plan declara un período de progresión obligatorio: `daily`, `weekly` o `monthly`, alineado en UTC. No existe plan sin período. |
 | BR-POINTS-019 | Los puntos de una suscripción se reinician en cada ventana fija del plan. No se utiliza ventana móvil en esta fase. |
 | BR-POINTS-020 | Tras el fin de una ventana media una hora de margen técnico global antes de ejecutar el run. La actividad cuya ocurrencia pertenece a la ventana y se obtiene antes de ejecutar el run puede otorgar puntos; la posterior es actividad tardía. |
@@ -93,6 +98,12 @@ flowchart LR
 | BR-POINTS-029 | Retirar un módulo del plan o del programa deja de aportar puntos desde el instante del retiro. Las contribuciones previas permanecen válidas. |
 | BR-POINTS-030 | En esta fase no se convierten monedas distintas. Solo se acepta actividad cuya unidad coincide con la unidad de la regla aplicable. |
 | BR-POINTS-031 | Administración consulta evaluaciones, contribuciones, runs y resultados. El usuario IB no consulta estos artefactos mediante este dominio. |
+| BR-POINTS-032 | Solo la actividad de la red interna del IB puede generar sus puntos de progresión. La actividad propia no aporta; los referidos directos corresponden al nivel `0`. |
+| BR-POINTS-033 | La actividad de un referido puede generar una contribución independiente para cada IB beneficiario alcanzable dentro de la profundidad configurada de la red. |
+| BR-POINTS-034 | Un nivel de distribución no configurado en la plantilla de progresión no genera puntos. |
+| BR-POINTS-035 | Una plantilla de progresión define niveles y `weight` propios, se asocia a símbolos habilitados para progresión y es independiente de una plantilla de pago. |
+| BR-POINTS-036 | La contribución conserva como snapshot el referido fuente, IB beneficiario, nivel, símbolo, plantilla, versión y `weight` que aplicaban en `occurred_at`. |
+| BR-POINTS-037 | La progresión por red no realiza backfill: solo procesa actividad ocurrida desde su activación. |
 
 ## Ejemplos de conversión
 
@@ -112,10 +123,10 @@ Broker puede tener dos reglas `points_per_quantity_unit` activas en el mismo pro
 Una contribución debe poder responder:
 
 - Qué actividad la originó.
-- Qué usuario y suscripción se beneficiaron.
+- Qué referido originó la actividad, qué IB y suscripción se beneficiaron y en qué nivel de distribución.
 - Qué plan y programa estaban vigentes al ocurrir.
 - Qué módulo, métrica e instrumento participaron.
-- Qué regla y versión realizaron la conversión.
+- Qué símbolo, plantilla, versión, `weight`, regla y versión realizaron la conversión.
 - Cuál fue el valor original y cuántos puntos produjo.
 - En qué run fue considerada.
 
@@ -160,6 +171,8 @@ Un resultado por suscripción puede completarse, omitirse cuando la fijación o 
 
 - Actividad evaluada y aceptada.
 - Actividad evaluada y excluida.
+- Plantilla de progresión publicada o sustituida.
+- Símbolo habilitado o retirado para progresión.
 - Contribución registrada.
 - Ventana de progresión cerrada.
 - Run de progresión iniciado.
@@ -179,3 +192,9 @@ Un resultado por suscripción puede completarse, omitirse cuando la fijación o 
 
 - Política de reversas y compensaciones sobre contribuciones ya registradas.
 - Conversión FX y autoridad de la tasa cuando la métrica monetaria no coincida con la unidad de la regla.
+
+## Extensión de configuración de símbolos
+
+- Los símbolos seleccionados por programa conservan una referencia opaca del módulo, su server group y la moneda de ese grupo.
+- Una configuración de símbolo puede habilitar de forma acumulable progresión, recompensa por volumen y elegibilidad CPA.
+- Sustituir plantilla, ponderación o selección cierra la vigencia anterior y crea una nueva; las contribuciones conservan siempre la versión aplicada.

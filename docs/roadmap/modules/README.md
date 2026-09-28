@@ -92,6 +92,16 @@ posterga hasta que esos contratos y el modelo base estén estables.
 - [`architecture.md`](../../rules/architecture.md)
 - [`integrations.md`](../../rules/integrations.md)
 
+## M2 requerido por Progression PG2
+
+`Progression PG2` es el consumidor real que justifica M2. La necesidad y los
+criterios de salida están en
+[`07-m2-instrument-catalog-planning.md`](07-m2-instrument-catalog-planning.md).
+M2 debe completarse antes de asociar plantillas de progresión a símbolos; no se
+autoriza una asociación temporal por métrica o unidad.
+
+M2 incorpora un primer catálogo Broker fixture, paginado y filtrable, con referencias opacas de plataformas, trading servers, server groups, securities y símbolos. El adapter queda preparado para sustituirse por S2S sin cambiar el contrato de Modules.
+
 ## M3 abierto
 
 [`Progression PG1`](../progression/README.md) es el consumidor real de M3. El

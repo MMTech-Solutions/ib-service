@@ -1,12 +1,13 @@
 # Roadmap del feature Progression
 
-Estado: **PG1 Completada**
+Estado: **PG1 completada; documentación base de PG2 completada**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
-Dependencia de desbloqueo: ninguna
+Dependencias de desbloqueo PG2: `Modules M2` y contrato histórico de red de
+referidos en `auth-service`
 Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
-Última revisión: 2026-09-17
+Última revisión: 2026-09-28
 
 ## Objetivo
 
@@ -48,8 +49,15 @@ excluida) y contribuciones auditables. No ejecuta runs ni mueve placement.
 ## Segunda entrega: PG2
 
 Runs por plan y ventana, resultados independientes por suscripción y cambios
-de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
-`06-second-delivery-planning.md` y el ciclo 07–11.
+de placement conforme al ladder vivo. PG2 incorpora como necesidad de producto
+la progresión por red interna: la actividad de la downline del IB genera puntos
+según el nivel de distribución y la plantilla de progresión asociada al símbolo.
+
+La planificación inicial, las decisiones por formalizar en el BDS y las
+dependencias de desbloqueo están en
+[`06-pg2-network-progression-planning.md`](06-pg2-network-progression-planning.md).
+No se implementa un sustituto basado en métricas mientras `Modules M2` no
+publique el catálogo de instrumentos y símbolos.
 
 ## Decisiones confirmadas
 
@@ -113,6 +121,9 @@ de placement conforme al ladder vivo. Se documentará tras cerrar PG1, con
 
 ## Próximo paso
 
-PG1 está cerrada. Planificar PG2 (`06-second-delivery-planning.md` y el ciclo
-07–11) para runs por plan/ventana y placement automático. No reabrir PG1 salvo
-un defecto que bloquee PG2.
+Esperar la disponibilidad de `Modules M2` y del contrato histórico de
+`auth-service`. Con evidencia de ambas dependencias, crear
+`08-pg2-network-vertical-deliveries.md` antes de iniciar implementación. No
+reabrir PG1 salvo un defecto que bloquee PG2.
+
+Modules M2 ya define referencias opacas de símbolos y el programa puede asociar una versión de plantilla de progresión por símbolo. PG2 sigue pendiente del contrato histórico de red en Auth y de sus entregas verticales.

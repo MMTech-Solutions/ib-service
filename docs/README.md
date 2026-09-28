@@ -43,8 +43,10 @@ sustituir los BDS ni las reglas técnicas.
   `points_per_quantity_unit` + `BR-RULE-016`).
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
-- [`progression/`](roadmap/progression/README.md): sesiones 1–2 y P0 de PG1
-  completadas; sesión 3 pendiente (PG2 diferido).
+- [`progression/`](roadmap/progression/README.md): PG1 completada; PG2
+  (runs y placement) diferido.
+- [`rewards/`](roadmap/rewards/README.md): RWD1 inventariado; CPA bloqueada por
+  fórmula y contratos de Auth/Finance pendientes.
 
 ## Jerarquía de autoridad
 
