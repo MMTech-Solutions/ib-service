@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Features\Modules\Catalog\Http\V1\Controllers\ActivateModuleController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\DeactivateModuleController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\ListInstrumentCatalogController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ListModuleOperationalHistoryController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ListModulesController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\PauseModuleProcessingController;
@@ -60,6 +61,8 @@ Route::prefix('ib/v1')
         Route::prefix('admin')
             ->group(function (): void {
                 Route::get('modules', ListModulesController::class)->name('ib.v1.admin.modules.index');
+                Route::get('modules/{module}/catalog/{type}', ListInstrumentCatalogController::class)
+                    ->name('ib.v1.admin.modules.catalog.index');
                 Route::get('modules/{module}', ShowModuleController::class)->name('ib.v1.admin.modules.show');
                 Route::patch('modules/{module}', UpdateModuleController::class)->name('ib.v1.admin.modules.update');
                 Route::post('modules/{module}/activate', ActivateModuleController::class)->name('ib.v1.admin.modules.activate');

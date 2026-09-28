@@ -16,8 +16,10 @@ final class ClosedRuleStrategyRegistry implements RuleStrategyRegistryInterface
     public function __construct()
     {
         $points = new PointsPerQuantityUnitStrategy;
+        $cpa = new CpaFixedAmountStrategy;
         $this->definitions = [
             $points->type() => $points,
+            $cpa->type() => $cpa,
         ];
     }
 

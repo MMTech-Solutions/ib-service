@@ -7,4 +7,5 @@ namespace App\Features\Rules\Catalog\Enums;
 enum RuleStrategyType: string
 {
     case PointsPerQuantityUnit = 'points_per_quantity_unit';
+    case CpaFixedAmount = 'cpa_fixed_amount';
 }
