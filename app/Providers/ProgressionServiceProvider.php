@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Features\Progression\Console\CloseProgressionWindowsCommand;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Progression\Repositories\InMemory\InMemoryActivityDistributionRepository;
 use App\Features\Progression\Repositories\InMemory\InMemoryActivityEvaluationRepository;
+use App\Features\Progression\Repositories\InMemory\InMemoryProgressionRunRepository;
 use App\Features\Progression\Repositories\PostgreSql\PostgreSqlActivityDistributionRepository;
 use App\Features\Progression\Repositories\PostgreSql\PostgreSqlActivityEvaluationRepository;
+use App\Features\Progression\Repositories\PostgreSql\PostgreSqlProgressionRunRepository;
 use App\Features\Progression\Services\Adapters\IamResolveReferralUplineAdapter;
 use App\Features\Progression\Services\Adapters\ModulesFetchProgressionActivitiesAdapter;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 
 final class ProgressionServiceProvider extends ServiceProvider
@@ -37,5 +41,13 @@ final class ProgressionServiceProvider extends ServiceProvider
                 DB::connection(),
             ),
         );
+        $this->app->singleton('progression.runs.repositories.memory', fn (): InMemoryProgressionRunRepository => new InMemoryProgressionRunRepository);
+        $this->app->singleton('progression.runs.repositories.postgresql', fn (): PostgreSqlProgressionRunRepository => new PostgreSqlProgressionRunRepository(DB::connection()));
+    }
+
+    public function boot(): void
+    {
+        $this->commands([CloseProgressionWindowsCommand::class]);
+        Schedule::command('progression:close-windows')->everyFiveMinutes()->withoutOverlapping();
     }
 }

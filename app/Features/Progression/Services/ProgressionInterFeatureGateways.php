@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Services;
 
+use App\Features\Plans\Contracts\Ports\Input\ListActivePlansForProgressionPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
+use App\Features\Subscriptions\Contracts\Ports\Input\ListProgressionWindowSubscriptionsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 
 /**
@@ -31,6 +34,9 @@ final class ProgressionInterFeatureGateways
         private readonly HasOpenSubscriptionsForPlanPort $openSubscriptionsForPlan,
         private readonly ResolveSubscriptionContextPort $subscriptionContext,
         private readonly ResolvePointsContributionContextPort $pointsContributionContext,
+        private readonly ListActivePlansForProgressionPort $activePlansForProgression,
+        private readonly ListProgressionWindowSubscriptionsPort $windowSubscriptions,
+        private readonly ResolveProgressionTargetProgramPort $targetProgram,
     ) {}
 
     public function activities(): FetchProgressionActivitiesPort
@@ -81,5 +87,20 @@ final class ProgressionInterFeatureGateways
     public function pointsContributionContext(): ResolvePointsContributionContextPort
     {
         return $this->pointsContributionContext;
+    }
+
+    public function activePlansForProgression(): ListActivePlansForProgressionPort
+    {
+        return $this->activePlansForProgression;
+    }
+
+    public function windowSubscriptions(): ListProgressionWindowSubscriptionsPort
+    {
+        return $this->windowSubscriptions;
+    }
+
+    public function targetProgram(): ResolveProgressionTargetProgramPort
+    {
+        return $this->targetProgram;
     }
 }

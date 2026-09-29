@@ -235,12 +235,12 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
         self::assertSame(0, DB::table('progression_activity_evaluations')->where('id', $retryId)->count());
     }
 
-    public function test_pg1_schema_has_no_run_or_placement_mutation_tables(): void
+    public function test_pg2_schema_adds_runs_without_placement_mutation_tables(): void
     {
         self::assertTrue(Schema::hasTable('progression_activity_evaluations'));
         self::assertTrue(Schema::hasTable('progression_contributions'));
-        self::assertFalse(Schema::hasTable('progression_runs'));
-        self::assertFalse(Schema::hasTable('progression_run_results'));
+        self::assertTrue(Schema::hasTable('progression_runs'));
+        self::assertTrue(Schema::hasTable('progression_run_results'));
         self::assertFalse(Schema::hasTable('progression_window_closures'));
     }
 

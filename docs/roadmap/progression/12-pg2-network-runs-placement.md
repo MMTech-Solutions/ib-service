@@ -1,6 +1,6 @@
 # PG2: runs y placement sobre contribuciones congeladas
 
-Estado: **Diseño completado; implementación pendiente**  
+Estado: **PG2.4 implementado; PG2.5 pendiente**
 Última revisión: 2026-09-29
 
 ## Responsabilidad
@@ -23,6 +23,15 @@ programa objetivo con el ladder vigente al ejecutar el run.
 Las pruebas deben demostrar que cambiar la respuesta de IAM después de congelar
 una distribución no modifica contribuciones ni resultados de run.
 
+## Evidencia PG2.4
+
+- `progression:close-windows` cierra ventanas vencidas tras el margen global de
+  una hora y se ejecuta como fallback cada cinco minutos.
+- Los runs y resultados tienen claves únicas PostgreSQL y solo reintentan
+  resultados fallidos; no consultan IAM ni reconstruyen distribuciones.
+- El resultado conserva puntos y programa objetivo; no modifica placement.
+
 ## Próximo paso
 
-Ejecutar el cierre integral definido en `13-pg2-network-closure.md`.
+Implementar PG2.5 para aplicar el cambio de placement a partir de resultados
+finales, sin reabrir runs.

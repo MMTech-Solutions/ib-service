@@ -1,6 +1,6 @@
 # PG2: cierre documental y gate de implementación
 
-Estado: **Diseño completado; implementación pendiente**  
+Estado: **PG2.4 implementado; cierre de placement pendiente en PG2.5**
 Última revisión: 2026-09-29
 
 ## Decisiones cerradas
@@ -22,6 +22,14 @@ Estado: **Diseño completado; implementación pendiente**
 | Reintento posterior al snapshot | Reutiliza destinatarios sin llamada IAM. |
 | Reintento concurrente | Una distribución canónica, sin duplicados. |
 | Run | Suma contribuciones locales y no llama IAM. |
+
+## Evidencia PG2.4
+
+- El comando `progression:close-windows` es la entrada operativa y tiene un
+  schedule fallback local cada cinco minutos.
+- PostgreSQL impone idempotencia por plan/ventana y por run/suscripción.
+- Los resultados finales son inmutables; los fallidos se reintentan sin
+  revertir resultados de otras suscripciones ni mover placement.
 
 ## Gate
 

@@ -8,6 +8,7 @@ use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
+use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
 use Closure;
 
 interface SubscriptionRepositoryInterface
@@ -31,6 +32,9 @@ interface SubscriptionRepositoryInterface
      * @return list<array{subscription: Subscription, placement: SubscriptionPlacement}>
      */
     public function listPlacementContextsAt(string $externalUserId, string $occurredAt): array;
+
+    /** @return list<ProgressionWindowSubscriptionData> */
+    public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array;
 
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData;
 

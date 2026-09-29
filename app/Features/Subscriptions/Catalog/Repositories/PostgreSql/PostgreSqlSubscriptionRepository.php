@@ -22,6 +22,7 @@ use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\SubscriptionChangeRecord;
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\SubscriptionPlacementRecord;
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\SubscriptionRecord;
+use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -116,6 +117,36 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         );
 
         return $matches;
+    }
+
+    public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array
+    {
+        return SubscriptionRecord::query()
+            ->where('plan_id', $planId)
+            ->whereNotNull('activated_at')
+            ->where('activated_at', '<', $windowEndsAt)
+            ->where(function ($query) use ($windowStartsAt): void {
+                $query->whereNull('closed_at')->orWhere('closed_at', '>', $windowStartsAt);
+            })
+            ->orderBy('activated_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function (SubscriptionRecord $record) use ($windowStartsAt, $windowEndsAt): ProgressionWindowSubscriptionData {
+                $isEvaluable = SubscriptionPlacementRecord::query()
+                    ->where('subscription_id', $record->id)
+                    ->where('is_fixed', false)
+                    ->where('effective_from', '<', $windowEndsAt)
+                    ->where(function ($query) use ($windowStartsAt): void {
+                        $query->whereNull('effective_until')->orWhere('effective_until', '>', $windowStartsAt);
+                    })
+                    ->exists();
+
+                return new ProgressionWindowSubscriptionData(
+                    subscription_id: (string) $record->id,
+                    is_evaluable: $isEvaluable,
+                );
+            })
+            ->all();
     }
 
     public function paginate(SubscriptionListQueryData $query): SubscriptionAggregatePageData

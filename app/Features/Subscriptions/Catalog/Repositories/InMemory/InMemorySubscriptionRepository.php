@@ -16,6 +16,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionInvariantException
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionChange;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
+use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
 use Closure;
 use Throwable;
 
@@ -119,6 +120,33 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
                 return strcmp($left['placement']->id, $right['placement']->id);
             },
         );
+
+        return $matches;
+    }
+
+    public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array
+    {
+        $matches = [];
+
+        foreach ($this->subscriptions as $subscription) {
+            if ($subscription->planId !== $planId || $subscription->activatedAt === null) {
+                continue;
+            }
+
+            if ($subscription->activatedAt >= $windowEndsAt || ($subscription->closedAt !== null && $subscription->closedAt <= $windowStartsAt)) {
+                continue;
+            }
+
+            $isEvaluable = false;
+            foreach ($subscription->placements as $placement) {
+                if (! $placement->isFixed() && $placement->effectiveFrom < $windowEndsAt && ($placement->effectiveUntil === null || $placement->effectiveUntil > $windowStartsAt)) {
+                    $isEvaluable = true;
+                    break;
+                }
+            }
+
+            $matches[] = new ProgressionWindowSubscriptionData($subscription->id, $isEvaluable);
+        }
 
         return $matches;
     }
