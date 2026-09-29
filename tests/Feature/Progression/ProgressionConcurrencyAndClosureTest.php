@@ -10,6 +10,7 @@ use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanRecord;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\Models\ProgramModuleSelectionRecord;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\Models\ProgramRecord;
 use App\Features\Progression\Factories\ActivityEvaluationRepositoryFactory;
+use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Models\ActivityEvaluation;
 use App\Features\Progression\Models\Contribution;
 use App\Features\Progression\ValueObjects\ExactDecimal;
@@ -66,6 +67,8 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
 
     protected function tearDown(): void
     {
+        DB::table('progression_run_results')->delete();
+        DB::table('progression_runs')->delete();
         DB::table('progression_contributions')->delete();
         DB::table('progression_activity_evaluations')->delete();
         DB::table('rule_assignments')->delete();
@@ -244,6 +247,99 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
         self::assertFalse(Schema::hasTable('progression_window_closures'));
     }
 
+    public function test_run_and_result_constraints_are_idempotent_and_completed_runs_do_not_reopen(): void
+    {
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        $window = ProgressionWindow::of(
+            CarbonImmutable::parse('2026-09-19T00:00:00Z'),
+            CarbonImmutable::parse('2026-09-20T00:00:00Z'),
+        );
+        $repository = app(ProgressionRunRepositoryFactory::class)->make('postgresql');
+
+        $first = $repository->findOrCreateRun($this->planId, $window, $now);
+        $second = $repository->findOrCreateRun($this->planId, $window, $now->addSecond());
+        self::assertSame($first->id, $second->id);
+        self::assertSame(1, DB::table('progression_runs')->where('plan_id', $this->planId)->count());
+
+        $firstResult = $repository->findOrCreateResult($first->id, $this->subscriptionId, $now);
+        $secondSubscriptionId = $this->createActiveSubscription($now);
+        $failedResult = $repository->findOrCreateResult($first->id, $secondSubscriptionId, $now);
+        $repository->markCompleted($firstResult, ExactDecimal::fromString('12.5'), $this->programId, $now);
+        $repository->markFailed($firstResult, 'must not overwrite final result', $now);
+        $repository->markFailed($failedResult, 'retryable failure', $now);
+
+        $withErrors = $repository->finishRun($first, $now);
+        self::assertSame('completed_with_errors', $withErrors->status->value);
+        self::assertSame('completed', DB::table('progression_run_results')->where('id', $firstResult->id)->value('status'));
+        self::assertSame(1, DB::table('progression_run_results')->where('id', $failedResult->id)->value('attempt_count'));
+
+        $retry = $repository->findOrCreateResult($first->id, $secondSubscriptionId, $now->addMinute());
+        $repository->markCompleted($retry, ExactDecimal::fromString('0'), $this->programId, $now->addMinute());
+        $completed = $repository->finishRun($withErrors, $now->addMinute());
+        $repository->markFailed($retry, 'completed results remain final', $now->addMinutes(2));
+
+        self::assertTrue($completed->isCompleted());
+        self::assertSame('completed', DB::table('progression_runs')->where('id', $first->id)->value('status'));
+        self::assertSame('completed', DB::table('progression_run_results')->where('id', $retry->id)->value('status'));
+    }
+
+    public function test_postgresql_run_contention_keeps_a_single_canonical_window(): void
+    {
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        $window = ProgressionWindow::of(
+            CarbonImmutable::parse('2026-09-19T00:00:00Z'),
+            CarbonImmutable::parse('2026-09-20T00:00:00Z'),
+        );
+        $canonicalId = (string) Str::uuid7();
+        $racing = $this->racingConnection();
+        $racing->beginTransaction();
+
+        try {
+            $racing->table('progression_runs')->insert([
+                'id' => $canonicalId, 'plan_id' => $this->planId, 'window_starts_at' => $window->startsAt,
+                'window_ends_at' => $window->endsAt, 'status' => 'pending', 'started_at' => $now,
+                'completed_at' => null, 'created_at' => $now, 'updated_at' => $now,
+            ]);
+            DB::statement("SET lock_timeout TO '500ms'");
+            try {
+                app(ProgressionRunRepositoryFactory::class)->make('postgresql')->findOrCreateRun($this->planId, $window, $now);
+                self::fail('Expected the contested unique key to wait for PostgreSQL.');
+            } catch (Throwable $exception) {
+                self::assertMatchesRegularExpression('/lock|timeout|canceling statement/i', $exception->getMessage());
+            } finally {
+                DB::rollBack();
+                DB::statement('SET lock_timeout TO 0');
+            }
+            $racing->commit();
+        } catch (Throwable $exception) {
+            $racing->rollBack();
+            throw $exception;
+        }
+
+        $run = app(ProgressionRunRepositoryFactory::class)->make('postgresql')->findOrCreateRun($this->planId, $window, $now);
+        self::assertSame($canonicalId, $run->id);
+        self::assertSame(1, DB::table('progression_runs')->where('plan_id', $this->planId)->count());
+    }
+
+    public function test_it_sums_only_final_accepted_contributions_for_subscription_and_window(): void
+    {
+        $window = ProgressionWindow::of(
+            CarbonImmutable::parse('2026-09-19T00:00:00Z'),
+            CarbonImmutable::parse('2026-09-20T00:00:00Z'),
+        );
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        $this->insertAcceptedContribution($this->subscriptionId, $window, CarbonImmutable::parse('2026-09-19T12:00:00Z'), '3.25');
+        $this->insertAcceptedContribution($this->subscriptionId, $window, CarbonImmutable::parse('2026-09-19T18:00:00Z'), '6.75');
+        $this->insertAcceptedContribution($this->createActiveSubscription($now), $window, CarbonImmutable::parse('2026-09-19T19:00:00Z'), '99');
+        $nextWindow = ProgressionWindow::of($window->endsAt, $window->endsAt->addDay());
+        $this->insertAcceptedContribution($this->subscriptionId, $nextWindow, CarbonImmutable::parse('2026-09-20T00:30:00Z'), '50');
+
+        $points = app(ProgressionRunRepositoryFactory::class)->make('postgresql')
+            ->sumAcceptedContributionPoints($this->planId, $this->subscriptionId, $window);
+
+        self::assertSame('10', $points->value());
+    }
+
     private function racingConnection(): Connection
     {
         config([
@@ -338,5 +434,39 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
         $this->ruleId = (string) $rule->id;
         $this->ruleVersionId = (string) $ruleVersion->id;
         $this->ruleAssignmentId = (string) $assignment->id;
+    }
+
+    private function createActiveSubscription(CarbonImmutable $now): string
+    {
+        $id = (string) Str::uuid7();
+        DB::table('subscriptions')->insert([
+            'id' => $id, 'external_user_id' => (string) Str::uuid7(), 'plan_id' => $this->planId,
+            'origin' => 'user_application', 'requires_approval' => false, 'status' => 'active',
+            'activated_at' => $now, 'closed_at' => null, 'replaces_subscription_id' => null,
+            'lock_version' => 1, 'created_at' => $now, 'updated_at' => $now,
+        ]);
+
+        return $id;
+    }
+
+    private function insertAcceptedContribution(string $subscriptionId, ProgressionWindow $window, CarbonImmutable $occurredAt, string $points): void
+    {
+        $evaluationId = (string) Str::uuid7();
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        DB::table('progression_activity_evaluations')->insert([
+            'id' => $evaluationId, 'module_id' => $this->moduleId, 'source_activity_id' => (string) Str::uuid7(),
+            'beneficiary_external_user_id' => (string) Str::uuid7(), 'subscription_id' => $subscriptionId,
+            'plan_id' => $this->planId, 'program_id' => $this->programId, 'occurred_at' => $occurredAt,
+            'window_starts_at' => $window->startsAt, 'window_ends_at' => $window->endsAt,
+            'metric_code' => 'confirmed_deposit', 'unit_code' => 'usd', 'instrument_reference' => null,
+            'quantity' => '1', 'status' => 'accepted', 'exclusion_reason' => null,
+            'evaluated_at' => $now, 'created_at' => $now, 'updated_at' => $now,
+        ]);
+        DB::table('progression_contributions')->insert([
+            'id' => (string) Str::uuid7(), 'evaluation_id' => $evaluationId, 'rule_id' => $this->ruleId,
+            'rule_version_id' => $this->ruleVersionId, 'rule_assignment_id' => $this->ruleAssignmentId,
+            'strategy_type' => 'points_per_quantity_unit', 'scope_type' => 'all', 'weight' => '1',
+            'distribution_weight' => '1', 'points' => $points, 'created_at' => $now, 'updated_at' => $now,
+        ]);
     }
 }
