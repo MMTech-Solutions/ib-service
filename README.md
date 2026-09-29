@@ -2,6 +2,8 @@
 
 Microservicio responsable de definir cómo un Introducing Broker se suscribe a un plan, progresa entre sus programas y recibe recompensas generadas por distintos módulos de negocio.
 
+La raíz del repositorio es `broker/ib-service/api`.
+
 El servicio se diseña con el **Plan IB como raíz funcional**. Broker, Copy Trading, Prop Firm, Hedge Fund y futuros módulos actúan como proveedores independientes de actividad; ninguno debe ser requisito técnico para que otro genere progresión o recompensas.
 
 ## Estado

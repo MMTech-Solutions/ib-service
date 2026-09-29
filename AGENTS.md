@@ -1,6 +1,6 @@
 # Instrucciones del repositorio
 
-Este repositorio contiene el microservicio IB. Antes de explorar, planificar o modificar, confirmar la raíz con `git rev-parse --show-toplevel` y mantener todo el alcance dentro de este repositorio salvo petición explícita.
+Este repositorio contiene el microservicio IB y su raíz es `broker/ib-service/api`. Antes de explorar, planificar o modificar, confirmar la raíz con `git rev-parse --show-toplevel` y mantener todo el alcance dentro de este repositorio salvo petición explícita.
 
 ## Fuentes de verdad
 

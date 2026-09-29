@@ -1,6 +1,6 @@
 # Documentación de IB Service
 
-Este directorio contiene las fuentes de verdad funcionales y técnicas del servicio. Su propósito es permitir que producto, negocio e ingeniería compartan el mismo vocabulario, que las decisiones sean verificables y que el código pueda contrastarse con reglas explícitas.
+Este directorio contiene las fuentes de verdad funcionales y técnicas del servicio. Se encuentra en `broker/ib-service/api/docs` y su propósito es permitir que producto, negocio e ingeniería compartan el mismo vocabulario, que las decisiones sean verificables y que el código pueda contrastarse con reglas explícitas.
 
 ## Secciones
 
