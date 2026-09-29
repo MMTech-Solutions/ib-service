@@ -12,7 +12,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | M1 completado | M3: contrato de actividad definido; adapter pendiente | 2026-09-17 |
+| [`Modules`](modules/README.md) | M1, M2 y M3 completados | M4: sustitución por Trading Account Service pendiente | 2026-09-28 |
 | [`Plans`](plans/README.md) | P1 + P0.3 completados | Extensión Progression publicada | 2026-09-17 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
@@ -38,6 +38,7 @@ Programs P2  (ladder vivo de umbrales)
     └──→ Subscriptions S1 ────────┤──→ Progression PG1 → PG2
                                   └──→ Rewards
 Modules M3 (actividad) ───────────→ Progression PG1
+Modules M2 (instrumentos) ─────────→ Progression PG2
 ```
 
 ```mermaid
@@ -48,6 +49,7 @@ flowchart LR
     Rules --> Progression["Progression PG1"]
     Subs --> Progression
     ModulesM3["Modules M3"] --> Progression
+    ModulesM2["Modules M2"] --> PG2
     Progression --> PG2["Progression PG2"]
     Rules --> Rewards["Rewards"]
     Subs --> Rewards

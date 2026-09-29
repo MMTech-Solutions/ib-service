@@ -65,14 +65,18 @@ pero se diseñará y validará como parte del vertical de Plans.
 No se avanza a Programs antes de completar P1: un programa pertenece a un plan
 y solo puede usar módulos habilitados por ese plan.
 
-### M2 — Catálogo externo de instrumentos
+### M2 — Catálogo externo de instrumentos (completado)
 
 Define el puerto de salida y el adaptador temporal hacia Broker para consultar
 server groups, símbolos e instrumentos. Devuelve identidades contractuales
 normalizadas y conserva la frontera necesaria para sustituir al proveedor.
 
-Criterio de aceptación preliminar: un caso de uso de `Modules` obtiene símbolos
-por módulo y contexto sin exponer IDs internos de Broker al consumidor.
+Criterio de aceptación: `ListInstrumentCatalogPort` devuelve instrumentos
+normalizados, paginados y filtrables por módulo sin exponer IDs internos de
+Broker. El adapter fixture se valida mediante una suite contractual reutilizable;
+el endpoint administrativo y Postman aportan evidencia de la consulta real.
+
+Evidencia de cierre: [`08-m2-implementation-closure.md`](08-m2-implementation-closure.md).
 
 ### M3 — Fuentes de actividad
 
@@ -97,8 +101,8 @@ adaptador temporal sin cambios para los consumidores.
   auditoría.
 - Plans P1 depende de M1 y origina el primer puerto público de Modules.
 - Programs depende de Plans P1 y de sus módulos habilitados.
-- M2 necesita un consumidor real que defina la necesidad de server groups e
-  instrumentos.
+- M2 fue justificada por Progression PG2 y se completó con el catálogo Broker
+  fixture; la sustitución S2S queda en M4.
 - M3 necesita consumidores y vocabulario de actividad para puntos o
   recompensas.
 - M4 depende de contratos reales del futuro Trading Account Service.

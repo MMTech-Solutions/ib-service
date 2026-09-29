@@ -531,6 +531,36 @@
                                 "description": "Returns immutable operational changes in reverse chronological order."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "List instrument catalog",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/modules/{{MODULE_ID}}/catalog/symbol?page=1&per_page=100&search=eur&platform=broker:platform:mt5&trading_server=broker:server:mt5-live&server_group=broker:group:mt5-usd&security=broker:security:fx",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "modules", "{{MODULE_ID}}", "catalog", "symbol"],
+                                    "variable": [
+                                        {"key": "MODULE_ID", "value": "{{MODULE_ID}}", "description": "UUIDv7 of the module."}
+                                    ],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "search", "value": "eur", "description": "Case-insensitive search by instrument name.", "disabled": true},
+                                        {"key": "platform", "value": "broker:platform:mt5", "description": "Optional opaque platform reference.", "disabled": true},
+                                        {"key": "trading_server", "value": "broker:server:mt5-live", "description": "Optional opaque trading server reference.", "disabled": true},
+                                        {"key": "server_group", "value": "broker:group:mt5-usd", "description": "Optional opaque server group reference.", "disabled": true},
+                                        {"key": "security", "value": "broker:security:fx", "description": "Optional opaque security reference.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Requires ib.modules.manage on the admin_panel surface. Lists normalized platform, trading_server, server_group, security or symbol references for a module. The current Broker fixture supports this catalog; unsupported active modules return 422."
+                            },
+                            "response": []
                         }
                     ]
                 },

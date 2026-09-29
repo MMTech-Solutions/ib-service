@@ -1,8 +1,8 @@
 # PG2: modelo de dominio de progresión por red interna
 
 Estado: **Completada**
-Dependencias de implementación: `Modules M2` y contrato histórico de red de
-referidos de `auth-service`
+Dependencia de implementación: contrato histórico de red de referidos de
+`auth-service`; Modules M2 ya está satisfecha
 Última revisión: 2026-09-28
 
 ## Objetivo
@@ -70,5 +70,5 @@ Actividad normalizada de referido
 
 ## Próximo paso
 
-Crear `08-pg2-network-vertical-deliveries.md` cuando `Modules M2` y el contrato
-histórico de Auth tengan una fecha de disponibilidad o una evidencia equivalente.
+Crear `08-pg2-network-vertical-deliveries.md` cuando el contrato histórico de
+Auth tenga una fecha de disponibilidad o una evidencia equivalente.

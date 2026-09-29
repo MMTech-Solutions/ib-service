@@ -1,6 +1,6 @@
 # M2: planificación del catálogo de instrumentos para Progression
 
-Estado: **Pendiente de implementación**
+Estado: **Completada**
 Consumidor real: `Progression PG2`
 Última revisión: 2026-09-28
 
@@ -36,14 +36,26 @@ propia configuración, sin trasladar reglas de Progression a Modules.
   consumido por Progression.
 - Progression puede asociar y consultar su configuración por símbolo sin
   importar tipos, SDKs o identificadores internos del proveedor.
-- Hay pruebas contractuales del puerto y evidencia de una consulta real.
+- Hay pruebas contractuales del adapter y evidencia de una consulta real por el
+  endpoint administrativo y la colección Postman.
 
 ## Fuera de M2
 
 - Plantillas, pesos, reglas, puntos, beneficiarios y placement.
 - Resolver red de referidos o usuarios IB.
 
+## Evidencia de cierre
+
+- `ListInstrumentCatalogPort` y los Data V1 publicados en `Modules/Contracts`.
+- `FixtureBrokerInstrumentCatalogAdapter`, aislado detrás de
+  `InstrumentCatalogSourceInterface`.
+- Endpoint administrativo paginado y filtrable, con autorización
+  `ib.modules.manage`.
+- Suite contractual del adapter, pruebas HTTP y request Postman.
+- Commit de implementación inicial: `b26e046 feat(modules): add broker instrument catalog`.
+
 ## Próximo paso
 
-Inventariar el caso de uso de Modules y definir sus entregas verticales antes de
-crear contratos o adapters.
+Esperar el Trading Account Service para M4. PG2 puede consumir la frontera M2;
+su único bloqueo externo pendiente es el contrato histórico de red de
+`auth-service`.

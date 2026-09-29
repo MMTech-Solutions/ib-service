@@ -13,11 +13,11 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 | --- | --- | --- |
 | 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado |
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para M1 |
-| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1 completado |
+| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1, M2 y M3 completados |
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
-Última revisión: 2026-09-17.
+Última revisión: 2026-09-28.
 
 ## Decisiones confirmadas
 
@@ -100,12 +100,11 @@ criterios de salida están en
 M2 debe completarse antes de asociar plantillas de progresión a símbolos; no se
 autoriza una asociación temporal por métrica o unidad.
 
-M2 incorpora un primer catálogo Broker fixture, paginado y filtrable, con referencias opacas de plataformas, trading servers, server groups, securities y símbolos. El adapter queda preparado para sustituirse por S2S sin cambiar el contrato de Modules.
+M2 está completada: incorpora un primer catálogo Broker fixture, paginado y filtrable, con referencias opacas de plataformas, trading servers, server groups, securities y símbolos. La evidencia de cierre está en [`08-m2-implementation-closure.md`](08-m2-implementation-closure.md). El adapter queda preparado para sustituirse por S2S en M4 sin cambiar el contrato de Modules.
 
-## M3 abierto
+## M3 completado
 
 [`Progression PG1`](../progression/README.md) es el consumidor real de M3. El
 contrato se define en [`06-m3-progression-activity-contract.md`](06-m3-progression-activity-contract.md)
-y su implementación queda pendiente del primer adapter de actividad. M2 permanece
-condicionado a un consumidor real de símbolos; no debe asociarse a
-`EvaluateActivity` ni a la actividad normalizada.
+y su implementación usa el adapter fixture de depósitos consumido por PG1. M2
+permanece separada de `EvaluateActivity` y de la actividad normalizada.

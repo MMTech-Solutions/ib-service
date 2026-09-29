@@ -4,8 +4,8 @@ Estado: **PG1 completada; documentación base de PG2 completada**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
-Dependencias de desbloqueo PG2: `Modules M2` y contrato histórico de red de
-referidos en `auth-service`
+Dependencia de desbloqueo PG2: contrato histórico de red de referidos en
+`auth-service`
 Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
 Última revisión: 2026-09-28
 
@@ -56,8 +56,9 @@ según el nivel de distribución y la plantilla de progresión asociada al símb
 La planificación inicial, las decisiones por formalizar en el BDS y las
 dependencias de desbloqueo están en
 [`06-pg2-network-progression-planning.md`](06-pg2-network-progression-planning.md).
-No se implementa un sustituto basado en métricas mientras `Modules M2` no
-publique el catálogo de instrumentos y símbolos.
+No se implementa un sustituto basado en métricas: Modules M2 ya publicó el
+catálogo de instrumentos y símbolos, y PG2 espera el contrato histórico de
+red de Auth.
 
 ## Decisiones confirmadas
 
@@ -121,9 +122,8 @@ publique el catálogo de instrumentos y símbolos.
 
 ## Próximo paso
 
-Esperar la disponibilidad de `Modules M2` y del contrato histórico de
-`auth-service`. Con evidencia de ambas dependencias, crear
-`08-pg2-network-vertical-deliveries.md` antes de iniciar implementación. No
-reabrir PG1 salvo un defecto que bloquee PG2.
+Esperar el contrato histórico de `auth-service`. Con evidencia de esa
+dependencia, crear `08-pg2-network-vertical-deliveries.md` antes de iniciar
+implementación. No reabrir PG1 salvo un defecto que bloquee PG2.
 
 Modules M2 ya define referencias opacas de símbolos y el programa puede asociar una versión de plantilla de progresión por símbolo. PG2 sigue pendiente del contrato histórico de red en Auth y de sus entregas verticales.

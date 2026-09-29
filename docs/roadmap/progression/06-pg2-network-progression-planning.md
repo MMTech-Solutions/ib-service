@@ -1,8 +1,8 @@
 # PG2: planificación de progresión por red interna
 
 Estado: **Completada**
-Dependencias de desbloqueo: `Modules M2` y contrato histórico de red de
-referidos de `auth-service`
+Dependencia de desbloqueo: contrato histórico de red de referidos de
+`auth-service`
 Última revisión: 2026-09-28
 
 ## Propósito
@@ -33,7 +33,7 @@ BDS propietario de Progression.
 
 | Dependencia | Propietario | Condición de desbloqueo |
 | --- | --- | --- |
-| Catálogo de instrumentos y símbolos | Modules M2 | Publicar la frontera que permita identificar símbolos por módulo sin exponer identificadores del proveedor. |
+| Catálogo de instrumentos y símbolos | Modules M2 | **Satisfecha:** frontera V1 publicada con referencias opacas por módulo. |
 | Red histórica | auth-service | Publicar un contrato versionado que resuelva, para un referido y `occurred_at`, los IB beneficiarios y su nivel de distribución. |
 | Semántica de negocio | BDS Progression | Incorporar glosario, relaciones, reglas, cálculo, auditoría y decisiones de migración temporal de PG2. |
 
@@ -49,7 +49,7 @@ símbolo e historicidad.
 | 2 | `07-pg2-network-domain-model.md` | Agregados, snapshots, invariantes e idempotencia | Completada |
 | 3 | `08-pg2-network-vertical-deliveries.md` | Entregas verticales y criterios observables | Bloqueada por dependencias externas |
 | 4 | `09-pg2-network-data-model.md` | Persistencia, restricciones, índices y concurrencia | Bloqueada por fases 2–3 |
-| 5 | `10-pg2-network-foundations.md` | Modules M2, contrato Auth y catálogo de plantillas | Bloqueada por dependencias externas |
+| 5 | `10-pg2-network-foundations.md` | Contrato Auth y catálogo de plantillas | Bloqueada por contrato externo de Auth |
 | 6 | `11-pg2-network-contributions.md` | Fan-out, evaluaciones y contribuciones auditables | Bloqueada por fase 5 |
 | 7 | `12-pg2-network-runs-placement.md` | Runs, resultados y placement | Bloqueada por fase 6 |
 | 8 | `13-pg2-network-closure.md` | Regresión, evidencia integral y gate para Rewards | Bloqueada por fase 7 |
@@ -78,6 +78,6 @@ No se crearán documentos vacíos para fases todavía no iniciadas.
 
 ## Próximo paso
 
-Esperar la evidencia de `Modules M2` y del contrato histórico de `auth-service`
-antes de crear `08-pg2-network-vertical-deliveries.md`. La implementación
-continúa bloqueada hasta entonces.
+Esperar la evidencia del contrato histórico de `auth-service` antes de crear
+`08-pg2-network-vertical-deliveries.md`. La implementación continúa bloqueada
+hasta entonces.

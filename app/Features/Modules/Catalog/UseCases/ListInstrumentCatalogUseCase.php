@@ -29,6 +29,6 @@ final class ListInstrumentCatalogUseCase implements ListInstrumentCatalogPort
             throw ModuleInactiveException::forIds([$module->id]);
         }
 
-        return $this->sourceFactory->make($module->code)->list($query);
+        return $this->sourceFactory->make($module->id, $module->code)->list($query);
     }
 }
