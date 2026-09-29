@@ -1,9 +1,8 @@
 # PG2: planificación de progresión por red interna
 
 Estado: **Completada**
-Dependencia de desbloqueo: contrato histórico de red de referidos de
-`auth-service`
-Última revisión: 2026-09-28
+Dependencia operativa satisfecha: resolución vigente de upline en IAM
+Última revisión: 2026-09-29
 
 ## Propósito
 
@@ -22,8 +21,9 @@ BDS propietario de Progression.
   el IB beneficiario; la actividad propia no genera progresión.
 - Cada contribución usa el `weight` del nivel de distribución de una plantilla
   propia de Progression, asociada a un símbolo habilitado para progresión.
-- Red, nivel, símbolo, plantilla, versión y `weight` se resuelven en
-  `occurred_at` y se conservan como snapshot auditable.
+- La red y el nivel se resuelven una sola vez al procesar la actividad y se
+  conservan como distribución inmutable; símbolo, plantilla, versión y
+  `weight` conservan su semántica de `occurred_at`.
 - No existe backfill: el comportamiento nuevo solo aplica a actividad ocurrida
   desde su activación.
 - Las plantillas de Progression comparten convenciones administrativas con las
@@ -34,8 +34,8 @@ BDS propietario de Progression.
 | Dependencia | Propietario | Condición de desbloqueo |
 | --- | --- | --- |
 | Catálogo de instrumentos y símbolos | Modules M2 | **Satisfecha:** frontera V1 publicada con referencias opacas por módulo. |
-| Red histórica | auth-service | Publicar un contrato versionado que resuelva, para un referido y `occurred_at`, los IB beneficiarios y su nivel de distribución. |
-| Semántica de negocio | BDS Progression | Incorporar glosario, relaciones, reglas, cálculo, auditoría y decisiones de migración temporal de PG2. |
+| Upline vigente | IAM | **Satisfecha:** resolver una vez los IB beneficiarios y niveles del referido; la respuesta se congela localmente antes de contribuir. |
+| Semántica de negocio | BDS Progression | **Satisfecha:** BDS v0.8 incorpora glosario, reglas, auditoría y distribución congelada de PG2. |
 
 No se asociará una plantilla a `metric_code` ni se usará la red actual como
 fallback: ambas alternativas romperían el requisito de configuración por
@@ -45,14 +45,14 @@ símbolo e historicidad.
 
 | Fase | Documento a crear al iniciarla | Alcance | Estado |
 | --- | --- | --- | --- |
-| 1 | Este documento | Decisiones, BDS y dependencias | En descubrimiento |
+| 1 | Este documento | Decisiones, BDS y dependencias | Completada |
 | 2 | `07-pg2-network-domain-model.md` | Agregados, snapshots, invariantes e idempotencia | Completada |
-| 3 | `08-pg2-network-vertical-deliveries.md` | Entregas verticales y criterios observables | Bloqueada por dependencias externas |
-| 4 | `09-pg2-network-data-model.md` | Persistencia, restricciones, índices y concurrencia | Bloqueada por fases 2–3 |
-| 5 | `10-pg2-network-foundations.md` | Contrato Auth y catálogo de plantillas | Bloqueada por contrato externo de Auth |
-| 6 | `11-pg2-network-contributions.md` | Fan-out, evaluaciones y contribuciones auditables | Bloqueada por fase 5 |
-| 7 | `12-pg2-network-runs-placement.md` | Runs, resultados y placement | Bloqueada por fase 6 |
-| 8 | `13-pg2-network-closure.md` | Regresión, evidencia integral y gate para Rewards | Bloqueada por fase 7 |
+| 3 | `08-pg2-network-vertical-deliveries.md` | Entregas verticales y criterios observables | Completada |
+| 4 | `09-pg2-network-data-model.md` | Persistencia, restricciones, índices y concurrencia | Completada |
+| 5 | `10-pg2-network-foundations.md` | Puerto IAM y catálogo de plantillas | Diseño completado |
+| 6 | `11-pg2-network-contributions.md` | Distribución, evaluaciones y contribuciones auditables | Diseño completado |
+| 7 | `12-pg2-network-runs-placement.md` | Runs, resultados y placement | Diseño completado |
+| 8 | `13-pg2-network-closure.md` | Regresión, evidencia integral y gate para Rewards | Diseño completado |
 
 Cada sesión crea su documento al iniciarse y lo actualiza al cerrarse con
 estado, evidencia verificable, pruebas ejecutadas, bloqueos y próximo paso.
@@ -61,23 +61,22 @@ No se crearán documentos vacíos para fases todavía no iniciadas.
 ## Criterio de salida de esta fase
 
 - El BDS de Progression refleja las decisiones confirmadas sin introducir
-  detalles de infraestructura. **Completado el 2026-09-28.**
-- `Modules M2` y el contrato de `auth-service` tienen condiciones de salida
+  detalles de infraestructura. **Completado el 2026-09-29.**
+- `Modules M2` y la consulta vigente de upline tienen condiciones de salida
   comprobables.
-- El README de Progression registra PG2 en descubrimiento y su siguiente paso.
+- El README de Progression registra el diseño PG2 cerrado y su siguiente paso.
 - No se ha modificado código, persistencia, contratos ejecutables ni el
   comportamiento de PG1.
 
 ## Evidencia
 
-- `docs/bds/progression.bds.md` v0.7: red interna, nivel `0`, plantilla propia,
-  snapshots en `occurred_at`, idempotencia por beneficiario y sin backfill.
-- `07-pg2-network-domain-model.md`: modelo de dominio de la siguiente fase.
+- `docs/bds/progression.bds.md` v0.8: red interna, nivel `0`, plantilla propia,
+  distribución congelada, idempotencia por beneficiario y sin backfill.
+- `07-pg2-network-domain-model.md`: modelo de dominio completado.
 - `docs/roadmap/modules/07-m2-instrument-catalog-planning.md` y la tarea de
   `auth-service`: dependencias documentadas con condiciones de salida.
 
 ## Próximo paso
 
-Esperar la evidencia del contrato histórico de `auth-service` antes de crear
-`08-pg2-network-vertical-deliveries.md`. La implementación continúa bloqueada
-hasta entonces.
+Crear las foundations de PG2. La futura consulta histórica de Auth no altera
+esta decisión sin una nueva regla de dominio.

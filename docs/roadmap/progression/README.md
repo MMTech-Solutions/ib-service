@@ -1,13 +1,13 @@
 # Roadmap del feature Progression
 
-Estado: **PG1 completada; documentación base de PG2 completada**
+Estado: **PG1 completada; PG2.1 y PG2.2 implementadas**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
-Dependencia de desbloqueo PG2: contrato histórico de red de referidos en
-`auth-service`
+Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
+IAM; la distribución se congela localmente por actividad
 Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
-Última revisión: 2026-09-28
+Última revisión: 2026-09-29
 
 ## Objetivo
 
@@ -53,12 +53,21 @@ de placement conforme al ladder vivo. PG2 incorpora como necesidad de producto
 la progresión por red interna: la actividad de la downline del IB genera puntos
 según el nivel de distribución y la plantilla de progresión asociada al símbolo.
 
-La planificación inicial, las decisiones por formalizar en el BDS y las
-dependencias de desbloqueo están en
+La planificación, el modelo de dominio y las entregas de PG2 están en
 [`06-pg2-network-progression-planning.md`](06-pg2-network-progression-planning.md).
-No se implementa un sustituto basado en métricas: Modules M2 ya publicó el
-catálogo de instrumentos y símbolos, y PG2 espera el contrato histórico de
-red de Auth.
+PG2 usa el upline vigente de IAM una sola vez por actividad y conserva la
+distribución resultante; no depende de una consulta histórica de red.
+
+| Etapa | Documento | Estado |
+| --- | --- | --- |
+| 1. Planificación | [`06-pg2-network-progression-planning.md`](06-pg2-network-progression-planning.md) | Completado |
+| 2. Modelo de dominio | [`07-pg2-network-domain-model.md`](07-pg2-network-domain-model.md) | Completado |
+| 3. Entregas verticales | [`08-pg2-network-vertical-deliveries.md`](08-pg2-network-vertical-deliveries.md) | Completado |
+| 4. Modelo de datos | [`09-pg2-network-data-model.md`](09-pg2-network-data-model.md) | Completado |
+| 5. Foundations | [`10-pg2-network-foundations.md`](10-pg2-network-foundations.md) | Implementada (PG2.1) |
+| 6. Contribuciones | [`11-pg2-network-contributions.md`](11-pg2-network-contributions.md) | Implementada (PG2.2) |
+| 7. Runs y placement | [`12-pg2-network-runs-placement.md`](12-pg2-network-runs-placement.md) | Diseño completado |
+| 8. Cierre | [`13-pg2-network-closure.md`](13-pg2-network-closure.md) | Diseño completado |
 
 ## Decisiones confirmadas
 
@@ -77,7 +86,8 @@ red de Auth.
 - Ventanas fijas con reinicio de puntos; margen técnico global de una hora
   (`BR-POINTS-019`, `BR-POINTS-020`).
 - Contexto de suscripción, placement y regla por instante de ocurrencia;
-  umbrales vigentes al run (`BR-POINTS-015`).
+  distribución de red congelada por actividad y umbrales vigentes al run
+  (`BR-POINTS-015`, `BR-POINTS-036`–`039`).
 - Actividad tardía: evaluación durable sin puntos (`BR-POINTS-021`).
 - Catálogo inicial de motivos de exclusión cerrado (BDS v0.6).
 - Precisión decimal máxima de ocho decimales; sin redondeo silencioso
@@ -122,8 +132,9 @@ red de Auth.
 
 ## Próximo paso
 
-Esperar el contrato histórico de `auth-service`. Con evidencia de esa
-dependencia, crear `08-pg2-network-vertical-deliveries.md` antes de iniciar
-implementación. No reabrir PG1 salvo un defecto que bloquee PG2.
+Iniciar PG2.4: cerrar ventanas y consumir contribuciones locales sin consultar
+IAM ni recrear beneficiarios. PG2.2 ya evalúa cada destinatario congelado y
+conserva sus snapshots auditables. No reabrir PG1 salvo un defecto que bloquee
+PG2.
 
-Modules M2 ya define referencias opacas de símbolos y el programa puede asociar una versión de plantilla de progresión por símbolo. PG2 sigue pendiente del contrato histórico de red en Auth y de sus entregas verticales.
+Modules M2 ya define referencias opacas de símbolos y el programa puede asociar una versión de plantilla de progresión por símbolo. PG2 conserva una distribución local por actividad y queda preparada para implementar sus entregas documentadas.

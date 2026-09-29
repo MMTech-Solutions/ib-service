@@ -22,6 +22,7 @@ final class ContributionRecord extends Model
     {
         return [
             'weight' => 'string',
+            'distribution_weight' => 'string',
             'points' => 'string',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

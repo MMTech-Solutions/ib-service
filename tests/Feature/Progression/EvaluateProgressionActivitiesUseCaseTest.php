@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace Tests\Feature\Progression;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
+use App\Features\Programs\Contracts\Data\V1\ProgramProgressionConfigurationData;
+use App\Features\Programs\Contracts\Data\V1\ResolveProgramProgressionConfigurationQueryData;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Progression\Contracts\Data\V1\FetchProgressionActivitiesQueryData;
 use App\Features\Progression\Contracts\Data\V1\FetchProgressionActivitiesResultData;
 use App\Features\Progression\Contracts\Data\V1\NormalizedActivityData;
+use App\Features\Progression\Contracts\Data\V1\ReferralUplineBeneficiaryData;
+use App\Features\Progression\Contracts\Data\V1\ResolveReferralUplineQueryData;
+use App\Features\Progression\Contracts\Data\V1\ResolveReferralUplineResultData;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
+use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Progression\DTOs\EvaluateProgressionActivitiesData;
 use App\Features\Progression\DTOs\EvaluateProgressionActivitiesResult;
 use App\Features\Progression\Enums\EvaluationStatus;
 use App\Features\Progression\Enums\ExclusionReason;
+use App\Features\Progression\Factories\ActivityDistributionRepositoryFactory;
 use App\Features\Progression\Factories\ActivityEvaluationRepositoryFactory;
+use App\Features\Progression\Models\ActivityDistribution;
 use App\Features\Progression\UseCases\EvaluateProgressionActivitiesUseCase;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\Features\Rules\Contracts\Data\V1\PointsContributionContextData;
@@ -43,6 +52,15 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         $this->seedAuthorizedAdmin();
         $this->customerSub = $this->seedAuthorizedCustomer();
         config()->set('progression.repository', 'postgresql');
+        $this->app->instance(ResolveReferralUplinePort::class, new class implements ResolveReferralUplinePort
+        {
+            public function resolve(ResolveReferralUplineQueryData $query): ResolveReferralUplineResultData
+            {
+                return ResolveReferralUplineResultData::resolved([
+                    new ReferralUplineBeneficiaryData($query->source_external_user_id, 0),
+                ], CarbonImmutable::now('UTC')->toISOString());
+            }
+        });
     }
 
     public function test_it_accepts_eligible_activity_and_is_idempotent(): void
@@ -89,6 +107,131 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertNotNull($stored);
         self::assertSame($first->evaluations[0]->id, $stored->id);
 
+        CarbonImmutable::setTestNow();
+    }
+
+    public function test_it_creates_independent_evaluations_for_each_frozen_beneficiary(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
+        $secondCustomer = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2';
+        $this->seedAuthorizedCustomer($secondCustomer);
+        $this->customerGatewayJson('POST', '/api/ib/v1/customer/subscriptions', ['plan_id' => $fixture['plan_id']], $secondCustomer)
+            ->assertCreated();
+        $this->app->instance(ResolveReferralUplinePort::class, new class($this->customerSub, $secondCustomer) implements ResolveReferralUplinePort
+        {
+            public function __construct(private readonly string $first, private readonly string $second) {}
+
+            public function resolve(ResolveReferralUplineQueryData $query): ResolveReferralUplineResultData
+            {
+                return ResolveReferralUplineResultData::resolved([
+                    new ReferralUplineBeneficiaryData($this->first, 0),
+                    new ReferralUplineBeneficiaryData($this->second, 1),
+                ], '2026-09-10T12:30:00.000000Z');
+            }
+        });
+        $this->stubActivities([$this->activity($fixture['module_id'], 'network-many', (string) Str::uuid7(), '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+
+        $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+
+        self::assertCount(2, $result->evaluations);
+        self::assertSame([0, 1], array_map(fn ($evaluation): int => $evaluation->distributionLevel, $result->evaluations));
+        self::assertSame(['10', '10'], array_map(fn ($evaluation): string => $evaluation->contribution?->points->value() ?? '', $result->evaluations));
+        CarbonImmutable::setTestNow();
+    }
+
+    public function test_it_reuses_an_empty_or_existing_distribution_without_calling_iam(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
+        $source = (string) Str::uuid7();
+        $distributions = $this->app->make(ActivityDistributionRepositoryFactory::class)->make();
+        $distributions->record(ActivityDistribution::resolve((string) Str::uuid7(), $fixture['module_id'], 'network-empty', $source, CarbonImmutable::parse('2026-09-10T12:30:00Z'), []));
+        $this->app->instance(ResolveReferralUplinePort::class, new class implements ResolveReferralUplinePort
+        {
+            public function resolve(ResolveReferralUplineQueryData $query): ResolveReferralUplineResultData
+            {
+                throw new \RuntimeException('IAM must not be called for a snapshot.');
+            }
+        });
+        $this->stubActivities([$this->activity($fixture['module_id'], 'network-empty', $source, '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+
+        $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+
+        self::assertSame([], $result->evaluations);
+        self::assertSame([], $result->retryableFailures);
+        CarbonImmutable::setTestNow();
+    }
+
+    public function test_it_leaves_iam_failures_retryable_without_a_distribution(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
+        $source = (string) Str::uuid7();
+        $this->app->instance(ResolveReferralUplinePort::class, new class implements ResolveReferralUplinePort
+        {
+            public function resolve(ResolveReferralUplineQueryData $query): ResolveReferralUplineResultData
+            {
+                return ResolveReferralUplineResultData::failed('unavailable');
+            }
+        });
+        $this->stubActivities([$this->activity($fixture['module_id'], 'network-failure', $source, '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+
+        $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+
+        self::assertSame([], $result->evaluations);
+        self::assertSame('unavailable', $result->retryableFailures[0]->failure_code);
+        self::assertNull($this->app->make(ActivityDistributionRepositoryFactory::class)->make()->findBySourceActivity($fixture['module_id'], 'network-failure'));
+        CarbonImmutable::setTestNow();
+    }
+
+    public function test_a_beneficiary_failure_does_not_revert_other_final_evaluations(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
+        $secondCustomer = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3';
+        $this->seedAuthorizedCustomer($secondCustomer);
+        $this->customerGatewayJson('POST', '/api/ib/v1/customer/subscriptions', ['plan_id' => $fixture['plan_id']], $secondCustomer)->assertCreated();
+        $this->app->instance(ResolveReferralUplinePort::class, new class($this->customerSub, $secondCustomer) implements ResolveReferralUplinePort
+        {
+            public function __construct(private readonly string $first, private readonly string $second) {}
+
+            public function resolve(ResolveReferralUplineQueryData $query): ResolveReferralUplineResultData
+            {
+                return ResolveReferralUplineResultData::resolved([new ReferralUplineBeneficiaryData($this->first, 0), new ReferralUplineBeneficiaryData($this->second, 1)], '2026-09-10T12:30:00Z');
+            }
+        });
+        $templateId = (string) Str::uuid7();
+        $templateVersionId = (string) Str::uuid7();
+        $bindingId = (string) Str::uuid7();
+        $configurationId = (string) Str::uuid7();
+        $timestamp = '2026-09-10T10:00:00Z';
+        DB::table('progression_templates')->insert(['id' => $templateId, 'name' => 'Network '.Str::random(6), 'created_at' => $timestamp, 'updated_at' => $timestamp]);
+        DB::table('progression_template_versions')->insert(['id' => $templateVersionId, 'template_id' => $templateId, 'version_number' => 1, 'status' => 'published', 'published_at' => $timestamp, 'created_at' => $timestamp, 'updated_at' => $timestamp]);
+        DB::table('plan_progression_template_version_bindings')->insert(['id' => $bindingId, 'plan_id' => $fixture['plan_id'], 'template_version_id' => $templateVersionId, 'created_at' => $timestamp]);
+        DB::table('program_symbol_configurations')->insert(['id' => $configurationId, 'program_id' => $fixture['program_id'], 'module_id' => $fixture['module_id'], 'symbol_reference' => 'XAUUSD', 'server_group_reference' => 'default', 'currency_code' => 'USD', 'use_for_progression' => true, 'plan_progression_template_version_binding_id' => $bindingId, 'use_for_volume_reward' => false, 'use_for_cpa' => false, 'starts_at' => $timestamp, 'created_at' => $timestamp, 'updated_at' => $timestamp]);
+        $configuration = new ProgramProgressionConfigurationData($configurationId, $bindingId, $templateVersionId, '1');
+        $this->app->instance(ResolveProgramProgressionConfigurationPort::class, new class($configuration) implements ResolveProgramProgressionConfigurationPort
+        {
+            public function __construct(private readonly ProgramProgressionConfigurationData $configuration) {}
+
+            public function resolve(ResolveProgramProgressionConfigurationQueryData $query): ?ProgramProgressionConfigurationData
+            {
+                if ($query->distribution_level === 1) {
+                    throw new \RuntimeException('temporary configuration outage');
+                }
+
+                return $this->configuration;
+            }
+        });
+        $activity = new NormalizedActivityData($fixture['module_id'], 'network-partial', (string) Str::uuid7(), 'confirmed_deposit', 'usd', '100', '2026-09-10T12:00:00Z', 'XAUUSD');
+        $this->stubActivities([$activity]);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00Z'));
+
+        $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
+
+        self::assertCount(1, $result->evaluations);
+        self::assertTrue($result->evaluations[0]->isAccepted());
+        self::assertSame('beneficiary_evaluation_failed', $result->retryableFailures[0]->failure_code);
         CarbonImmutable::setTestNow();
     }
 

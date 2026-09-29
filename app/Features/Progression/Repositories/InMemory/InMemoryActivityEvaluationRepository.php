@@ -44,8 +44,9 @@ final class InMemoryActivityEvaluationRepository implements ActivityEvaluationRe
         string $moduleId,
         string $sourceActivityId,
         string $beneficiaryExternalUserId,
+        ?int $distributionLevel = null,
     ): ?ActivityEvaluation {
-        $key = $this->key($moduleId, $sourceActivityId, $beneficiaryExternalUserId);
+        $key = $this->key($moduleId, $sourceActivityId, $beneficiaryExternalUserId, $distributionLevel);
         $id = $this->idempotencyIndex[$key] ?? null;
 
         return $id === null ? null : $this->findById($id);
@@ -122,6 +123,7 @@ final class InMemoryActivityEvaluationRepository implements ActivityEvaluationRe
                 $evaluation->moduleId,
                 $evaluation->sourceActivityId,
                 $evaluation->beneficiaryExternalUserId,
+                $evaluation->distributionLevel,
             );
 
             if ($existing !== null) {
@@ -140,8 +142,9 @@ final class InMemoryActivityEvaluationRepository implements ActivityEvaluationRe
         string $moduleId,
         string $sourceActivityId,
         string $beneficiaryExternalUserId,
+        ?int $distributionLevel = null,
     ): string {
-        return implode('|', [$moduleId, $sourceActivityId, $beneficiaryExternalUserId]);
+        return implode('|', [$moduleId, $sourceActivityId, $beneficiaryExternalUserId, $distributionLevel ?? -1]);
     }
 
     private function copy(ActivityEvaluation $evaluation): ActivityEvaluation

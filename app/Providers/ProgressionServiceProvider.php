@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
+use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
+use App\Features\Progression\Repositories\InMemory\InMemoryActivityDistributionRepository;
 use App\Features\Progression\Repositories\InMemory\InMemoryActivityEvaluationRepository;
+use App\Features\Progression\Repositories\PostgreSql\PostgreSqlActivityDistributionRepository;
 use App\Features\Progression\Repositories\PostgreSql\PostgreSqlActivityEvaluationRepository;
+use App\Features\Progression\Services\Adapters\IamResolveReferralUplineAdapter;
 use App\Features\Progression\Services\Adapters\ModulesFetchProgressionActivitiesAdapter;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +24,9 @@ final class ProgressionServiceProvider extends ServiceProvider
             FetchProgressionActivitiesPort::class,
             ModulesFetchProgressionActivitiesAdapter::class,
         );
+        $this->app->singleton(ResolveReferralUplinePort::class, IamResolveReferralUplineAdapter::class);
+        $this->app->singleton('progression.distributions.repositories.memory', fn (): InMemoryActivityDistributionRepository => new InMemoryActivityDistributionRepository);
+        $this->app->singleton('progression.distributions.repositories.postgresql', fn (): PostgreSqlActivityDistributionRepository => new PostgreSqlActivityDistributionRepository(DB::connection()));
         $this->app->singleton(
             'progression.evaluations.repositories.memory',
             fn (): InMemoryActivityEvaluationRepository => new InMemoryActivityEvaluationRepository,

@@ -10,6 +10,7 @@ use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
+use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
@@ -21,6 +22,7 @@ final class ProgressionInterFeatureGateways
 {
     public function __construct(
         private readonly FetchProgressionActivitiesPort $activities,
+        private readonly ResolveReferralUplinePort $referralUpline,
         private readonly ResolvePlanContextPort $planContext,
         private readonly ResolvePlanSubscriptionContextPort $planSubscriptionContext,
         private readonly ResolvePlanProgressionContextPort $planProgressionContext,
@@ -34,6 +36,11 @@ final class ProgressionInterFeatureGateways
     public function activities(): FetchProgressionActivitiesPort
     {
         return $this->activities;
+    }
+
+    public function referralUpline(): ResolveReferralUplinePort
+    {
+        return $this->referralUpline;
     }
 
     public function planContext(): ResolvePlanContextPort

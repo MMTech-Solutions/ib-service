@@ -24,6 +24,7 @@ final class ActivityEvaluationRecord extends Model
         return [
             'quantity' => 'string',
             'occurred_at' => 'immutable_datetime',
+            'distribution_resolved_at' => 'immutable_datetime',
             'window_starts_at' => 'immutable_datetime',
             'window_ends_at' => 'immutable_datetime',
             'evaluated_at' => 'immutable_datetime',

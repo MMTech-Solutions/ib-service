@@ -19,6 +19,7 @@ interface ActivityEvaluationRepositoryInterface
         string $moduleId,
         string $sourceActivityId,
         string $beneficiaryExternalUserId,
+        ?int $distributionLevel = null,
     ): ?ActivityEvaluation;
 
     public function paginate(ActivityEvaluationListQueryData $query): ActivityEvaluationAggregatePageData;

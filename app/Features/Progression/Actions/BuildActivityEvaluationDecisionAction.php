@@ -11,8 +11,10 @@ use App\Features\Plans\Contracts\Exceptions\ModuleNotEnabledOnPlanException;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Programs\Contracts\Data\V1\AssertSelectedModuleQueryData;
+use App\Features\Programs\Contracts\Data\V1\ResolveProgramProgressionConfigurationQueryData;
 use App\Features\Programs\Contracts\Exceptions\ModuleNotSelectedOnProgramException;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Progression\Contracts\Data\V1\NormalizedActivityData;
 use App\Features\Progression\Enums\ExclusionReason;
 use App\Features\Progression\Exceptions\InvalidExactDecimalException;
@@ -39,6 +41,7 @@ final class BuildActivityEvaluationDecisionAction
         private readonly ResolvePlanProgressionContextPort $planProgression,
         private readonly ResolvePlanContextPort $planContext,
         private readonly ResolveProgramContextPort $programs,
+        private readonly ResolveProgramProgressionConfigurationPort $progressionConfiguration,
         private readonly ResolveModulesPort $modules,
         private readonly ResolvePointsContributionContextPort $rules,
         private readonly DeriveProgressionWindowFromPeriod $deriveWindow,
@@ -49,7 +52,24 @@ final class BuildActivityEvaluationDecisionAction
         string $planId,
         bool $resumingAfterPause,
         CarbonImmutable $evaluatedAt,
+        ?string $beneficiaryExternalUserId = null,
+        ?string $activityDistributionId = null,
+        ?int $distributionLevel = null,
+        ?CarbonImmutable $distributionResolvedAt = null,
     ): ActivityEvaluation {
+        $sourceExternalUserId = $activity->subject_external_user_id;
+        if ($beneficiaryExternalUserId !== null) {
+            $activity = new NormalizedActivityData(
+                module_id: $activity->module_id,
+                source_activity_id: $activity->source_activity_id,
+                subject_external_user_id: $beneficiaryExternalUserId,
+                metric_code: $activity->metric_code,
+                unit_code: $activity->unit_code,
+                quantity: $activity->quantity,
+                occurred_at: $activity->occurred_at,
+                instrument_reference: $activity->instrument_reference,
+            );
+        }
         $occurredAt = CarbonImmutable::parse($activity->occurred_at)->utc();
         $evaluationId = (string) Str::uuid7();
 
@@ -279,6 +299,47 @@ final class BuildActivityEvaluationDecisionAction
             );
         }
 
+        $configuration = null;
+        $distributionWeight = ExactDecimal::fromString('1');
+        if ($activity->instrument_reference !== null) {
+            $configuration = $this->progressionConfiguration->resolve(new ResolveProgramProgressionConfigurationQueryData(
+                program_id: $subscription->program_id,
+                module_id: $activity->module_id,
+                instrument_reference: $activity->instrument_reference,
+                distribution_level: $distributionLevel ?? 0,
+                occurred_at: $occurredAt->toISOString(),
+            ));
+            if ($configuration === null) {
+                return $this->excluded(
+                    evaluationId: $evaluationId,
+                    activity: $activity,
+                    occurredAt: $occurredAt,
+                    evaluatedAt: $evaluatedAt,
+                    reason: ExclusionReason::NoApplicableRule,
+                    quantity: $quantity,
+                    subscriptionId: $subscription->subscription_id,
+                    planId: $subscription->plan_id,
+                    programId: $subscription->program_id,
+                    window: $window,
+                );
+            }
+            $distributionWeight = $this->tryQuantity($configuration->distribution_weight);
+            if ($distributionWeight === null) {
+                return $this->excluded(
+                    evaluationId: $evaluationId,
+                    activity: $activity,
+                    occurredAt: $occurredAt,
+                    evaluatedAt: $evaluatedAt,
+                    reason: ExclusionReason::ScaleExceeded,
+                    quantity: $quantity,
+                    subscriptionId: $subscription->subscription_id,
+                    planId: $subscription->plan_id,
+                    programId: $subscription->program_id,
+                    window: $window,
+                );
+            }
+        }
+
         $contribution = Contribution::create(
             id: (string) Str::uuid7(),
             evaluationId: $evaluationId,
@@ -288,12 +349,20 @@ final class BuildActivityEvaluationDecisionAction
             quantity: $quantity,
             weight: $weight,
             now: $evaluatedAt,
+            distributionWeight: $distributionWeight,
+            programSymbolConfigurationId: $configuration?->program_symbol_configuration_id,
+            planProgressionTemplateVersionBindingId: $configuration?->plan_progression_template_version_binding_id,
+            progressionTemplateVersionId: $configuration?->progression_template_version_id,
         );
 
         return ActivityEvaluation::accepted([
             'id' => $evaluationId,
             'moduleId' => $activity->module_id,
             'sourceActivityId' => $activity->source_activity_id,
+            'activityDistributionId' => $activityDistributionId,
+            'sourceExternalUserId' => $sourceExternalUserId,
+            'distributionLevel' => $distributionLevel,
+            'distributionResolvedAt' => $distributionResolvedAt,
             'beneficiaryExternalUserId' => $activity->subject_external_user_id,
             'subscriptionId' => $subscription->subscription_id,
             'planId' => $subscription->plan_id,

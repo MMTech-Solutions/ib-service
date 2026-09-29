@@ -7,8 +7,10 @@ namespace App\Providers;
 use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
+use App\Features\Programs\Catalog\UseCases\ResolveProgramProgressionConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseCase;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\PaymentTemplates\Repositories\InMemory\InMemoryPaymentTemplateRepository;
 use App\Features\Programs\PaymentTemplates\Repositories\PostgreSql\PostgreSqlPaymentTemplateRepository;
@@ -23,6 +25,7 @@ final class ProgramsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolveProgramContextPort::class, ResolveProgramContextUseCase::class);
+        $this->app->singleton(ResolveProgramProgressionConfigurationPort::class, ResolveProgramProgressionConfigurationUseCase::class);
         $this->app->singleton(ResolveProgramSubscriptionContextPort::class, ResolveProgramSubscriptionContextUseCase::class);
         $this->app->singleton(
             'programs.repositories.memory',

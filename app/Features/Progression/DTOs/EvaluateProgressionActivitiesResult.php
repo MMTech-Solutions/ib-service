@@ -21,10 +21,12 @@ final class EvaluateProgressionActivitiesResult
 
     /**
      * @param  list<ActivityEvaluation>  $evaluations
+     * @param  list<RetryableProgressionFailureData>  $retryableFailures
      */
     public function __construct(
         public readonly string $outcome,
         public readonly array $evaluations = [],
+        public readonly array $retryableFailures = [],
     ) {}
 
     public static function skippedPlanInactive(): self
@@ -45,8 +47,8 @@ final class EvaluateProgressionActivitiesResult
     /**
      * @param  list<ActivityEvaluation>  $evaluations
      */
-    public static function evaluated(array $evaluations): self
+    public static function evaluated(array $evaluations, array $retryableFailures = []): self
     {
-        return new self(self::OUTCOME_EVALUATED, $evaluations);
+        return new self(self::OUTCOME_EVALUATED, $evaluations, $retryableFailures);
     }
 }

@@ -1,9 +1,8 @@
 # PG2: modelo de dominio de progresión por red interna
 
 Estado: **Completada**
-Dependencia de implementación: contrato histórico de red de referidos de
-`auth-service`; Modules M2 ya está satisfecha
-Última revisión: 2026-09-28
+Dependencias de implementación: IAM para upline vigente y Modules M2
+Última revisión: 2026-09-29
 
 ## Objetivo
 
@@ -16,7 +15,7 @@ Subscriptions ni Auth.
 
 | Concepto | Propietario | Responsabilidad |
 | --- | --- | --- |
-| Red y nivel de distribución | auth-service | Resuelve históricamente los IB beneficiarios de un referido en `occurred_at`. |
+| Red y nivel de distribución | IAM | Resuelve los IB beneficiarios vigentes una sola vez; Progression conserva el resultado como distribución inmutable. |
 | Símbolo e instrumento | Modules | Publica una identidad normalizada; no calcula puntos ni decide beneficiarios. |
 | Plantilla de progresión | Progression | Conserva niveles, `weight` y versiones inmutables; no contiene datos de pago. |
 | Configuración de símbolo para progresión | Progression | Determina qué símbolos son elegibles y qué versión de plantilla aplica. |
@@ -31,16 +30,19 @@ Subscriptions ni Auth.
 - Un nivel sin `weight` configurado se excluye sin puntos.
 - La plantilla y su versión se determinan por el símbolo elegible vigente en
   `occurred_at`; cambios posteriores no alteran contribuciones existentes.
-- La consulta de red usa historia de Auth y no reconstruye el pasado desde la
-  topología actual.
+- La cadena ascendente del referido es única e inmutable. La consulta vigente
+  solo se admite antes de persistir la distribución; no se usa para reintentos
+  ni para runs.
+- Una respuesta satisfactoria sin beneficiarios persiste una distribución vacía;
+  un fallo técnico no persiste resultado y queda reintentable.
 - La actividad previa a la activación de esta capacidad no se reprocesa.
 
 ## Flujo de decisión
 
 ```text
 Actividad normalizada de referido
+  → resolver y congelar distribución: IB beneficiario + nivel
   → símbolo elegible y plantilla vigentes
-  → red histórica: IB beneficiario + nivel
   → suscripción/placement/programa del beneficiario
   → regla aplicable y weight del nivel
   → evaluación y contribución snapshot
@@ -49,10 +51,10 @@ Actividad normalizada de referido
 
 ## Límites transaccionales
 
-- Auth y Modules se consultan fuera de la transacción local.
-- La evaluación y todas las contribuciones derivadas que se persistan para una
-  actividad se coordinan localmente y resuelven colisiones mediante la
-  restricción idempotente autoritativa.
+- IAM y Modules se consultan fuera de la transacción local.
+- La distribución, la evaluación y todas las contribuciones derivadas que se
+  persistan para una actividad se coordinan localmente y resuelven colisiones
+  mediante restricciones idempotentes autoritativas.
 - Un fallo para un IB beneficiario no invalida las contribuciones ya finales de
   los demás; queda reintentable con evidencia propia.
 
@@ -65,10 +67,10 @@ Actividad normalizada de referido
 
 ## Evidencia
 
-- `docs/bds/progression.bds.md` v0.7.
+- `docs/bds/progression.bds.md` v0.8.
 - `06-pg2-network-progression-planning.md` completada el 2026-09-28.
 
 ## Próximo paso
 
-Crear `08-pg2-network-vertical-deliveries.md` cuando el contrato histórico de
-Auth tenga una fecha de disponibilidad o una evidencia equivalente.
+Implementar las foundations documentadas en
+[`10-pg2-network-foundations.md`](10-pg2-network-foundations.md).

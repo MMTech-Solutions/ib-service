@@ -1,7 +1,7 @@
 # Progresión multi-módulo por puntos — BDS
 
-- **Versión:** 0.7
-- **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, ponderación por nivel y catálogo inicial de motivos de exclusión para PG1/PG2
+- **Versión:** 0.8
+- **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, distribución inmutable y catálogo inicial de motivos de exclusión para PG1/PG2
 
 **Propósito:** normalizar actividades heterogéneas para que todos los módulos habilitados puedan contribuir al crecimiento del IB.
 
@@ -21,6 +21,7 @@ La conversión a puntos reutiliza el catálogo de reglas del plan: identidad, ve
 | Regla de contribución | Regla del catálogo del plan cuya estrategia convierte una métrica nativa en puntos de progresión. En esta fase la estrategia aplicable es `points_per_quantity_unit`. |
 | Red interna | Downline de un IB formada por sus referidos directos e indirectos. La actividad propia del IB no pertenece a su red para progresión. |
 | Nivel de distribución | Distancia entre el IB beneficiario y el referido fuente: el referido directo ocupa el nivel `0`; cada salto adicional incrementa el nivel en uno. |
+| Distribución resuelta | Resultado inmutable de resolver los IB beneficiarios y sus niveles para una actividad. Conserva el instante en que se resolvió; no se vuelve a consultar la red para reintentar ni para ejecutar un run. |
 | Ponderación (`weight`) | Proporción configurada para un nivel de distribución que determina cuántos puntos aporta una unidad elegible de la actividad del referido. |
 | Plantilla de progresión | Configuración versionada de niveles de distribución y sus `weight`, asociable a un símbolo habilitado para progresión. Es independiente de las plantillas de pago. |
 | Contribución | Hecho auditable que registra la actividad aceptada, el referido fuente, el IB beneficiario, el nivel, la configuración aplicada y los puntos obtenidos. |
@@ -54,7 +55,7 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    A[Actividad de referido] --> B[Resolver red en occurred_at]
+    A[Actividad de referido] --> B[Resolver y congelar distribución]
     B --> C[Evaluación durable por beneficiario]
     C -->|aceptada| D[Contribución en puntos]
     C -->|excluida| E[Motivo auditable]
@@ -81,7 +82,7 @@ flowchart LR
 | BR-POINTS-012 | El procesamiento pausado de un módulo impide calcular nuevas contribuciones suyas aunque las selecciones y umbrales del programa permanezcan vigentes. |
 | BR-POINTS-013 | La actividad del módulo consultada durante una pausa se conserva. Al reanudar se procesa solo si su ventana original sigue abierta; si la ventana ya cerró, permanece en evaluación sin puntos. |
 | BR-POINTS-014 | Un módulo inactivo no consulta actividad y no genera contribuciones nuevas. |
-| BR-POINTS-015 | La red, nivel, suscripción, placement, símbolo, plantilla, asignación y versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. Los umbrales del ladder se leen vigentes al ejecutar el run. |
+| BR-POINTS-015 | Suscripción, placement, símbolo, plantilla, asignación y versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. Los umbrales del ladder se leen vigentes al ejecutar el run. La red y el nivel provienen de la distribución resuelta y congelada para esa actividad. |
 | BR-POINTS-016 | Existe como máximo una asignación activa de estrategia `points_per_quantity_unit` por combinación de programa, módulo y métrica o unidad. El mismo tipo de estrategia puede repetirse en el módulo solo para métricas o unidades distintas. |
 | BR-POINTS-017 | Una misma actividad puede contribuir a distintos IB beneficiarios de la red, pero recibe como máximo una ponderación por combinación de beneficiario, nivel, símbolo y métrica. El total de la ventana suma contribuciones válidas de métricas y módulos distintos. |
 | BR-POINTS-018 | Cada plan declara un período de progresión obligatorio: `daily`, `weekly` o `monthly`, alineado en UTC. No existe plan sin período. |
@@ -102,8 +103,10 @@ flowchart LR
 | BR-POINTS-033 | La actividad de un referido puede generar una contribución independiente para cada IB beneficiario alcanzable dentro de la profundidad configurada de la red. |
 | BR-POINTS-034 | Un nivel de distribución no configurado en la plantilla de progresión no genera puntos. |
 | BR-POINTS-035 | Una plantilla de progresión define niveles y `weight` propios, se asocia a símbolos habilitados para progresión y es independiente de una plantilla de pago. |
-| BR-POINTS-036 | La contribución conserva como snapshot el referido fuente, IB beneficiario, nivel, símbolo, plantilla, versión y `weight` que aplicaban en `occurred_at`. |
+| BR-POINTS-036 | La contribución conserva como snapshot el referido fuente, IB beneficiario, nivel, instante de resolución de la distribución, símbolo, plantilla, versión y `weight`. Los elementos distintos de red y nivel se determinan en `occurred_at`. |
 | BR-POINTS-037 | La progresión por red no realiza backfill: solo procesa actividad ocurrida desde su activación. |
+| BR-POINTS-038 | La cadena ascendente de un referido es única e inmutable. Las altas nuevas amplían downlines, pero no modifican la distribución ya resuelta de actividades existentes. |
+| BR-POINTS-039 | Una respuesta satisfactoria que no encuentre IB beneficiarios congela una distribución vacía. Un error al resolver la red no congela distribución ni produce contribuciones y permanece reintentable. |
 
 ## Ejemplos de conversión
 
@@ -124,6 +127,7 @@ Una contribución debe poder responder:
 
 - Qué actividad la originó.
 - Qué referido originó la actividad, qué IB y suscripción se beneficiaron y en qué nivel de distribución.
+- Cuándo se resolvió la distribución que determinó esos beneficiarios y niveles.
 - Qué plan y programa estaban vigentes al ocurrir.
 - Qué módulo, métrica e instrumento participaron.
 - Qué símbolo, plantilla, versión, `weight`, regla y versión realizaron la conversión.
@@ -131,6 +135,11 @@ Una contribución debe poder responder:
 - En qué run fue considerada.
 
 Una evaluación excluida debe poder responder el mismo contexto de actividad y el motivo de la exclusión.
+
+Los runs no consultan ni reconstruyen la red: agregan únicamente contribuciones
+derivadas de distribuciones ya congeladas. Un reintento de evaluación o
+contribución reutiliza la misma distribución; solo puede resolverla otra vez si
+el fallo anterior ocurrió antes de que se conservara resultado alguno.
 
 ## Motivos de exclusión iniciales
 

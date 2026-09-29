@@ -45,12 +45,14 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
         string $moduleId,
         string $sourceActivityId,
         string $beneficiaryExternalUserId,
+        ?int $distributionLevel = null,
     ): ?ActivityEvaluation {
         $record = ActivityEvaluationRecord::query()
             ->with('contribution')
             ->where('module_id', $moduleId)
             ->where('source_activity_id', $sourceActivityId)
             ->where('beneficiary_external_user_id', $beneficiaryExternalUserId)
+            ->where('distribution_level', $distributionLevel ?? 0)
             ->first();
 
         return $record === null ? null : $this->hydrate($record);
@@ -115,6 +117,7 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
                     $evaluation->moduleId,
                     $evaluation->sourceActivityId,
                     $evaluation->beneficiaryExternalUserId,
+                    $evaluation->distributionLevel,
                 );
 
                 if ($canonical === null) {
@@ -134,6 +137,7 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
                     $evaluation->moduleId,
                     $evaluation->sourceActivityId,
                     $evaluation->beneficiaryExternalUserId,
+                    $evaluation->distributionLevel,
                 );
             }
 
@@ -163,9 +167,13 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
                 strategyType: ContributionStrategyType::from((string) $contributionRecord->strategy_type),
                 scopeType: ContributionScopeType::from((string) $contributionRecord->scope_type),
                 weight: ExactDecimal::fromString((string) $contributionRecord->weight),
+                distributionWeight: ExactDecimal::fromString((string) $contributionRecord->distribution_weight),
                 points: ExactDecimal::fromString((string) $contributionRecord->points),
                 createdAt: $contributionRecord->created_at,
                 updatedAt: $contributionRecord->updated_at,
+                programSymbolConfigurationId: $contributionRecord->program_symbol_configuration_id === null ? null : (string) $contributionRecord->program_symbol_configuration_id,
+                planProgressionTemplateVersionBindingId: $contributionRecord->plan_progression_template_version_binding_id === null ? null : (string) $contributionRecord->plan_progression_template_version_binding_id,
+                progressionTemplateVersionId: $contributionRecord->progression_template_version_id === null ? null : (string) $contributionRecord->progression_template_version_id,
             );
         }
 
@@ -173,6 +181,10 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
             id: (string) $record->id,
             moduleId: (string) $record->module_id,
             sourceActivityId: (string) $record->source_activity_id,
+            activityDistributionId: $record->activity_distribution_id === null ? null : (string) $record->activity_distribution_id,
+            sourceExternalUserId: $record->source_external_user_id === null ? null : (string) $record->source_external_user_id,
+            distributionLevel: $record->distribution_level === null ? null : (int) $record->distribution_level,
+            distributionResolvedAt: $record->distribution_resolved_at,
             beneficiaryExternalUserId: (string) $record->beneficiary_external_user_id,
             subscriptionId: $record->subscription_id === null ? null : (string) $record->subscription_id,
             planId: $record->plan_id === null ? null : (string) $record->plan_id,
@@ -203,6 +215,10 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
             'id' => $evaluation->id,
             'module_id' => $evaluation->moduleId,
             'source_activity_id' => $evaluation->sourceActivityId,
+            'activity_distribution_id' => $evaluation->activityDistributionId,
+            'source_external_user_id' => $evaluation->sourceExternalUserId,
+            'distribution_level' => $evaluation->distributionLevel ?? 0,
+            'distribution_resolved_at' => $evaluation->distributionResolvedAt,
             'beneficiary_external_user_id' => $evaluation->beneficiaryExternalUserId,
             'subscription_id' => $evaluation->subscriptionId,
             'plan_id' => $evaluation->planId,
@@ -231,9 +247,13 @@ final class PostgreSqlActivityEvaluationRepository implements ActivityEvaluation
             'rule_id' => $contribution->ruleId,
             'rule_version_id' => $contribution->ruleVersionId,
             'rule_assignment_id' => $contribution->ruleAssignmentId,
+            'program_symbol_configuration_id' => $contribution->programSymbolConfigurationId,
+            'plan_progression_template_version_binding_id' => $contribution->planProgressionTemplateVersionBindingId,
+            'progression_template_version_id' => $contribution->progressionTemplateVersionId,
             'strategy_type' => $contribution->strategyType->value,
             'scope_type' => $contribution->scopeType->value,
             'weight' => $contribution->weight->value(),
+            'distribution_weight' => $contribution->distributionWeight->value(),
             'points' => $contribution->points->value(),
             'created_at' => $contribution->createdAt,
             'updated_at' => $contribution->updatedAt,
