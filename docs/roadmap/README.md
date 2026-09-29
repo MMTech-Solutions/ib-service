@@ -17,7 +17,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
-| [`Progression`](progression/README.md) | PG1 completada; diseño PG2 cerrado | Preparada para implementación de foundations | 2026-09-29 |
+| [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
 | [`Rewards`](rewards/README.md) | RWD1 inventariado; vertical CPA bloqueada | Fórmula CPA y contratos Auth/Finance pendientes | 2026-09-17 |
 
 ## Secuencia entre features

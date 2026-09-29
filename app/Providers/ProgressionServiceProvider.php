@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Features\Progression\Console\CloseProgressionWindowsCommand;
+use App\Features\Progression\Console\RecoverProgressionRunsCommand;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Progression\Repositories\InMemory\InMemoryActivityDistributionRepository;
@@ -47,7 +48,7 @@ final class ProgressionServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->commands([CloseProgressionWindowsCommand::class]);
-        Schedule::command('progression:close-windows')->everyFiveMinutes()->withoutOverlapping();
+        $this->commands([CloseProgressionWindowsCommand::class, RecoverProgressionRunsCommand::class]);
+        Schedule::command('progression:close-windows')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
     }
 }

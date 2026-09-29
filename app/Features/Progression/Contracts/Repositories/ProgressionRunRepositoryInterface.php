@@ -6,6 +6,7 @@ namespace App\Features\Progression\Contracts\Repositories;
 
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
+use App\Features\Progression\Models\ProgressionRunRetry;
 use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
 use App\Features\Subscriptions\Contracts\Enums\ProgressionPlacementOutcome;
@@ -20,6 +21,8 @@ interface ProgressionRunRepositoryInterface
 
     public function findOrCreateRun(string $planId, ProgressionWindow $window, CarbonImmutable $now): ProgressionRun;
 
+    public function findRun(string $runId): ?ProgressionRun;
+
     public function findOrCreateResult(string $runId, string $subscriptionId, CarbonImmutable $now): ProgressionRunResult;
 
     public function sumAcceptedContributionPoints(string $planId, string $subscriptionId, ProgressionWindow $window): ExactDecimal;
@@ -32,8 +35,11 @@ interface ProgressionRunRepositoryInterface
 
     public function finishRun(ProgressionRun $run, CarbonImmutable $now): ProgressionRun;
 
+    /** @return list<ProgressionRunRetry> */
+    public function failedResults(?string $runId = null): array;
+
     /** @return list<ProgressionRunResult> */
-    public function finalizedResultsAwaitingPlacement(): array;
+    public function finalizedResultsAwaitingPlacement(?string $runId = null): array;
 
     public function lockFinalizedResultAwaitingPlacement(string $resultId): ?ProgressionRunResult;
 

@@ -13,6 +13,8 @@ use App\Features\Progression\Factories\ActivityEvaluationRepositoryFactory;
 use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Models\ActivityEvaluation;
 use App\Features\Progression\Models\Contribution;
+use App\Features\Progression\Services\ProgressionExecutionMutex;
+use App\Features\Progression\UseCases\RecoverProgressionRunsUseCase;
 use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
 use App\Features\Rules\Assignments\Enums\RuleAssignmentScopeType;
@@ -305,6 +307,51 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
 
         self::assertSame(1, DB::table('progression_placement_applications')->where('run_result_id', $result->id)->where('outcome', 'unchanged')->count());
         self::assertSame([], $repository->finalizedResultsAwaitingPlacement());
+    }
+
+    public function test_recovery_retries_only_failed_results_and_applies_the_pending_placement(): void
+    {
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        $window = ProgressionWindow::of($now->subDay(), $now);
+        $repository = app(ProgressionRunRepositoryFactory::class)->make('postgresql');
+        $run = $repository->findOrCreateRun($this->planId, $window, $now);
+        $result = $repository->findOrCreateResult($run->id, $this->subscriptionId, $now);
+        DB::table('subscription_placements')->insert([
+            'id' => (string) Str::uuid7(),
+            'subscription_id' => $this->subscriptionId,
+            'program_id' => $this->programId,
+            'is_fixed' => false,
+            'effective_from' => $now->subDay(),
+            'effective_until' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $repository->markFailed($result, 'retryable_failure', $now);
+
+        $recovered = app(RecoverProgressionRunsUseCase::class)->execute($run->id, $now->addMinute());
+
+        self::assertSame(1, $recovered->results_recovered);
+        self::assertSame(0, $recovered->results_failed);
+        self::assertSame('completed', DB::table('progression_runs')->where('id', $run->id)->value('status'));
+        self::assertSame('completed', DB::table('progression_run_results')->where('id', $result->id)->value('status'));
+        self::assertSame(1, DB::table('progression_placement_applications')->where('run_result_id', $result->id)->count());
+    }
+
+    public function test_postgresql_execution_mutex_excludes_a_second_connection(): void
+    {
+        $first = new ProgressionExecutionMutex(DB::connection());
+        $second = new ProgressionExecutionMutex($this->racingConnection());
+
+        self::assertTrue($first->acquire());
+
+        try {
+            self::assertFalse($second->acquire());
+        } finally {
+            $first->release();
+        }
+
+        self::assertTrue($second->acquire());
+        $second->release();
     }
 
     public function test_postgresql_run_contention_keeps_a_single_canonical_window(): void

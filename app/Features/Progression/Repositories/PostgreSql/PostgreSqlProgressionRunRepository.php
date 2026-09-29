@@ -9,6 +9,7 @@ use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
+use App\Features\Progression\Models\ProgressionRunRetry;
 use App\Features\Progression\Repositories\PostgreSql\Models\ProgressionRunRecord;
 use App\Features\Progression\Repositories\PostgreSql\Models\ProgressionRunResultRecord;
 use App\Features\Progression\ValueObjects\ExactDecimal;
@@ -51,6 +52,13 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
         }
 
         return $this->run($record);
+    }
+
+    public function findRun(string $runId): ?ProgressionRun
+    {
+        $record = ProgressionRunRecord::query()->find($runId);
+
+        return $record === null ? null : $this->run($record);
     }
 
     public function findOrCreateResult(string $runId, string $subscriptionId, CarbonImmutable $now): ProgressionRunResult
@@ -113,12 +121,34 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
         return $this->run(ProgressionRunRecord::query()->findOrFail($run->id));
     }
 
-    public function finalizedResultsAwaitingPlacement(): array
+    public function failedResults(?string $runId = null): array
+    {
+        return ProgressionRunResultRecord::query()
+            ->join('progression_runs', 'progression_runs.id', '=', 'progression_run_results.run_id')
+            ->where('progression_run_results.status', ProgressionRunResultStatus::Failed->value)
+            ->when($runId !== null, fn ($query) => $query->where('progression_run_results.run_id', $runId))
+            ->select('progression_run_results.*')
+            ->orderBy('progression_run_results.updated_at')
+            ->get()
+            ->map(function (ProgressionRunResultRecord $record): ProgressionRunRetry {
+                $run = $this->findRun((string) $record->run_id);
+
+                if ($run === null) {
+                    throw new \LogicException('Progression run result references a missing run.');
+                }
+
+                return new ProgressionRunRetry($run, $this->result($record));
+            })
+            ->all();
+    }
+
+    public function finalizedResultsAwaitingPlacement(?string $runId = null): array
     {
         return ProgressionRunResultRecord::query()
             ->leftJoin('progression_placement_applications as applications', 'applications.run_result_id', '=', 'progression_run_results.id')
             ->whereNull('applications.run_result_id')
             ->where('progression_run_results.status', ProgressionRunResultStatus::Completed->value)
+            ->when($runId !== null, fn ($query) => $query->where('progression_run_results.run_id', $runId))
             ->select('progression_run_results.*')
             ->orderBy('progression_run_results.completed_at')
             ->get()

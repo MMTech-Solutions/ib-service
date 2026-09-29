@@ -7,12 +7,13 @@ namespace App\Features\Progression\UseCases;
 use App\Features\Programs\Contracts\Data\V1\ResolveProgressionTargetProgramQueryData;
 use App\Features\Progression\DTOs\CloseProgressionWindowsResultData;
 use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
+use App\Features\Progression\Services\ApplyPendingProgressionPlacementsService;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
 use App\Features\Progression\Support\DeriveProgressionWindowFromPeriod;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
-use App\Features\Subscriptions\Contracts\Data\V1\ApplyProgressionPlacementData;
 use App\Features\Subscriptions\Contracts\Data\V1\ListProgressionWindowSubscriptionsQueryData;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Log;
 
 final class CloseProgressionWindowsUseCase
 {
@@ -20,6 +21,7 @@ final class CloseProgressionWindowsUseCase
         private readonly ProgressionRunRepositoryFactory $repositoryFactory,
         private readonly ProgressionInterFeatureGateways $gateways,
         private readonly DeriveProgressionWindowFromPeriod $windows,
+        private readonly ApplyPendingProgressionPlacementsService $placements,
     ) {}
 
     public function execute(?CarbonImmutable $now = null): CloseProgressionWindowsResultData
@@ -43,6 +45,12 @@ final class CloseProgressionWindowsUseCase
                     continue;
                 }
                 $counts['runs_created']++;
+                Log::info('progression.run.processing', [
+                    'run_id' => $run->id,
+                    'plan_id' => $plan->plan_id,
+                    'window_starts_at' => $window->startsAt->toISOString(),
+                    'window_ends_at' => $window->endsAt->toISOString(),
+                ]);
 
                 foreach ($this->gateways->windowSubscriptions()->list(new ListProgressionWindowSubscriptionsQueryData($plan->plan_id, $window->startsAtIso(), $window->endsAtIso())) as $subscription) {
                     $result = $repository->findOrCreateResult($run->id, $subscription->subscription_id, $clock);
@@ -52,6 +60,10 @@ final class CloseProgressionWindowsUseCase
                     if (! $subscription->is_evaluable) {
                         $repository->markSkipped($result, $clock);
                         $counts['results_skipped']++;
+                        Log::info('progression.result.skipped', [
+                            'run_id' => $run->id,
+                            'run_result_id' => $result->id,
+                        ]);
 
                         continue;
                     }
@@ -60,9 +72,18 @@ final class CloseProgressionWindowsUseCase
                         $target = $this->gateways->targetProgram()->resolve(new ResolveProgressionTargetProgramQueryData($plan->plan_id, $points->value()));
                         $repository->markCompleted($result, $points, $target->program_id, $clock);
                         $counts['results_completed']++;
+                        Log::info('progression.result.completed', [
+                            'run_id' => $run->id,
+                            'run_result_id' => $result->id,
+                        ]);
                     } catch (\Throwable $throwable) {
-                        $repository->markFailed($result, $throwable->getMessage(), $clock);
-                        report($throwable);
+                        $repository->markFailed($result, 'retryable_failure', $clock);
+                        Log::warning('progression.result.retryable_failure', [
+                            'run_id' => $run->id,
+                            'run_result_id' => $result->id,
+                            'attempt' => $result->attemptCount + 1,
+                            'exception_class' => $throwable::class,
+                        ]);
                         $counts['results_failed']++;
                     }
                 }
@@ -73,22 +94,15 @@ final class CloseProgressionWindowsUseCase
             }
         }
 
-        $this->assertPostgreSqlRepositories();
-        foreach ($repository->finalizedResultsAwaitingPlacement() as $candidate) {
-            try {
-                $repository->transaction(function () use ($repository, $candidate, $clock): void {
-                    $result = $repository->lockFinalizedResultAwaitingPlacement($candidate->id);
-                    if ($result === null || $result->targetProgramId === null) {
-                        return;
-                    }
-
-                    $outcome = $this->gateways->placement()->apply(new ApplyProgressionPlacementData($result->subscriptionId, $result->targetProgramId, $result->id, $clock->toISOString()));
-                    $repository->recordPlacementApplication($result->id, $outcome, $clock);
-                });
-            } catch (\Throwable $throwable) {
-                report($throwable);
-            }
-        }
+        $placementCounts = $this->placements->execute($repository, $clock);
+        Log::info('progression.close_windows.completed', [
+            ...$counts,
+            'placements_applied' => $placementCounts['applied'],
+            'placements_unchanged' => $placementCounts['unchanged'],
+            'placements_fixed' => $placementCounts['fixed'],
+            'placements_not_active' => $placementCounts['not_active'],
+            'placements_failed' => $placementCounts['failed'],
+        ]);
 
         return new CloseProgressionWindowsResultData(...$counts);
     }
@@ -111,12 +125,5 @@ final class CloseProgressionWindowsUseCase
         }
 
         return $window;
-    }
-
-    private function assertPostgreSqlRepositories(): void
-    {
-        if (config('progression.repository') !== 'postgresql' || config('subscriptions.repository') !== 'postgresql') {
-            throw new \LogicException('Progression placement application requires PostgreSQL repositories.');
-        }
     }
 }

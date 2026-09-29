@@ -9,6 +9,7 @@ use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
+use App\Features\Progression\Models\ProgressionRunRetry;
 use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
 use App\Features\Subscriptions\Contracts\Enums\ProgressionPlacementOutcome;
@@ -54,6 +55,11 @@ final class InMemoryProgressionRunRepository implements ProgressionRunRepository
         return $this->runs[(string) $id = Str::uuid7()] = new ProgressionRun($id, $planId, $window, ProgressionRunStatus::Pending, $now, null);
     }
 
+    public function findRun(string $runId): ?ProgressionRun
+    {
+        return $this->runs[$runId] ?? null;
+    }
+
     public function findOrCreateResult(string $runId, string $subscriptionId, CarbonImmutable $now): ProgressionRunResult
     {
         $key = $runId.'|'.$subscriptionId;
@@ -89,9 +95,22 @@ final class InMemoryProgressionRunRepository implements ProgressionRunRepository
         return $this->runs[$run->id] = new ProgressionRun($run->id, $run->planId, $run->window, $status, $run->startedAt, $status === ProgressionRunStatus::Completed ? $now : null);
     }
 
-    public function finalizedResultsAwaitingPlacement(): array
+    public function failedResults(?string $runId = null): array
     {
-        return array_values(array_filter($this->results, fn (ProgressionRunResult $result): bool => $result->status === ProgressionRunResultStatus::Completed && ! isset($this->placementApplications[$result->id])));
+        return array_values(array_filter(array_map(function (ProgressionRunResult $result): ?ProgressionRunRetry {
+            if ($result->status !== ProgressionRunResultStatus::Failed || ($runId !== null && $result->runId !== $runId)) {
+                return null;
+            }
+
+            $run = $this->findRun($result->runId);
+
+            return $run === null ? null : new ProgressionRunRetry($run, $result);
+        }, $this->results)));
+    }
+
+    public function finalizedResultsAwaitingPlacement(?string $runId = null): array
+    {
+        return array_values(array_filter($this->results, fn (ProgressionRunResult $result): bool => $result->status === ProgressionRunResultStatus::Completed && ($runId === null || $result->runId === $runId) && ! isset($this->placementApplications[$result->id])));
     }
 
     public function lockFinalizedResultAwaitingPlacement(string $resultId): ?ProgressionRunResult

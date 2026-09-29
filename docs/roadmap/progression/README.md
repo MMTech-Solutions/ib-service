@@ -68,6 +68,7 @@ distribución resultante; no depende de una consulta histórica de red.
 | 6. Contribuciones | [`11-pg2-network-contributions.md`](11-pg2-network-contributions.md) | Implementada (PG2.2) |
 | 7. Runs y placement | [`12-pg2-network-runs-placement.md`](12-pg2-network-runs-placement.md) | Implementada (PG2.4 y PG2.5) |
 | 8. Cierre | [`13-pg2-network-closure.md`](13-pg2-network-closure.md) | Completado |
+| 9. Operación y release | [`14-operations-release.md`](14-operations-release.md) | Implementado; pendiente de evidencia de despliegue |
 
 ## Decisiones confirmadas
 
@@ -132,6 +133,5 @@ distribución resultante; no depende de una consulta histórica de red.
 
 ## Próximo paso
 
-Preparar la operación y release de Progression (MMTECH-240). PG2 ya conserva
-distribuciones, contribuciones, runs y placement auditables; no reabrir PG1 o
-PG2 salvo un defecto que bloquee su operación.
+Validar en el entorno de despliegue el scheduler compartido, alertas sobre logs
+agregables y la recuperación operativa documentada en MMTECH-240.
