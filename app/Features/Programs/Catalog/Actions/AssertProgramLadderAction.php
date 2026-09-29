@@ -15,8 +15,12 @@ final class AssertProgramLadderAction
     public function assert(array $orderedPrograms): void
     {
         $previous = null;
-        foreach (array_values($orderedPrograms) as $program) {
+        foreach (array_values($orderedPrograms) as $index => $program) {
             if ($program->entryThreshold < 0) {
+                throw ProgramLadderInvalidException::forPlan();
+            }
+
+            if ($index === 0 && $program->entryThreshold !== 0) {
                 throw ProgramLadderInvalidException::forPlan();
             }
 

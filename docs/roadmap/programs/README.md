@@ -1,8 +1,8 @@
 # Roadmap del feature Programs
 
-Estado: **PR1 y P2 completados; extensión de Progression pendiente**
+Estado: **PR1 y P2 completados; BR-PROGRAM-015 cerrado**
 Dependencia satisfecha: `Plans P1` completado
-Última revisión: 2026-09-17
+Última revisión: 2026-09-29
 
 ## Posición en la secuencia
 
@@ -58,11 +58,11 @@ Umbral de entrada vivo y validación atómica del ladder del plan.
 ## Extensión requerida por Progression
 
 `BR-PROGRAM-015` exige que el primer programa del ladder declare siempre
-umbral de entrada `0`. P2 valida umbrales no negativos y estrictamente
-crecientes, pero **el código vigente aún no impone el cero del primer
-nivel**. La alineación se realizará junto con
-[`Progression`](../progression/README.md); no se presenta P2 como ya
-cumplido respecto a esta regla.
+umbral de entrada `0`. La validación de ladder rechaza crear, editar o
+reordenar una colección cuyo primer nivel no sea cero; PostgreSQL normaliza
+los primeros niveles existentes y protege la misma condición con un `CHECK`.
+La evidencia está en
+[`11-p2-implementation.md`](11-p2-implementation.md).
 
 ## Fuera de P2
 
@@ -74,9 +74,8 @@ cumplido respecto a esta regla.
 
 ## Próximo paso
 
-Alinear la validación del ladder con `BR-PROGRAM-015` cuando Progression
-avance. Mientras tanto, el roadmap continúa en Rules y Subscriptions ya
-cerrados, y en Progression.
+Ninguno dentro de Programs P2. Progression puede resolver cero puntos contra
+el primer programa del ladder sin una extensión pendiente en Programs.
 
 ## Configuración de símbolos
 

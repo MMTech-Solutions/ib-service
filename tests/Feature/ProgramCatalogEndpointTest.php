@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\InteractsWithAdminGateway;
 use Tests\TestCase;
 
@@ -201,6 +203,27 @@ final class ProgramCatalogEndpointTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_first_program_requires_a_zero_entry_threshold(): void
+    {
+        $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'mix',
+            'name' => 'Mix',
+            'progression_period' => 'monthly',
+        ])->assertCreated()->json('data');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'basic',
+            'name' => 'Basic',
+            'entry_threshold' => 1,
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'PROGRAM_LADDER_INVALID');
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'basic',
+            'name' => 'Basic',
+            'entry_threshold' => 0,
+        ])->assertCreated()->assertJsonPath('data.entry_threshold', 0);
+    }
+
     public function test_program_ladder_must_be_strictly_increasing(): void
     {
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
@@ -232,20 +255,91 @@ final class ProgramCatalogEndpointTest extends TestCase
             'lock_version' => $advanced['lock_version'],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'PROGRAM_LADDER_INVALID');
 
+        $this->gatewayJson('PATCH', "/api/ib/v1/admin/plans/{$plan['id']}/programs/{$basic['id']}", [
+            'entry_threshold' => 1,
+            'lock_version' => $basic['lock_version'],
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'PROGRAM_LADDER_INVALID');
+
+        $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$plan['id']}/programs/{$basic['id']}")
+            ->assertOk()
+            ->assertJsonPath('data.entry_threshold', 0)
+            ->assertJsonPath('data.lock_version', $basic['lock_version']);
+
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs/reorder", [
             'programs' => [
                 [
                     'id' => $advanced['id'],
-                    'entry_threshold' => 50,
+                    'entry_threshold' => 10,
                     'lock_version' => $advanced['lock_version'],
                 ],
                 [
                     'id' => $basic['id'],
-                    'entry_threshold' => 10,
+                    'entry_threshold' => 50,
                     'lock_version' => $basic['lock_version'],
                 ],
             ],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'PROGRAM_LADDER_INVALID');
+    }
+
+    public function test_reorder_reports_stale_lock_versions_without_partial_changes(): void
+    {
+        $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'mix',
+            'name' => 'Mix',
+            'progression_period' => 'monthly',
+        ])->assertCreated()->json('data');
+
+        $basic = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'basic',
+            'name' => 'Basic',
+            'entry_threshold' => 0,
+        ])->assertCreated()->json('data');
+        $advanced = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'advanced',
+            'name' => 'Advanced',
+            'entry_threshold' => 100,
+        ])->assertCreated()->json('data');
+
+        DB::table('programs')->where('id', $advanced['id'])->update(['lock_version' => 2]);
+
+        $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs/reorder", [
+            'programs' => [
+                [
+                    'id' => $advanced['id'],
+                    'entry_threshold' => 0,
+                    'lock_version' => $advanced['lock_version'],
+                ],
+                [
+                    'id' => $basic['id'],
+                    'entry_threshold' => 100,
+                    'lock_version' => $basic['lock_version'],
+                ],
+            ],
+        ])->assertConflict()->assertJsonPath('error.code', 'PROGRAM_CONCURRENCY_CONFLICT');
+
+        $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$plan['id']}/programs")
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $basic['id'])
+            ->assertJsonPath('data.0.entry_threshold', 0)
+            ->assertJsonPath('data.1.id', $advanced['id'])
+            ->assertJsonPath('data.1.entry_threshold', 100);
+    }
+
+    public function test_postgresql_constraint_rejects_a_non_zero_first_program_threshold(): void
+    {
+        $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'mix',
+            'name' => 'Mix',
+            'progression_period' => 'monthly',
+        ])->assertCreated()->json('data');
+        $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'basic',
+            'name' => 'Basic',
+            'entry_threshold' => 0,
+        ])->assertCreated()->json('data');
+
+        $this->expectException(QueryException::class);
+        DB::table('programs')->where('id', $program['id'])->update(['entry_threshold' => 1]);
     }
 
     private function brokerId(): string

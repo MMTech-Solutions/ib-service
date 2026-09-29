@@ -37,14 +37,14 @@ sustituir los BDS ni las reglas técnicas.
 - [`plans/`](roadmap/plans/README.md): primer consumidor inter-feature de
   Modules; P1 completado; P0.3 (período de progresión) publicado.
 - [`programs/`](roadmap/programs/README.md): PR1 y P2 completados (catálogo
-  administrativo y ladder vivo de umbrales); extensión de umbral `0` pendiente.
+  administrativo y ladder vivo de umbrales, incluido el primer nivel en `0`).
 - [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,
   versiones y asignaciones históricas); P0.1 publicado (puerto de contexto
   `points_per_quantity_unit` + `BR-RULE-016`).
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
-- [`progression/`](roadmap/progression/README.md): PG1 completada; PG2
-  (runs y placement) diferido.
+- [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
+  runs y placement operativos.
 - [`rewards/`](roadmap/rewards/README.md): RWD1 inventariado; CPA bloqueada por
   fórmula y contratos de Auth/Finance pendientes.
 

@@ -24,7 +24,17 @@ final class AssertProgramLadderActionTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function test_it_rejects_duplicate_or_decreasing_thresholds(): void
+    public function test_it_rejects_a_first_program_without_a_zero_threshold(): void
+    {
+        $action = new AssertProgramLadderAction;
+        $this->expectException(ProgramLadderInvalidException::class);
+        $action->assert([
+            $this->program(1, 1),
+            $this->program(2, 100),
+        ]);
+    }
+
+    public function test_it_rejects_duplicate_or_decreasing_thresholds_after_the_first_program(): void
     {
         $action = new AssertProgramLadderAction;
         $this->expectException(ProgramLadderInvalidException::class);

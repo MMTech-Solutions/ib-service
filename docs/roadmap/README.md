@@ -14,7 +14,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | --- | --- | --- | --- |
 | [`Modules`](modules/README.md) | M1, M2 y M3 completados | M4: sustitución por Trading Account Service pendiente | 2026-09-28 |
 | [`Plans`](plans/README.md) | P1 + P0.3 completados | Extensión Progression publicada | 2026-09-17 |
-| [`Programs`](programs/README.md) | PR1 y P2 completados | Extensión: umbral `0` del primer programa | 2026-09-17 |
+| [`Programs`](programs/README.md) | PR1 y P2 completados; BR-PROGRAM-015 cerrado | Sin extensión pendiente de Progression | 2026-09-29 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
@@ -63,8 +63,9 @@ flowchart LR
   primer `Contracts/Data` versionado.
 - `Programs` no consume libremente el catálogo de módulos: primero debe obtener
   el contexto y los módulos habilitados por el plan propietario.
-- `Programs P2` implementa el ladder vivo de umbrales. No publica ni
-  versiona programas. Rules y Subscriptions abren inventario tras P2.
+- `Programs P2` implementa el ladder vivo de umbrales, incluido el umbral `0`
+  del primer programa. No publica ni versiona programas. Rules y
+  Subscriptions abren inventario tras P2.
 - `Subscriptions` conserva una única suscripción abierta global por usuario,
   historia terminal y placement libre o fijado. S1 está implementada de extremo
   a extremo (contextos, persistencia, solicitud/moderación, ciclo de vida,
@@ -72,7 +73,8 @@ flowchart LR
   verificados. Progression y Rewards pueden consumir ese contexto sin reabrir
   S1 para contratos especulativos.
 - `Progression` PG1 está completada (sesiones 1–5 y P0). PG2 cubre runs y
-  placement. El umbral `0` en Programs permanece como extensión aparte.
+  placement; Programs también cierra el umbral `0` requerido para el primer
+  nivel del ladder.
 - Una frontera pública se diseña junto con la entrega vertical del consumidor,
   no como una entrega aislada del proveedor.
 

@@ -6,7 +6,6 @@ Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 Subscriptions P0.2, Plans P0.3
 Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
 IAM; la distribución se congela localmente por actividad
-Extensiones pendientes en proveedores: umbral `0` del primer programa en Programs
 Última revisión: 2026-09-29
 
 ## Objetivo
@@ -105,7 +104,9 @@ distribución resultante; no depende de una consulta histórica de red.
   `BR-POINTS-027`).
 - Placement objetivo directo, con salto de varios niveles; cero puntos
   resuelven el primer programa (`BR-POINTS-024`, `BR-POINTS-025`,
-  `BR-PROGRAM-015`).
+  `BR-PROGRAM-015`). Programs valida y persiste el umbral `0` del primer
+  nivel; evidencia en
+  [`Programs P2`](../programs/11-p2-implementation.md).
 - Suscripción a mitad de ventana participa en el cierre actual
   (`BR-POINTS-026`).
 - Administración consulta evaluaciones, contribuciones, runs y resultados;

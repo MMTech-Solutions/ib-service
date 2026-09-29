@@ -12,7 +12,7 @@ final class ProgramLadderInvalidException extends ApiException
     {
         return new self(
             'PROGRAM_LADDER_INVALID',
-            'Program entry thresholds must be non-negative integers strictly increasing with position.',
+            'The first program entry threshold must be zero; subsequent thresholds must be non-negative and strictly increasing with position.',
             422,
         );
     }
