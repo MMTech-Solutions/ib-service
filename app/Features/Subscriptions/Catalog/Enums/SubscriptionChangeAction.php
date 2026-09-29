@@ -15,4 +15,5 @@ enum SubscriptionChangeAction: string
     case ChangeProgram = 'change_program';
     case FixPlacement = 'fix_placement';
     case ReleasePlacement = 'release_placement';
+    case ProgressionPlacement = 'progression_placement';
 }

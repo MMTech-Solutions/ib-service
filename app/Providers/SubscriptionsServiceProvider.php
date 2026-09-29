@@ -6,9 +6,11 @@ namespace App\Providers;
 
 use App\Features\Subscriptions\Catalog\Repositories\InMemory\InMemorySubscriptionRepository;
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\PostgreSqlSubscriptionRepository;
+use App\Features\Subscriptions\Catalog\UseCases\ApplyProgressionPlacementUseCase;
 use App\Features\Subscriptions\Catalog\UseCases\HasOpenSubscriptionsForPlanUseCase;
 use App\Features\Subscriptions\Catalog\UseCases\ListProgressionWindowSubscriptionsUseCase;
 use App\Features\Subscriptions\Catalog\UseCases\ResolveSubscriptionContextUseCase;
+use App\Features\Subscriptions\Contracts\Ports\Input\ApplyProgressionPlacementPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListProgressionWindowSubscriptionsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
@@ -23,6 +25,7 @@ final class SubscriptionsServiceProvider extends ServiceProvider
         $this->app->singleton(HasOpenSubscriptionsForPlanPort::class, HasOpenSubscriptionsForPlanUseCase::class);
         $this->app->singleton(ResolveSubscriptionContextPort::class, ResolveSubscriptionContextUseCase::class);
         $this->app->singleton(ListProgressionWindowSubscriptionsPort::class, ListProgressionWindowSubscriptionsUseCase::class);
+        $this->app->singleton(ApplyProgressionPlacementPort::class, ApplyProgressionPlacementUseCase::class);
 
         $this->app->singleton(
             'subscriptions.repositories.memory',

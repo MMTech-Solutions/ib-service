@@ -113,6 +113,7 @@ final class SubscriptionChange
             SubscriptionChangeAction::ChangeProgram => $this->assertChangeProgramMatrix(),
             SubscriptionChangeAction::FixPlacement => $this->assertFixPlacementMatrix(),
             SubscriptionChangeAction::ReleasePlacement => $this->assertReleasePlacementMatrix(),
+            SubscriptionChangeAction::ProgressionPlacement => $this->assertChangeProgramMatrix(),
         };
     }
 

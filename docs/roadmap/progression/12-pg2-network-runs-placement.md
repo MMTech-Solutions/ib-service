@@ -1,6 +1,6 @@
 # PG2: runs y placement sobre contribuciones congeladas
 
-Estado: **PG2.4 implementado; PG2.5 pendiente**
+Estado: **PG2.4 y PG2.5 implementados**
 Última revisión: 2026-09-29
 
 ## Responsabilidad
@@ -29,9 +29,16 @@ una distribución no modifica contribuciones ni resultados de run.
   una hora y se ejecuta como fallback cada cinco minutos.
 - Los runs y resultados tienen claves únicas PostgreSQL y solo reintentan
   resultados fallidos; no consultan IAM ni reconstruyen distribuciones.
-- El resultado conserva puntos y programa objetivo; no modifica placement.
+## Evidencia PG2.5
+
+- PG2.5 consume exclusivamente resultados `completed` finales con programa
+  objetivo y bloquea cada resultado antes de aplicar placement.
+- Placement, auditoría de Subscriptions y ledger PostgreSQL se confirman en la
+  misma transacción; los outcomes terminales son `applied`, `unchanged`,
+  `fixed` y `not_active`.
+- El placement fijado o terminal no se cambia ni se recupera al liberar una
+  fijación.
 
 ## Próximo paso
 
-Implementar PG2.5 para aplicar el cambio de placement a partir de resultados
-finales, sin reabrir runs.
+Preparar la operación productiva de Progression (MMTECH-240).

@@ -17,6 +17,7 @@ vez y los runs consuman resultados locales, sin una consulta de red posterior.
 | Evaluación/contribución | Destinatario, contexto en `occurred_at`, configuración aplicada y puntos. | Idempotencia que reutiliza el destinatario congelado. |
 | Run | Plan, inicio y fin de ventana, estado y cierre. | Único por plan y ventana. |
 | Resultado de run | Run, suscripción, puntos, programa objetivo y outcome. | Único por run y suscripción; solo los fallidos se reintentan. |
+| Aplicación de placement | Resultado `completed`, outcome de aplicación e instante. | PK/FK única por resultado; `outcome` es `applied`, `unchanged`, `fixed` o `not_active`. |
 
 ## Concurrencia y recuperación
 
@@ -26,6 +27,13 @@ vez y los runs consuman resultados locales, sin una consulta de red posterior.
 - Si el proceso falla antes de finalizar esa transacción, no existe snapshot y
   el reintento puede consultar IAM de nuevo.
 - Si ya existe snapshot, ningún reintento, contribución ni run consulta IAM.
+- PG2.5 bloquea la fila del resultado `completed` con `FOR UPDATE`, verifica que
+  no exista aplicación y confirma en la misma transacción el placement, su
+  auditoría de Subscriptions y la aplicación. Un fallo revierte los tres y deja
+  el resultado disponible para reintento.
+- `skipped` y `failed` no crean aplicaciones de placement. Los outcomes
+  `unchanged`, `fixed` y `not_active` consumen definitivamente el resultado sin
+  cambiar el placement.
 
 ## Índices administrativos
 
@@ -34,4 +42,4 @@ instante de resolución, plan, ventana, suscripción y estado de resultado.
 
 ## Próximo paso
 
-Implementar las fronteras y el adapter definidos en `10-pg2-network-foundations.md`.
+Preparar la operación productiva de Progression tras el cierre de PG2.

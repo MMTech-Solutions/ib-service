@@ -13,7 +13,9 @@ use App\Features\Progression\Repositories\PostgreSql\Models\ProgressionRunRecord
 use App\Features\Progression\Repositories\PostgreSql\Models\ProgressionRunResultRecord;
 use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
+use App\Features\Subscriptions\Contracts\Enums\ProgressionPlacementOutcome;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
@@ -21,6 +23,11 @@ use Illuminate\Support\Str;
 final class PostgreSqlProgressionRunRepository implements ProgressionRunRepositoryInterface
 {
     public function __construct(private readonly ConnectionInterface $connection) {}
+
+    public function transaction(Closure $callback): mixed
+    {
+        return $this->connection->transaction($callback);
+    }
 
     public function latestWindowEndsAt(string $planId): ?CarbonImmutable
     {
@@ -104,6 +111,38 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
         ]);
 
         return $this->run(ProgressionRunRecord::query()->findOrFail($run->id));
+    }
+
+    public function finalizedResultsAwaitingPlacement(): array
+    {
+        return ProgressionRunResultRecord::query()
+            ->leftJoin('progression_placement_applications as applications', 'applications.run_result_id', '=', 'progression_run_results.id')
+            ->whereNull('applications.run_result_id')
+            ->where('progression_run_results.status', ProgressionRunResultStatus::Completed->value)
+            ->select('progression_run_results.*')
+            ->orderBy('progression_run_results.completed_at')
+            ->get()
+            ->map(fn (ProgressionRunResultRecord $record): ProgressionRunResult => $this->result($record))
+            ->all();
+    }
+
+    public function lockFinalizedResultAwaitingPlacement(string $resultId): ?ProgressionRunResult
+    {
+        $record = ProgressionRunResultRecord::query()->whereKey($resultId)->lockForUpdate()->first();
+        if ($record === null || $record->status !== ProgressionRunResultStatus::Completed->value || $record->target_program_id === null || $this->connection->table('progression_placement_applications')->where('run_result_id', $resultId)->exists()) {
+            return null;
+        }
+
+        return $this->result($record);
+    }
+
+    public function recordPlacementApplication(string $resultId, ProgressionPlacementOutcome $outcome, CarbonImmutable $now): void
+    {
+        $this->connection->table('progression_placement_applications')->insert([
+            'run_result_id' => $resultId,
+            'outcome' => $outcome->value,
+            'applied_at' => $now,
+        ]);
     }
 
     private function updateFinal(ProgressionRunResult $result, ProgressionRunResultStatus $status, ExactDecimal $points, ?string $targetProgramId, ?string $failureMessage, CarbonImmutable $now): void

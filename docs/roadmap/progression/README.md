@@ -1,6 +1,6 @@
 # Roadmap del feature Progression
 
-Estado: **PG1 completada; PG2.1 y PG2.2 implementadas**
+Estado: **PG1 y PG2 completadas**
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
@@ -66,8 +66,8 @@ distribución resultante; no depende de una consulta histórica de red.
 | 4. Modelo de datos | [`09-pg2-network-data-model.md`](09-pg2-network-data-model.md) | Completado |
 | 5. Foundations | [`10-pg2-network-foundations.md`](10-pg2-network-foundations.md) | Implementada (PG2.1) |
 | 6. Contribuciones | [`11-pg2-network-contributions.md`](11-pg2-network-contributions.md) | Implementada (PG2.2) |
-| 7. Runs y placement | [`12-pg2-network-runs-placement.md`](12-pg2-network-runs-placement.md) | Diseño completado |
-| 8. Cierre | [`13-pg2-network-closure.md`](13-pg2-network-closure.md) | Diseño completado |
+| 7. Runs y placement | [`12-pg2-network-runs-placement.md`](12-pg2-network-runs-placement.md) | Implementada (PG2.4 y PG2.5) |
+| 8. Cierre | [`13-pg2-network-closure.md`](13-pg2-network-closure.md) | Completado |
 
 ## Decisiones confirmadas
 
@@ -132,9 +132,6 @@ distribución resultante; no depende de una consulta histórica de red.
 
 ## Próximo paso
 
-Iniciar PG2.4: cerrar ventanas y consumir contribuciones locales sin consultar
-IAM ni recrear beneficiarios. PG2.2 ya evalúa cada destinatario congelado y
-conserva sus snapshots auditables. No reabrir PG1 salvo un defecto que bloquee
-PG2.
-
-Modules M2 ya define referencias opacas de símbolos y el programa puede asociar una versión de plantilla de progresión por símbolo. PG2 conserva una distribución local por actividad y queda preparada para implementar sus entregas documentadas.
+Preparar la operación y release de Progression (MMTECH-240). PG2 ya conserva
+distribuciones, contribuciones, runs y placement auditables; no reabrir PG1 o
+PG2 salvo un defecto que bloquee su operación.

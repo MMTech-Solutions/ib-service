@@ -1,6 +1,6 @@
 # PG2: cierre documental y gate de implementación
 
-Estado: **PG2.4 implementado; cierre de placement pendiente en PG2.5**
+Estado: **PG2 completado**
 Última revisión: 2026-09-29
 
 ## Decisiones cerradas
@@ -31,9 +31,14 @@ Estado: **PG2.4 implementado; cierre de placement pendiente en PG2.5**
 - Los resultados finales son inmutables; los fallidos se reintentan sin
   revertir resultados de otras suscripciones ni mover placement.
 
+## Evidencia PG2.5
+
+- PG2.5 aplica una sola vez cada resultado `completed` final con programa
+  objetivo mediante un ledger PostgreSQL transaccional; conserva la auditoría
+  de Subscriptions y respeta toda fijación vigente.
+
 ## Gate
 
-La implementación puede comenzar por foundations. No se requieren cambios de
-SDK ni un endpoint histórico de IAM. Adoptar una futura capacidad histórica
-requerirá revisar el BDS y decidir explícitamente si afecta actividades nuevas,
-correcciones o migraciones.
+PG2 está cerrado. No se requieren cambios de SDK ni un endpoint histórico de
+IAM. Adoptar una futura capacidad histórica requerirá revisar el BDS y decidir
+explícitamente si afecta actividades nuevas, correcciones o migraciones.

@@ -10,6 +10,7 @@ use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
 use App\Features\Progression\Support\DeriveProgressionWindowFromPeriod;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
+use App\Features\Subscriptions\Contracts\Data\V1\ApplyProgressionPlacementData;
 use App\Features\Subscriptions\Contracts\Data\V1\ListProgressionWindowSubscriptionsQueryData;
 use Carbon\CarbonImmutable;
 
@@ -72,6 +73,23 @@ final class CloseProgressionWindowsUseCase
             }
         }
 
+        $this->assertPostgreSqlRepositories();
+        foreach ($repository->finalizedResultsAwaitingPlacement() as $candidate) {
+            try {
+                $repository->transaction(function () use ($repository, $candidate, $clock): void {
+                    $result = $repository->lockFinalizedResultAwaitingPlacement($candidate->id);
+                    if ($result === null || $result->targetProgramId === null) {
+                        return;
+                    }
+
+                    $outcome = $this->gateways->placement()->apply(new ApplyProgressionPlacementData($result->subscriptionId, $result->targetProgramId, $result->id, $clock->toISOString()));
+                    $repository->recordPlacementApplication($result->id, $outcome, $clock);
+                });
+            } catch (\Throwable $throwable) {
+                report($throwable);
+            }
+        }
+
         return new CloseProgressionWindowsResultData(...$counts);
     }
 
@@ -93,5 +111,12 @@ final class CloseProgressionWindowsUseCase
         }
 
         return $window;
+    }
+
+    private function assertPostgreSqlRepositories(): void
+    {
+        if (config('progression.repository') !== 'postgresql' || config('subscriptions.repository') !== 'postgresql') {
+            throw new \LogicException('Progression placement application requires PostgreSQL repositories.');
+        }
     }
 }

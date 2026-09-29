@@ -14,6 +14,7 @@ use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramP
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
+use App\Features\Subscriptions\Contracts\Ports\Input\ApplyProgressionPlacementPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListProgressionWindowSubscriptionsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
@@ -37,6 +38,7 @@ final class ProgressionInterFeatureGateways
         private readonly ListActivePlansForProgressionPort $activePlansForProgression,
         private readonly ListProgressionWindowSubscriptionsPort $windowSubscriptions,
         private readonly ResolveProgressionTargetProgramPort $targetProgram,
+        private readonly ApplyProgressionPlacementPort $placement,
     ) {}
 
     public function activities(): FetchProgressionActivitiesPort
@@ -102,5 +104,10 @@ final class ProgressionInterFeatureGateways
     public function targetProgram(): ResolveProgressionTargetProgramPort
     {
         return $this->targetProgram;
+    }
+
+    public function placement(): ApplyProgressionPlacementPort
+    {
+        return $this->placement;
     }
 }

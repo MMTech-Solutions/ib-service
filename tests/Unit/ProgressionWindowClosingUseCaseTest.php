@@ -28,10 +28,13 @@ use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
+use App\Features\Subscriptions\Contracts\Enums\ProgressionPlacementOutcome;
+use App\Features\Subscriptions\Contracts\Ports\Input\ApplyProgressionPlacementPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListProgressionWindowSubscriptionsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Container\Container;
 use Mockery;
 use Tests\TestCase;
@@ -49,6 +52,11 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
         $repository = new class implements ProgressionRunRepositoryInterface
         {
             public ?ProgressionWindow $createdWindow = null;
+
+            public function transaction(Closure $callback): mixed
+            {
+                return $callback();
+            }
 
             public function latestWindowEndsAt(string $planId): ?CarbonImmutable
             {
@@ -82,6 +90,18 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
             {
                 return new ProgressionRun($run->id, $run->planId, $run->window, ProgressionRunStatus::Completed, $run->startedAt, $now);
             }
+
+            public function finalizedResultsAwaitingPlacement(): array
+            {
+                return [];
+            }
+
+            public function lockFinalizedResultAwaitingPlacement(string $resultId): ?ProgressionRunResult
+            {
+                return null;
+            }
+
+            public function recordPlacementApplication(string $resultId, ProgressionPlacementOutcome $outcome, CarbonImmutable $now): void {}
         };
         $container = new Container;
         $container->instance('progression.runs.repositories.memory', $repository);
@@ -96,7 +116,7 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
         $iam->shouldNotReceive('resolve');
 
         $useCase = new CloseProgressionWindowsUseCase(new ProgressionRunRepositoryFactory($container), new ProgressionInterFeatureGateways(
-            Mockery::mock(FetchProgressionActivitiesPort::class), $iam, Mockery::mock(ResolvePlanContextPort::class), Mockery::mock(ResolvePlanSubscriptionContextPort::class), Mockery::mock(ResolvePlanProgressionContextPort::class), Mockery::mock(ResolveProgramContextPort::class), Mockery::mock(ResolveProgramSubscriptionContextPort::class), Mockery::mock(HasOpenSubscriptionsForPlanPort::class), Mockery::mock(ResolveSubscriptionContextPort::class), Mockery::mock(ResolvePointsContributionContextPort::class), $plans, $subscriptions, $targets,
+            Mockery::mock(FetchProgressionActivitiesPort::class), $iam, Mockery::mock(ResolvePlanContextPort::class), Mockery::mock(ResolvePlanSubscriptionContextPort::class), Mockery::mock(ResolvePlanProgressionContextPort::class), Mockery::mock(ResolveProgramContextPort::class), Mockery::mock(ResolveProgramSubscriptionContextPort::class), Mockery::mock(HasOpenSubscriptionsForPlanPort::class), Mockery::mock(ResolveSubscriptionContextPort::class), Mockery::mock(ResolvePointsContributionContextPort::class), $plans, $subscriptions, $targets, Mockery::mock(ApplyProgressionPlacementPort::class),
         ), new DeriveProgressionWindowFromPeriod);
 
         $result = $useCase->execute(CarbonImmutable::parse('2026-09-20T01:00:00Z'));

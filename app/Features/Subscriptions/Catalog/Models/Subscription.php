@@ -456,6 +456,27 @@ final class Subscription
         );
     }
 
+    public function applyProgressionPlacement(string $programId, string $placementId, string $operationId, Closure $generateId, string $now): string
+    {
+        $this->assertMutableOpen(SubscriptionStatus::Active);
+        $current = $this->requireOpenPlacement();
+
+        if ($current->isFixed()) {
+            return 'fixed';
+        }
+
+        if ($current->programId === $programId) {
+            return 'unchanged';
+        }
+
+        $current->close($now);
+        $this->placements[] = SubscriptionPlacement::open($placementId, $this->id, $programId, PlacementCondition::Unfixed, $now);
+        $this->updatedAt = $now;
+        $this->recordChange($generateId(), $operationId, SubscriptionChangeAction::ProgressionPlacement, SubscriptionActorKind::System, null, null, SubscriptionStatus::Active, SubscriptionStatus::Active, $current->programId, $programId, false, false, $now);
+
+        return 'applied';
+    }
+
     public function releasePlacement(
         string $placementId,
         string $operationId,

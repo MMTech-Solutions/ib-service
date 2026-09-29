@@ -21,6 +21,7 @@ use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\Features\Rules\Catalog\Enums\RuleVersionStatus;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\Models\RuleRecord;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\Models\RuleVersionRecord;
+use App\Features\Subscriptions\Contracts\Enums\ProgressionPlacementOutcome;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
@@ -67,6 +68,7 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
 
     protected function tearDown(): void
     {
+        DB::table('progression_placement_applications')->delete();
         DB::table('progression_run_results')->delete();
         DB::table('progression_runs')->delete();
         DB::table('progression_contributions')->delete();
@@ -281,6 +283,28 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
         self::assertTrue($completed->isCompleted());
         self::assertSame('completed', DB::table('progression_runs')->where('id', $first->id)->value('status'));
         self::assertSame('completed', DB::table('progression_run_results')->where('id', $retry->id)->value('status'));
+    }
+
+    public function test_final_result_placement_application_is_idempotent_in_postgresql(): void
+    {
+        $now = CarbonImmutable::parse('2026-09-20T01:00:00Z');
+        $window = ProgressionWindow::of($now->subDay(), $now);
+        $repository = app(ProgressionRunRepositoryFactory::class)->make('postgresql');
+        $run = $repository->findOrCreateRun($this->planId, $window, $now);
+        $result = $repository->findOrCreateResult($run->id, $this->subscriptionId, $now);
+        $repository->markCompleted($result, ExactDecimal::fromString('0'), $this->programId, $now);
+
+        $final = $repository->finalizedResultsAwaitingPlacement();
+        self::assertCount(1, $final);
+        self::assertSame($result->id, $final[0]->id);
+
+        $repository->transaction(function () use ($repository, $result, $now): void {
+            self::assertNotNull($repository->lockFinalizedResultAwaitingPlacement($result->id));
+            $repository->recordPlacementApplication($result->id, ProgressionPlacementOutcome::Unchanged, $now);
+        });
+
+        self::assertSame(1, DB::table('progression_placement_applications')->where('run_result_id', $result->id)->where('outcome', 'unchanged')->count());
+        self::assertSame([], $repository->finalizedResultsAwaitingPlacement());
     }
 
     public function test_postgresql_run_contention_keeps_a_single_canonical_window(): void
