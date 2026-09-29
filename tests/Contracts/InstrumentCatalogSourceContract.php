@@ -17,20 +17,20 @@ abstract class InstrumentCatalogSourceContract extends TestCase
         $result = $this->source()->list($this->catalogQuery(type: 'symbol'));
 
         self::assertSame(2, $result->total);
-        self::assertSame('broker:symbol:eurusd', $result->items[0]->reference);
+        self::assertSame('broker:server_group:00000000-0000-7000-8000-000000000003:symbol:00000000-0000-7000-8000-000000000005', $result->items[0]->reference);
         self::assertSame('symbol', $result->items[0]->type);
-        self::assertSame('broker:group:mt5-usd', $result->items[0]->parents['server_group']);
+        self::assertSame('broker:server_group:00000000-0000-7000-8000-000000000003', $result->items[0]->parents['server_group']);
         self::assertSame('USD', $result->items[0]->currency_code);
     }
 
     public function test_it_lists_each_supported_catalog_type(): void
     {
         $expectedReferences = [
-            'platform' => 'broker:platform:mt5',
-            'trading_server' => 'broker:server:mt5-live',
-            'server_group' => 'broker:group:mt5-usd',
-            'security' => 'broker:security:fx',
-            'symbol' => 'broker:symbol:eurusd',
+            'platform' => 'broker:platform:00000000-0000-7000-8000-000000000001',
+            'trading_server' => 'broker:trading_server:00000000-0000-7000-8000-000000000002',
+            'server_group' => 'broker:server_group:00000000-0000-7000-8000-000000000003',
+            'security' => 'broker:security:00000000-0000-7000-8000-000000000004',
+            'symbol' => 'broker:server_group:00000000-0000-7000-8000-000000000003:symbol:00000000-0000-7000-8000-000000000005',
         ];
 
         foreach ($expectedReferences as $type => $reference) {
@@ -46,13 +46,13 @@ abstract class InstrumentCatalogSourceContract extends TestCase
         $result = $this->source()->list($this->catalogQuery(
             type: 'symbol',
             filters: [
-                'server_group' => 'broker:group:mt5-usd',
+                'server_group' => 'broker:server_group:00000000-0000-7000-8000-000000000003',
                 'search' => 'eur',
             ],
         ));
 
         self::assertSame(1, $result->total);
-        self::assertSame('broker:symbol:eurusd', $result->items[0]->reference);
+        self::assertSame('broker:server_group:00000000-0000-7000-8000-000000000003:symbol:00000000-0000-7000-8000-000000000005', $result->items[0]->reference);
     }
 
     public function test_it_paginates_catalog_results_and_preserves_page_metadata(): void
@@ -63,7 +63,7 @@ abstract class InstrumentCatalogSourceContract extends TestCase
         self::assertSame(2, $result->page);
         self::assertSame(1, $result->per_page);
         self::assertCount(1, $result->items);
-        self::assertSame('broker:symbol:gbpusd', $result->items[0]->reference);
+        self::assertSame('broker:server_group:00000000-0000-7000-8000-000000000003:symbol:00000000-0000-7000-8000-000000000006', $result->items[0]->reference);
     }
 
     /** @param array<string, string> $filters */

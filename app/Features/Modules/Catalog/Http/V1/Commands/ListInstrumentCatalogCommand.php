@@ -23,7 +23,7 @@ final class ListInstrumentCatalogCommand extends Data
     {
         $validated = $request->validated();
         $filters = array_filter(
-            $request->safe()->only(['search', 'platform', 'trading_server', 'server_group', 'security']),
+            $request->safe()->only(['search', 'platform', 'trading_server', 'server_group', 'security', 'symbol']),
             static fn (mixed $value): bool => is_string($value) && $value !== '',
         );
 

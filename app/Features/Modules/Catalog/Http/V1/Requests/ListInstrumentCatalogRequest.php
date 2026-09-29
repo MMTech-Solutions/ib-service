@@ -38,6 +38,7 @@ final class ListInstrumentCatalogRequest extends FormRequest
             'trading_server' => ['sometimes', 'string', 'max:160'],
             'server_group' => ['sometimes', 'string', 'max:160'],
             'security' => ['sometimes', 'string', 'max:160'],
+            'symbol' => ['sometimes', 'string', 'max:200'],
         ];
     }
 }
