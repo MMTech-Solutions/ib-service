@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 final class LocalRbacSnapshotSeeder extends Seeder
 {
-    public const ADMIN_SUB = '08e7cde8-54ad-423d-ae40-200fad11b157';
+    /** Aligns with Keycloak user created by broker/docker/keycloak-bff-bootstrap.sh + mmtech:init */
+    public const ADMIN_SUB = 'a9280aeb-70d9-43bb-b9ac-4acde4dc61c5';
 
     public const CUSTOMER_SUB = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa0';
 
