@@ -78,6 +78,9 @@ erDiagram
 | BR-CPA-004 | La captura CPA es idempotente por el par usuario referido e IB. Las redeliveries del mismo hecho no crean otro contexto ni otra recompensa. |
 | BR-CPA-005 | El contexto CPA conserva el conjunto de símbolos marcados para CPA del programa en el instante de captura. Cambios posteriores de programa, regla o símbolos no modifican ese snapshot. |
 | BR-CPA-006 | Un programa puede tener como máximo una asociación CPA activa a una versión publicada de regla `cpa_fixed_amount`. |
+| BR-CPA-007 | Los requisitos CPA configurados se cumplen de forma acumulativa: todos deben satisfacerse para que la estrategia pueda evaluar una adquisición. |
+| BR-CPA-008 | Cuando un requisito CPA exige depósito certificado, este se mide desde la captura CPA y en la misma moneda configurada, sin conversión de moneda. |
+| BR-CPA-009 | Cuando un requisito CPA exige volumen cerrado, se mide desde la captura CPA y solo para el snapshot de símbolos y grupos configurado al capturarla. |
 
 ## Ejemplo de reutilización CPA
 

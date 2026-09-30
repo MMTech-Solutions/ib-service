@@ -7,7 +7,7 @@ Consumidor real: `Progression PG1`
 ## Propósito
 
 M3 publica la consulta pull-only que Progression necesita para obtener hechos de
-actividad sin conocer Broker, Prop Firm, Copy Trading ni Trading Account Service.
+actividad sin conocer Broker, Prop Firm ni Copy Trading.
 La normalización describe el hecho externo; no decide plan, suscripción,
 placement, regla, elegibilidad ni puntos.
 
@@ -38,8 +38,7 @@ Devuelve una página con condición operacional vigente del módulo y hechos
 
 No contiene payloads de proveedor, secretos, URLs, modelos Eloquent, plan,
 suscripción, programa, placement, regla ni puntos. Cada adapter traduce su SDK o
-HTTP a este contrato; cambiar Broker por Trading Account Service solo cambia el
-adapter.
+HTTP a este contrato; cambiar el proveedor solo cambia el adapter.
 
 ## Operatividad, seguridad e idempotencia
 

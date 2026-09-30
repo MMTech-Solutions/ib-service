@@ -138,8 +138,8 @@ Features/Modules/
 - `Modules` obtiene, valida y normaliza actividad. `Programs`, `Rules`, `Progression` y `Rewards` deciden cómo configurarla, interpretarla o pagarla.
 - El catálogo no almacena credenciales, tokens, endpoints arbitrarios ni nombres de clases. La configuración técnica vive en archivos de configuración o gestores de secretos y las factories resuelven implementaciones mediante allowlists.
 - Las referencias de instrumentos específicas de Broker, Copy Trading u otro módulo se resuelven dentro del subfeature propietario y se exponen como contratos tipados.
-- Broker puede implementar temporalmente los puertos destinados al futuro Trading Account Service, exponiendo únicamente las necesidades de IB. La sustitución posterior cambia el adapter o repository de salida, no los consumidores ni los contratos de `Modules`.
-- Un módulo puede combinar varias fuentes: Broker puede obtener depósitos desde Broker Service y volumen, PnL, cuentas o símbolos desde Trading Account Service; PropFirm puede obtener challenges desde PropFirm Service y cuentas o métricas desde Trading Account Service.
+- Broker Service expone los puertos S2S de catálogo y actividad que necesita IB. Un cambio futuro de proveedor cambia el adapter o repository de salida, no los consumidores ni los contratos de `Modules`.
+- Un módulo puede combinar varias fuentes: Broker puede obtener catálogo, volumen, PnL, cuentas o símbolos desde Broker Service; PropFirm puede obtener challenges desde PropFirm Service y sus propias cuentas o métricas.
 
 El catálogo de módulos no se versiona como un agregado completo. El programa
 conserva una referencia directa al registro del módulo; no congela semántica
@@ -321,16 +321,16 @@ Programs UseCase
     ↓ depende de ListModuleSymbolsPort
 Modules/ListModuleSymbolsUseCase
     ↓ depende de TradingSymbolsSourcePort
-BrokerTradingSymbolsAdapter               # sustituto temporal
+BrokerTradingSymbolsAdapter
     ↓
 broker-service
 
-TradingAccountServiceTradingSymbolsAdapter # implementación futura
+FutureActivityProviderTradingSymbolsAdapter # implementación futura
     ↓
-Trading Account Service
+Proveedor futuro de actividad
 ```
 
-`Programs` nunca importa `ListModuleSymbolsUseCase`, el adapter concreto ni tipos de Broker o Trading Account Service. El cambio de fuente es transparente para el consumidor.
+`Programs` nunca importa `ListModuleSymbolsUseCase`, el adapter concreto ni tipos de Broker. El cambio de fuente es transparente para el consumidor.
 
 ### Puertos de salida y adapters
 

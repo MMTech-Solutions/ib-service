@@ -12,7 +12,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | M1, M2 y M3 completados | M4: sustitución por Trading Account Service pendiente | 2026-09-28 |
+| [`Modules`](modules/README.md) | M1-M4 completados; M5 en curso | M5: actividad Broker S2S y configuración instrumental de Programs | 2026-09-30 |
 | [`Plans`](plans/README.md) | P1 + P0.3 completados | Extensión Progression publicada | 2026-09-17 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados; BR-PROGRAM-015 cerrado | Sin extensión pendiente de Progression | 2026-09-29 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |

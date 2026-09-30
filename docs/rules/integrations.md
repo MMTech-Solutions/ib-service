@@ -28,7 +28,7 @@ Kafka es el transporte aprobado para hechos de integración y mensajes asíncron
 
 El topic de salida del servicio tendrá versión mayor. `ib-service.events.v1` es el nombre provisional propuesto; no se considera definitivo hasta validar naming, ownership, ACLs, retención y consumidores.
 
-Notification Service podrá consumir el topic del servicio y seleccionar mensajes por un `event_name` registrado. Los eventos entrantes de servicios como el futuro Trading Account Service se consumen mediante handlers por topic y se discriminan por `event_name`; cada handler valida y mapea su payload antes de invocar un UseCase.
+Notification Service podrá consumir el topic del servicio y seleccionar mensajes por un `event_name` registrado. Los eventos entrantes de proveedores de actividad como Broker Service se consumen mediante handlers por topic y se discriminan por `event_name`; cada handler valida y mapea su payload antes de invocar un UseCase.
 
 ### Envelope mínimo
 
@@ -137,7 +137,7 @@ Modules/Sources/
 └── CopyTrading/
 ```
 
-El adapter temporal hacia `broker-service` implementa el contrato mínimo previsto para Trading Account Service. No expone el modelo completo de Broker. Cuando el nuevo servicio esté disponible, la factory cambia la implementación de salida conservando los puertos y Data utilizados por los módulos.
+El adapter hacia `broker-service` implementa el contrato mínimo de Modules. No expone el modelo completo de Broker y conserva los puertos y Data utilizados por los módulos si en el futuro cambia el proveedor.
 
 ## Decisiones pendientes
 

@@ -20,6 +20,7 @@ use App\Features\Plans\Catalog\Http\V1\Controllers\StorePlanController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\UpdatePlanController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ListProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
+use App\Features\Programs\Catalog\Http\V1\Controllers\ReplaceProgramSymbolConfigurationsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ShowProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\StoreProgramController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\UpdateProgramController;
@@ -119,6 +120,7 @@ Route::prefix('ib/v1')
                 Route::post('plans/{plan}/programs/reorder', ReorderProgramsController::class)->name('ib.v1.admin.plans.programs.reorder');
                 Route::get('plans/{plan}/programs/{program}', ShowProgramController::class)->name('ib.v1.admin.plans.programs.show');
                 Route::patch('plans/{plan}/programs/{program}', UpdateProgramController::class)->name('ib.v1.admin.plans.programs.update');
+                Route::put('plans/{plan}/programs/{program}/symbol-configurations', ReplaceProgramSymbolConfigurationsController::class)->name('ib.v1.admin.plans.programs.symbol-configurations.replace');
                 Route::get('plans/{plan}/rules', ListRulesController::class)->name('ib.v1.admin.plans.rules.index');
                 Route::post('plans/{plan}/rules', StoreRuleController::class)->name('ib.v1.admin.plans.rules.store');
                 Route::get('plans/{plan}/rules/{rule}', ShowRuleController::class)->name('ib.v1.admin.plans.rules.show');

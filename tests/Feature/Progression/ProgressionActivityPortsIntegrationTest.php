@@ -11,7 +11,7 @@ use App\Features\Modules\Catalog\Repositories\InMemory\InMemoryModuleRepository;
 use App\Features\Modules\Catalog\Repositories\NoModuleReferences;
 use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
 use App\Features\Modules\Catalog\Support\ProgressionActivityCursor;
-use App\Features\Modules\Sources\Broker\Services\Adapters\FixtureBrokerDepositsActivityAdapter;
+use App\Features\Modules\Sources\Broker\Services\Adapters\BrokerClosedTradingVolumeActivityAdapter;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
@@ -24,6 +24,7 @@ use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPor
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -38,6 +39,12 @@ final class ProgressionActivityPortsIntegrationTest extends TestCase
         $this->modules = new InMemoryModuleRepository(new NoModuleReferences);
         $this->app->instance('modules.repositories.memory', $this->modules);
         config()->set('modules.repository', 'memory');
+        Http::fake(fn () => Http::response([
+            'data' => [
+                ['source_activity_id' => 'broker:position:00000000-0000-7000-8000-000000000001', 'subject_external_user_id' => '11111111-1111-4111-8111-111111111111', 'metric_code' => 'closed_trading_volume', 'unit_code' => 'lot', 'quantity' => '1.5', 'occurred_at' => '2026-09-10T10:00:00+00:00', 'symbol_id' => '00000000-0000-7000-8000-000000000005', 'server_group_id' => '00000000-0000-7000-8000-000000000003'],
+            ],
+            'meta' => ['next_cursor' => null],
+        ]));
     }
 
     public function test_it_delivers_paginated_normalized_activity_for_running_module(): void
@@ -55,23 +62,11 @@ final class ProgressionActivityPortsIntegrationTest extends TestCase
         self::assertSame('running', $page->module_condition);
         self::assertTrue($page->provider_invoked);
         self::assertFalse($page->isRejected());
-        self::assertCount(2, $page->activities);
-        self::assertSame('broker-deposit-001', $page->activities[0]->source_activity_id);
-        self::assertSame('confirmed_deposit', $page->activities[0]->metric_code);
-        self::assertSame('USD', $page->activities[0]->unit_code);
-        self::assertNotNull($page->next_cursor);
-
-        $second = $port->fetch(new FetchProgressionActivitiesQueryData(
-            module_id: $module->id,
-            occurred_from: '2026-09-10T00:00:00+00:00',
-            occurred_until: '2026-09-12T00:00:00+00:00',
-            cursor: $page->next_cursor,
-            limit: 2,
-        ));
-
-        self::assertCount(1, $second->activities);
-        self::assertSame('broker-deposit-003', $second->activities[0]->source_activity_id);
-        self::assertNull($second->next_cursor);
+        self::assertCount(1, $page->activities);
+        self::assertSame('broker:position:00000000-0000-7000-8000-000000000001', $page->activities[0]->source_activity_id);
+        self::assertSame('closed_trading_volume', $page->activities[0]->metric_code);
+        self::assertSame('lot', $page->activities[0]->unit_code);
+        self::assertSame('broker:server_group:00000000-0000-7000-8000-000000000003:symbol:00000000-0000-7000-8000-000000000005', $page->activities[0]->instrument_reference);
     }
 
     public function test_it_queries_activity_while_module_is_paused_without_granting_evaluation(): void
@@ -102,11 +97,11 @@ final class ProgressionActivityPortsIntegrationTest extends TestCase
 
         $calls = 0;
         $this->app->bind(
-            FixtureBrokerDepositsActivityAdapter::class,
-            function () use (&$calls): FixtureBrokerDepositsActivityAdapter {
+            BrokerClosedTradingVolumeActivityAdapter::class,
+            function () use (&$calls): BrokerClosedTradingVolumeActivityAdapter {
                 $calls++;
 
-                return new FixtureBrokerDepositsActivityAdapter;
+                return $this->app->make(BrokerClosedTradingVolumeActivityAdapter::class);
             },
         );
 

@@ -19,9 +19,8 @@ activo sin fuente de catálogo devuelve
 ## Frontera y sustitución
 
 `InstrumentCatalogSourceInterface` separa el puerto de salida del adapter de
-Broker. Un adapter futuro de Trading Account Service debe respetar la misma
-suite contractual sin cambiar `ListInstrumentCatalogPort`, sus Data V1 ni a los
-consumidores.
+Broker. Un cambio futuro de proveedor debe respetar la misma suite contractual
+sin cambiar `ListInstrumentCatalogPort`, sus Data V1 ni a los consumidores.
 
 ## Evidencia
 

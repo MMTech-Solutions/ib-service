@@ -59,16 +59,16 @@ implementan hasta cerrar sus bloqueos.
 ## Bloqueos de RWD1
 
 - Fórmula CPA: importe, moneda, beneficiario y distribución siguen pendientes.
-- Finance no expone aún una consulta S2S que certifique, por usuario y rango
-  temporal, los depósitos externos ya asentados. Sus endpoints actuales de
-  depósitos crypto son por dirección, paginados y no admiten el rango CPA.
-- La frontera versionada de verificación de depósitos y settlement con Finance
-  aún no está definida por su primer consumidor real.
+- Finance expone la consulta S2S paginada de depósitos externos asentados por
+  usuario y rango. Broker la compone como fachada de métricas CPA junto con el
+  volumen cerrado; ese contrato no decide elegibilidad ni reemplaza el feed
+  global M3.
+- Settlement y la frontera definitiva de Rewards continúan pendientes de la
+  fórmula CPA, Auth y del primer consumidor real.
 
 La configuración ya puede congelar una regla CPA fija y los símbolos CPA del programa. La captura real desde Auth, la evaluación y cualquier pago continúan bloqueados por los contratos anteriores.
 
 ## Próximo paso
 
-Cerrar la fórmula CPA y acordar con Finance la verificación S2S de depósitos
-asentados. Después, abrir `02-domain-model.md` para modelar el ledger y sus
-transiciones.
+Cerrar la fórmula CPA, Auth y el contrato de settlement. Después, abrir
+`02-domain-model.md` para modelar el ledger y sus transiciones.

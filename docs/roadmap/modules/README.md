@@ -5,7 +5,7 @@
 `Modules` representa en IB Service las capacidades que otros dominios aportan a
 planes y programas. Su primera fase debe permitir representar esas capacidades,
 consultarlas y controlar su operatividad sin acoplar el dominio a Broker,
-PropFirm, Copy Trading o al futuro Trading Account Service.
+PropFirm, Copy Trading o Broker Service.
 
 ## Estado
 
@@ -13,7 +13,7 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 | --- | --- | --- |
 | 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado |
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para M1 |
-| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1, M2 y M3 completados |
+| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1-M4 completados; M5 en curso |
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
@@ -52,8 +52,8 @@ PropFirm, Copy Trading o al futuro Trading Account Service.
 - M1 no publica objetos en `Contracts/Data` sin un consumidor inter-feature
   real. La primera publicación ocurrirá con `Plans P1`.
 - Los bindings se concentrarán inicialmente en `ModulesServiceProvider`.
-- Broker puede sustituir temporalmente al futuro Trading Account Service tras
-  adaptadores estrechos; ese reemplazo no debe cambiar a los consumidores.
+- Broker Service es el proveedor S2S de catálogo y actividad de trading; sus
+  adaptadores estrechos no cambian a los consumidores de Modules.
 - M1 no diseña una frontera pública para consumidores hipotéticos. La primera
   surgirá en `Plans P1`, cuando un caso de uso real necesite consultar módulos.
 - M1a entrega la sincronización y el listado administrativo; M1b incorpora
@@ -83,7 +83,8 @@ posterga hasta que esos contratos y el modelo base estén estables.
 - Ingesta o consulta de posiciones, cuentas y métricas.
 - Normalización de depósitos, lotaje, challenges, PnL o CPA.
 - Cálculo de progresión y recompensas.
-- Sustitución definitiva de Broker por Trading Account Service.
+- Sustitución del proveedor Broker por otro proveedor de actividad si se decide
+  en el futuro.
 
 ## Referencias canónicas
 
@@ -100,11 +101,11 @@ criterios de salida están en
 M2 debe completarse antes de asociar plantillas de progresión a símbolos; no se
 autoriza una asociación temporal por métrica o unidad.
 
-M2 está completada: incorpora un primer catálogo Broker fixture, paginado y filtrable, con referencias opacas de plataformas, trading servers, server groups, securities y símbolos. La evidencia de cierre está en [`08-m2-implementation-closure.md`](08-m2-implementation-closure.md). El adapter queda preparado para sustituirse por S2S en M4 sin cambiar el contrato de Modules.
+M2 y M4 están completadas: el catálogo Broker S2S es paginado y filtrable, con referencias opacas de plataformas, trading servers, server groups, securities y símbolos. M4 cerró la sustitución del fixture sin cambiar el contrato de Modules.
 
 ## M3 completado
 
 [`Progression PG1`](../progression/README.md) es el consumidor real de M3. El
 contrato se define en [`06-m3-progression-activity-contract.md`](06-m3-progression-activity-contract.md)
-y su implementación usa el adapter fixture de depósitos consumido por PG1. M2
-permanece separada de `EvaluateActivity` y de la actividad normalizada.
+y M5 sustituye el fixture por el feed S2S de `closed_trading_volume` de Broker.
+M2 permanece separada de `EvaluateActivity` y de la actividad normalizada.

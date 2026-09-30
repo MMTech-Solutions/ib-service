@@ -32,8 +32,8 @@ propia configuración, sin trasladar reglas de Progression a Modules.
 
 - Un adapter temporal hacia Broker obtiene símbolos por módulo y los traduce a
   identidades contractuales propias de Modules.
-- La sustitución futura por Trading Account Service no cambia el contrato
-  consumido por Progression.
+- Un cambio futuro de proveedor no cambia el contrato consumido por
+  Progression.
 - Progression puede asociar y consultar su configuración por símbolo sin
   importar tipos, SDKs o identificadores internos del proveedor.
 - Hay pruebas contractuales del adapter y evidencia de una consulta real por el
@@ -56,6 +56,6 @@ propia configuración, sin trasladar reglas de Progression a Modules.
 
 ## Próximo paso
 
-Esperar el Trading Account Service para M4. PG2 puede consumir la frontera M2;
-su único bloqueo externo pendiente es el contrato histórico de red de
-`auth-service`.
+M4 cerró la integración S2S del catálogo con Broker Service. PG2 puede consumir
+la frontera M2; su único bloqueo externo pendiente es el contrato histórico de
+red de `auth-service`.

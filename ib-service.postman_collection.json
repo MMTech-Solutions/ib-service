@@ -834,6 +834,29 @@
                                 "description": "Atomically reorders all programs of the plan and sets their live entry thresholds. programs must list every program exactly once with lock_version."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Replace program symbol configurations",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"symbols\": [\n    {\n      \"module_id\": \"{{MODULE_ID}}\",\n      \"instrument_reference\": \"broker:server_group:{{SERVER_GROUP_ID}}:symbol:{{SYMBOL_ID}}\",\n      \"use_for_progression\": true,\n      \"plan_progression_template_version_binding_id\": \"{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}\",\n      \"use_for_volume_reward\": false,\n      \"use_for_cpa\": true\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}/symbol-configurations",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}", "symbol-configurations"]
+                                },
+                                "description": "Atomically replaces the current program symbol set. Broker is consulted before the transaction; group and currency are derived from its live catalogue. Requires ib.programs.manage."
+                            },
+                            "response": []
                         }
                     ]
                 },

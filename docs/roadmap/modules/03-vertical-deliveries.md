@@ -91,9 +91,9 @@ inactivo no realiza consulta externa y deja evidencia técnica.
 
 ### M4 — Sustitución y endurecimiento operativo
 
-Conecta Trading Account Service cuando esté disponible, valida compatibilidad
-contractual, completa observabilidad, resiliencia e idempotencia, y retira el
-adaptador temporal sin cambios para los consumidores.
+Conecta Broker Service por S2S, valida compatibilidad contractual, completa
+observabilidad, resiliencia e idempotencia, y retira el adaptador fixture sin
+cambios para los consumidores.
 
 ## Dependencias
 
@@ -105,7 +105,7 @@ adaptador temporal sin cambios para los consumidores.
   fixture; la sustitución S2S queda en M4.
 - M3 necesita consumidores y vocabulario de actividad para puntos o
   recompensas.
-- M4 depende de contratos reales del futuro Trading Account Service.
+- M4 depende del contrato real S2S de catálogo de Broker Service.
 
 ## Regla de revisión
 

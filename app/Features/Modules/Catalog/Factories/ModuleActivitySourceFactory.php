@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Catalog\Factories;
 
-use App\Features\Modules\Sources\Broker\Services\Adapters\FixtureBrokerDepositsActivityAdapter;
+use App\Features\Modules\Sources\Broker\Services\Adapters\BrokerClosedTradingVolumeActivityAdapter;
 use App\Features\Modules\Sources\Contracts\ModuleActivitySourceInterface;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
@@ -17,7 +17,7 @@ final class ModuleActivitySourceFactory
      * @var array<string, class-string<ModuleActivitySourceInterface>>
      */
     private const ALLOWLIST = [
-        'deposits' => FixtureBrokerDepositsActivityAdapter::class,
+        'closed_trading_volume' => BrokerClosedTradingVolumeActivityAdapter::class,
     ];
 
     public function __construct(private readonly Container $container) {}
