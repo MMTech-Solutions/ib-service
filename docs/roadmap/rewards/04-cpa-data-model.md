@@ -22,7 +22,7 @@ siguientes datos de lectura:
 | Referido e IB | Identidades opacas del contexto. |
 | Estado | `pending`, `qualified` o `error`. |
 | Volumen observado/requerido y unidad | Decimales exactos y unidad configurada. |
-| Depósito observado/requerido y moneda | Minor units exactos y moneda sin conversión. |
+| Depósito observado/requerido y moneda | Minor units exactos, moneda sin conversión y precisión congelada por la configuración CPA. |
 | Banderas de cumplimiento | Resultado independiente de cada requisito. |
 | Desde/hasta observado | Captura y último corte consultado. |
 | Última evaluación y error | Operabilidad sin historia de intentos; error sanitizado y nullable. |

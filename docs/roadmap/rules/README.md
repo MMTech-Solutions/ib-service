@@ -85,4 +85,4 @@ Ninguno en Rules para desbloquear PG1 sesión 3: P0.1 está cerrada. Queda
 P0.3 (Plans) en el prerrequisito P0 de Progression (P0.2 Subscriptions también
 cerrada).
 
-La estrategia `cpa_fixed_amount` permite publicar una regla CPA de importe y moneda fijos. Su asociación única por programa y su posterior captura histórica pertenecen a Rewards; Rules no calcula ni solicita pagos.
+La estrategia `cpa_fixed_amount` V1 permite publicar una regla CPA de importe y moneda fijos, incluida la precisión explícita de moneda necesaria para los requisitos de depósito. Su asociación única por programa y su posterior captura histórica pertenecen a Rewards; Rules no calcula ni solicita pagos.

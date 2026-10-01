@@ -1,6 +1,6 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2 listo para implementación documentalmente**
+Estado: **RWD1 inventariado; RWD2/RV1 en curso**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-09-30
@@ -45,7 +45,7 @@ flowchart LR
 | 2. Modelo de dominio | [`02-cpa-domain-model.md`](02-cpa-domain-model.md) | Listo |
 | 3. Entregas verticales | [`03-cpa-vertical-deliveries.md`](03-cpa-vertical-deliveries.md) | Listo |
 | 4. Modelo de datos | [`04-cpa-data-model.md`](04-cpa-data-model.md) | Listo |
-| 5. Implementación y contract tests | [`05-cpa-implementation-plan.md`](05-cpa-implementation-plan.md) | Listo para comenzar |
+| 5. Implementación y contract tests | [`05-cpa-implementation-plan.md`](05-cpa-implementation-plan.md) | RV1 en curso |
 
 ## Decisiones confirmadas
 

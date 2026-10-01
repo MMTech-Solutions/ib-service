@@ -1,6 +1,6 @@
 # RWD2: implementación y contract tests
 
-Estado: **Listo para comenzar**
+Estado: **RV1 en curso**
 Última revisión: 2026-09-30
 
 ## Contratos y capas
@@ -33,7 +33,8 @@ Estado: **Listo para comenzar**
 ## Matriz de pruebas
 
 - Captura: redelivery, contexto inexistente/no aplicable, snapshot inmutable y
-  unicidad persistente.
+  unicidad persistente. La configuración CPA V1 declara explícitamente
+  `currency_precision`; IB no intenta inferirla de ICU ni de un proveedor externo.
 - Evidencia: cursor, límite, rango, usuario, símbolos/grupos, unidad, decimal,
   timeout, respuesta inválida e indisponibilidad de cada fuente.
 - Evaluación: cumplimiento parcial, moneda distinta, ambos requisitos, módulo

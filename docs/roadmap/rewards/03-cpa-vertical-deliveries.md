@@ -1,6 +1,6 @@
 # RWD2: entregas verticales CPA
 
-Estado: **Listo**
+Estado: **RV1 en curso; RV2 y RV3 listos para comenzar**
 Última revisión: 2026-09-30
 
 ## RV1 — captura y progreso

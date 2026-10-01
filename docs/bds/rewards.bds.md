@@ -89,6 +89,7 @@ erDiagram
 | BR-CPA-012 | La evidencia CPA se observa desde la captura hasta un corte explícito. Cada evaluación conserva el último corte que pudo consultar, sin convertir los intentos en un historial de dominio. |
 | BR-CPA-013 | Cuando todos los requisitos acumulativos se satisfacen, el contexto puede originar una única recompensa `pending`; la relación a esa recompensa pertenece al contexto CPA, no al progreso de verificación. |
 | BR-CPA-014 | El proveedor de actividad entrega evidencia normalizada y Finance certifica depósitos; ninguno decide elegibilidad CPA, importe, beneficiario, recompensa ni settlement. |
+| BR-CPA-015 | Una versión CPA que exija depósito declara explícitamente la precisión de su moneda. IB usa esa precisión congelada para convertir y comparar minor units; no la infiere de ICU, Finance ni otra fuente externa. |
 
 ## Ejemplo de reutilización CPA
 

@@ -58,6 +58,7 @@ app/
 │       ├── Exceptions/
 │       ├── Events/
 │       ├── Listeners/
+│       │   └── Kafka/
 │       ├── Jobs/
 │       └── Support/
 ├── SharedFeatures/
@@ -73,7 +74,9 @@ No se crean todos esos directorios por anticipado. Cada feature incorpora única
 La infraestructura de Laravel que ejecuta responsabilidades de negocio pertenece
 al feature o subfeature propietario. Sus comandos Artisan viven directamente en
 `Console`, sus trabajos en `Jobs`, sus listeners en `Listeners` y sus
-eventos internos en `Events`, todos dentro de ese límite. No se ubican comandos,
+eventos internos en `Events`, todos dentro de ese límite. Los consumidores de
+Kafka son listeners de infraestructura y viven en `Listeners/Kafka`; validan y
+normalizan el transporte antes de delegar a un UseCase con DTO neutral. No se ubican comandos,
 jobs, listeners ni eventos propios de un feature en directorios globales bajo
 `app/`.
 

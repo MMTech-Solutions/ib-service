@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Features\Rewards\Listeners\Kafka\AuthAccountRegisteredTopicHandler;
 
 return [
     'consumer' => [
@@ -10,7 +11,7 @@ return [
         'group_id' => env('RBAC_KAFKA_GROUP_ID', 'rbac-materializer'),
         // Optional: app-specific topics to consume in the same worker.
         'handlers' => [
-            // 'auth.events.v1' => \App\Kafka\Handlers\AuthEventsTopicHandler::class,
+            env('REWARDS_AUTH_ACCOUNT_REGISTERED_TOPIC', 'auth.events.v1') => AuthAccountRegisteredTopicHandler::class,
         ],
         // skip|fail: behavior when a message arrives for a topic without registered handler.
         'on_unhandled_topic' => env('RBAC_KAFKA_ON_UNHANDLED_TOPIC', 'skip'),
