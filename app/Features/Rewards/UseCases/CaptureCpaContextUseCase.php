@@ -6,11 +6,15 @@ namespace App\Features\Rewards\UseCases;
 
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
 use App\Features\Programs\Contracts\Data\V1\AssertSelectedModuleQueryData;
+use App\Features\Programs\Contracts\Data\V1\ResolveProgramCpaSymbolsQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramCpaSymbolsPort;
 use App\Features\Rewards\Contracts\Ports\Input\CaptureCpaContextPort;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
 use App\Features\Rewards\DTOs\CaptureCpaContextResultData;
 use App\Features\Rewards\Exceptions\CpaCaptureNotApplicableException;
+use App\Features\Rules\Contracts\Data\V1\ResolveCpaRuleContextQueryData;
+use App\Features\Rules\Contracts\Ports\Input\ResolveCpaRuleContextPort;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextQueryData;
@@ -25,6 +29,8 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
         private readonly ConnectionInterface $connection,
         private readonly ResolveSubscriptionContextPort $subscriptions,
         private readonly ResolveProgramContextPort $programs,
+        private readonly ResolveProgramCpaSymbolsPort $programCpaSymbols,
+        private readonly ResolveCpaRuleContextPort $rules,
         private readonly ResolveModulesPort $modules,
     ) {}
 
@@ -44,8 +50,8 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
         }
 
         $context = $subscription->context;
-        $rule = $this->ruleContext($context->program_id, $data->captured_at);
-        if ($rule === null) {
+        $rule = $this->rules->resolve(new ResolveCpaRuleContextQueryData($context->program_id, $data->captured_at));
+        if (! $rule->found()) {
             throw CpaCaptureNotApplicableException::create('cpa_rule_assignment_absent');
         }
 
@@ -59,12 +65,12 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
             throw CpaCaptureNotApplicableException::create('module_not_operational');
         }
 
-        $symbols = $this->symbols($context->program_id, (string) $rule->module_id, $data->captured_at);
+        $symbols = $this->programCpaSymbols->resolve(new ResolveProgramCpaSymbolsQueryData($context->program_id, (string) $rule->module_id, $data->captured_at));
         if ($symbols === []) {
             throw CpaCaptureNotApplicableException::create('cpa_symbols_absent');
         }
 
-        $configuration = is_string($rule->configuration) ? json_decode($rule->configuration, true) : $rule->configuration;
+        $configuration = $rule->configuration;
         if (! is_array($configuration)) {
             throw CpaCaptureNotApplicableException::create('cpa_rule_configuration_invalid');
         }
@@ -99,9 +105,10 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
                     'plan_id' => $context->plan_id,
                     'program_id' => $context->program_id,
                     'module_id' => (string) $rule->module_id,
+                    'rule_assignment_id' => (string) $rule->rule_assignment_id,
                     'rule_id' => (string) $rule->rule_id,
                     'rule_version_id' => (string) $rule->rule_version_id,
-                    'symbols_snapshot' => json_encode($symbols, JSON_THROW_ON_ERROR),
+                    'symbols_snapshot' => json_encode(array_map(static fn ($symbol): array => $symbol->toArray(), $symbols), JSON_THROW_ON_ERROR),
                     'requirements_snapshot' => json_encode($requirements, JSON_THROW_ON_ERROR),
                     'captured_at' => $data->captured_at,
                 ]);
@@ -132,29 +139,5 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
         $id = $this->connection->table('cpa_contexts')->where('referred_user_id', $data->referred_user_id)->where('ib_user_id', $data->ib_user_id)->value('id');
 
         return $id === null ? null : (string) $id;
-    }
-
-    private function ruleContext(string $programId, string $capturedAt): ?object
-    {
-        return $this->connection->table('program_cpa_rule_assignments as cpa')
-            ->join('rule_assignments as assignments', function ($join): void {
-                $join->on('assignments.program_id', '=', 'cpa.program_id')->on('assignments.rule_id', '=', 'cpa.rule_id')->on('assignments.rule_version_id', '=', 'cpa.rule_version_id');
-            })->join('rules', 'rules.id', '=', 'cpa.rule_id')->join('rule_versions', 'rule_versions.id', '=', 'cpa.rule_version_id')
-            ->where('cpa.program_id', $programId)->where('cpa.starts_at', '<=', $capturedAt)
-            ->where(fn ($query) => $query->whereNull('cpa.ends_at')->orWhere('cpa.ends_at', '>', $capturedAt))
-            ->where('assignments.starts_at', '<=', $capturedAt)
-            ->where(fn ($query) => $query->whereNull('assignments.ends_at')->orWhere('assignments.ends_at', '>', $capturedAt))
-            ->where('rules.strategy_type', 'cpa_fixed_amount')->where('rule_versions.status', 'published')
-            ->select(['cpa.rule_id', 'cpa.rule_version_id', 'assignments.module_id', 'rule_versions.configuration'])->first();
-    }
-
-    /** @return list<array{symbol_reference: string, server_group_reference: string, currency_code: string}> */
-    private function symbols(string $programId, string $moduleId, string $capturedAt): array
-    {
-        return $this->connection->table('program_symbol_configurations')
-            ->where('program_id', $programId)->where('module_id', $moduleId)->where('use_for_cpa', true)
-            ->where('starts_at', '<=', $capturedAt)->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>', $capturedAt))
-            ->orderBy('symbol_reference')->get(['symbol_reference', 'server_group_reference', 'currency_code'])
-            ->map(fn (object $symbol): array => ['symbol_reference' => (string) $symbol->symbol_reference, 'server_group_reference' => (string) $symbol->server_group_reference, 'currency_code' => (string) $symbol->currency_code])->all();
     }
 }

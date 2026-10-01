@@ -26,10 +26,10 @@ final class ReplaceProgramSymbolConfigurationsUseCase
 
         return $this->connection->transaction(function () use ($programId, $resolved): array {
             $now = now('UTC');
-            $active = $this->connection->table('program_symbol_configurations')->where('program_id', $programId)->whereNull('ends_at')->lockForUpdate()->get()->keyBy(fn ($row): string => $row->module_id.'|'.$row->symbol_reference);
+            $active = $this->connection->table('program_symbol_configurations')->where('program_id', $programId)->whereNull('ends_at')->lockForUpdate()->get()->keyBy(fn ($row): string => $row->module_id.'|'.$row->server_group_reference.'|'.$row->symbol_reference);
             $keys = [];
             foreach ($resolved as $symbol) {
-                $key = $symbol['module_id'].'|'.$symbol['symbol_reference'];
+                $key = $symbol['module_id'].'|'.$symbol['server_group_reference'].'|'.$symbol['symbol_reference'];
                 $keys[] = $key;
                 $existing = $active->get($key);
                 if ($existing !== null && $this->same($existing, $symbol)) {

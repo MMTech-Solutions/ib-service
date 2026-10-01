@@ -2,6 +2,9 @@
 
 Estado: **En curso**
 
+Evidencia: el feed interno acepta referido y pares canonicos de grupo/simbolo
+para la evidencia CPA, sin cambiar el contrato M3 de Progression.
+
 M5 conserva M4 como cierre del catálogo Broker S2S. Reemplaza el fixture de
 actividad de Progression por volumen cerrado paginado de Broker y publica la
 administración atómica de símbolos de Program validada contra el catálogo vivo.

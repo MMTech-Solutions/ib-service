@@ -34,10 +34,26 @@ conservan en el snapshot o en la Reward conforme al contrato de evidencia.
 
 ## Reward
 
+El ledger `rewards` es genérico: no contiene `cpa_context_id`. Para CPA, la
+relación única y protegida se conserva en sentido inverso mediante
+`cpa_contexts.reward_id`; por eso el mismo ledger podrá registrar volumen y
+PnL sin requerir un contexto CPA. El contexto CPA es causa comercial congelada,
+no un hecho de `reward_evidence`.
+
 RWD2 crea el ledger `rewards` con una restricción persistente que impide más de
 una Reward por contexto CPA. La Reward conserva causa, beneficiario, importe y
 moneda congelados, referencias de regla y módulo, snapshot de evidencia y
 estado inicial `pending`. No incluye columnas de settlement en esta entrega.
+
+La restricción de una sola Reward por contexto CPA se implementa con la
+unicidad de `cpa_contexts.reward_id`, no con una columna de CPA en `rewards`.
+
+`reward_evidence` conserva los hechos normalizados que justificaron una Reward:
+`evidence_provider`, `evidence_type` e identificador fuente son obligatorios.
+Para volumen cerrado también conserva cantidad, unidad, instante y referencia
+instrumental; para depósitos certificados conserva importe minor, moneda e
+instante acreditado. No existe `source_system` en Reward: su módulo ya expresa
+el origen funcional de la obligación.
 
 ## Concurrencia y retención
 

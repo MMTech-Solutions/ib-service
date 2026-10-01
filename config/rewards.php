@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 return [
+    'cpa' => [
+        'batch_size' => (int) env('REWARDS_CPA_BATCH_SIZE', 100),
+        'incremental_evidence' => filter_var(env('REWARDS_CPA_INCREMENTAL_EVIDENCE', false), FILTER_VALIDATE_BOOL),
+    ],
     'auth_account_registered' => [
         'topic' => env('REWARDS_AUTH_ACCOUNT_REGISTERED_TOPIC', 'auth.events.v1'),
         'allowed_sources' => array_values(array_filter(array_map(

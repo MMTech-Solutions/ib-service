@@ -1,6 +1,9 @@
 # RWD2: implementación y contract tests
 
 Estado: **RV1 en curso**
+
+RV2 conserva evidencia inmutable por Reward y hecho fuente; no usa el progreso
+como historial de intentos ni como ledger de actividad.
 Última revisión: 2026-09-30
 
 ## Contratos y capas

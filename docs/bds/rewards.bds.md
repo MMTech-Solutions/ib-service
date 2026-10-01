@@ -90,6 +90,9 @@ erDiagram
 | BR-CPA-013 | Cuando todos los requisitos acumulativos se satisfacen, el contexto puede originar una única recompensa `pending`; la relación a esa recompensa pertenece al contexto CPA, no al progreso de verificación. |
 | BR-CPA-014 | El proveedor de actividad entrega evidencia normalizada y Finance certifica depósitos; ninguno decide elegibilidad CPA, importe, beneficiario, recompensa ni settlement. |
 | BR-CPA-015 | Una versión CPA que exija depósito declara explícitamente la precisión de su moneda. IB usa esa precisión congelada para convertir y comparar minor units; no la infiere de ICU, Finance ni otra fuente externa. |
+| BR-CPA-016 | Al calificar un contexto CPA, IB conserva en la Reward la evidencia normalizada que la justifica. Cada hecho conserva proveedor, tipo e identificador fuente; la evidencia no sustituye el ledger ni el progreso CPA. |
+| BR-CPA-017 | El modo incremental solo es válido si cada proveedor garantiza que no publicará, corregirá ni retirará hechos anteriores a un corte confirmado. Hasta verificar ese contrato, IB debe reevaluar el intervalo completo desde la captura. |
+| BR-CPA-018 | El ledger `rewards` es genérico. La relación específica de CPA se conserva de forma inversa, única e inmutable mediante `cpa_context.reward_id`; una Reward no exige ni contiene un contexto CPA. |
 
 ## Ejemplo de reutilización CPA
 

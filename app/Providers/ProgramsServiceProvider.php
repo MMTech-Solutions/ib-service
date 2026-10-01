@@ -7,10 +7,12 @@ namespace App\Providers;
 use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
+use App\Features\Programs\Catalog\UseCases\ResolveProgramCpaSymbolsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramProgressionConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgressionTargetProgramUseCase;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramCpaSymbolsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
@@ -27,6 +29,7 @@ final class ProgramsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolveProgramContextPort::class, ResolveProgramContextUseCase::class);
+        $this->app->singleton(ResolveProgramCpaSymbolsPort::class, ResolveProgramCpaSymbolsUseCase::class);
         $this->app->singleton(ResolveProgramProgressionConfigurationPort::class, ResolveProgramProgressionConfigurationUseCase::class);
         $this->app->singleton(ResolveProgramSubscriptionContextPort::class, ResolveProgramSubscriptionContextUseCase::class);
         $this->app->singleton(ResolveProgressionTargetProgramPort::class, ResolveProgressionTargetProgramUseCase::class);
