@@ -37,6 +37,6 @@ final class PointsPerQuantityUnitStrategyTest extends TestCase
     {
         $registry = new ClosedRuleStrategyRegistry;
         $this->expectException(UnsupportedRuleStrategyException::class);
-        $registry->definition('cpa_fixed_amount');
+        $registry->definition('unknown_strategy');
     }
 }
