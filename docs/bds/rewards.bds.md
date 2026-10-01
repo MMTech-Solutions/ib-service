@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.7
-- **Estado:** base inicial; R2 cierra asignaciones históricas con scope `all`; Rewards inicia su inventario CPA con ledger propio de IB
+- **Versión:** 0.8
+- **Estado:** R2 cierra asignaciones históricas con scope `all`; RWD2 define la verificación CPA, su progreso y la creación de la obligación `pending`
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -25,6 +25,8 @@ El catálogo de reglas —identidad, versiones publicadas e inmutables y asignac
 | Ledger de recompensas | Registro autoritativo de IB para las obligaciones de recompensa. Conserva su causa y snapshot; su estado refleja el ciclo informado por Finance. |
 | Settlement | Confirmación de que la operación financiera solicitada fue asentada. |
 | Contexto CPA | Snapshot que fija referido, plan, programa, asignación, versión de regla, scope y condiciones aplicables a una adquisición. |
+| Progreso de verificación CPA | Estado observable y único de los requisitos de un contexto CPA. No es un historial de intentos ni una recompensa. |
+| Evidencia CPA | Hechos verificables de actividad o depósito que una estrategia usa para evaluar un contexto CPA; no incluye una decisión de elegibilidad. |
 
 ## Relaciones
 
@@ -39,6 +41,7 @@ erDiagram
     RULE_ASSIGNMENT ||--o{ REWARD : produces
     RULE_ASSIGNMENT ||--o{ CONTRIBUTION : converts
     CPA_CONTEXT ||--o| REWARD : pays_once
+    CPA_CONTEXT ||--|| CPA_VERIFICATION_PROGRESS : tracks
 ```
 
 ## Reglas de dominio
@@ -81,6 +84,11 @@ erDiagram
 | BR-CPA-007 | Los requisitos CPA configurados se cumplen de forma acumulativa: todos deben satisfacerse para que la estrategia pueda evaluar una adquisición. |
 | BR-CPA-008 | Cuando un requisito CPA exige depósito certificado, este se mide desde la captura CPA y en la misma moneda configurada, sin conversión de moneda. |
 | BR-CPA-009 | Cuando un requisito CPA exige volumen cerrado, se mide desde la captura CPA y solo para el snapshot de símbolos y grupos configurado al capturarla. |
+| BR-CPA-010 | La verificación CPA es independiente de Progression: no mueve placements, no consume puntos y no aplica ponderaciones ni profundidad de red. |
+| BR-CPA-011 | Un contexto CPA tiene un único progreso de verificación observable. Sus estados son `pending`, `qualified` y `error`; un error técnico no altera el contexto ni crea una recompensa. |
+| BR-CPA-012 | La evidencia CPA se observa desde la captura hasta un corte explícito. Cada evaluación conserva el último corte que pudo consultar, sin convertir los intentos en un historial de dominio. |
+| BR-CPA-013 | Cuando todos los requisitos acumulativos se satisfacen, el contexto puede originar una única recompensa `pending`; la relación a esa recompensa pertenece al contexto CPA, no al progreso de verificación. |
+| BR-CPA-014 | El proveedor de actividad entrega evidencia normalizada y Finance certifica depósitos; ninguno decide elegibilidad CPA, importe, beneficiario, recompensa ni settlement. |
 
 ## Ejemplo de reutilización CPA
 
@@ -100,6 +108,8 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Regla asignada o retirada de un programa y módulo.
 - Versión de una asignación reemplazada.
 - Contexto CPA capturado.
+- Progreso CPA actualizado.
+- Contexto CPA calificado.
 - Actividad aceptada para evaluación.
 - Recompensa calculada.
 - Pago solicitado.
@@ -112,5 +122,5 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
 - Capacidades mínimas que cada estrategia exige a los módulos proveedores.
-- Fórmulas definitivas de CPA, volumen, PnL y distribución multinivel.
+- Fórmulas definitivas de volumen, PnL y distribución multinivel distintas de CPA.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

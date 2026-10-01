@@ -18,6 +18,11 @@
   `UserContext::can(...)` y una `UserSurface` explícita. El middleware autentica
   y prepara el contexto, pero no sustituye la decisión de autorización de la
   operación.
+- Cuando una capacidad es común a cliente y administración, la autorización
+  puede variar el alcance, filtros permitidos y proyección, pero nunca permite
+  que un filtro aportado por el cliente amplíe el alcance que el servidor le
+  impone. Esa derivación se resuelve antes del UseCase mediante criterios
+  tipados y autorizados.
 - Los features de negocio no acceden directamente a `auth()`, `Auth`,
   `request()->user()` ni `$request->user()`, ni dependen del tipo `GatewayUser`.
   La identidad actual se consume exclusivamente mediante `UserContext`.

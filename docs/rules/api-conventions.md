@@ -78,6 +78,12 @@ Al implementar o modificar un controller HTTP:
 
 ## Relación con otros documentos
 
+Una capacidad puede servir a más de una surface y devolver una proyección de
+campos distinta conforme a permisos, pero conserva el mismo envelope: `data` es
+siempre el recurso o colección autorizado y `meta` contiene filtros y
+paginación. La decisión de alcance, filtros forzados y proyección pertenece a
+la arquitectura de aplicación, no a esta convención ni al Resource.
+
 - Flujo HTTP y Resources: [`architecture.md`](architecture.md) § HTTP y Resources.
 - Estilo de controllers y `ApiResponse`: [`code-style.md`](code-style.md).
 - Directive operativa para agentes: [`AGENTS.md`](../../AGENTS.md) (routing documental y decisión de salida).

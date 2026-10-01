@@ -139,6 +139,12 @@ Modules/Sources/
 
 El adapter hacia `broker-service` implementa el contrato mínimo de Modules. No expone el modelo completo de Broker y conserva los puertos y Data utilizados por los módulos si en el futuro cambia el proveedor.
 
+### Evidencia CPA de Broker
+
+La capacidad CPA de `Modules/Broker` compone dos consultas de solo lectura: los hechos normalizados de `closed_trading_volume` de `broker-service` y los depósitos externos certificados de Finance. `broker-service` no recibe ni devuelve depósitos CPA, importes, decisiones de elegibilidad o recompensas.
+
+Rewards consume un puerto V1 de Modules especializado en evidencia CPA. El adapter de Modules pagina, limita y normaliza las dos fuentes, conserva la trazabilidad de sus referencias y traduce indisponibilidad, timeout y contrato inválido a errores tipados. No mantiene una transacción local abierta durante ninguna llamada. Finance se invoca desde IB con identidad S2S y la moneda se filtra de forma exacta antes de entregar evidencia a Rewards.
+
 ## Decisiones pendientes
 
 - Confirmar `ib-service.events.v1` como nombre del topic de salida.

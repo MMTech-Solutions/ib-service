@@ -510,6 +510,33 @@ FormRequest → Http/V1/Command → UseCase → Result Data → Controller → A
 - Un Resource no ejecuta queries, no carga relaciones y no accede a modelos de otro feature.
 - Toda información requerida por un Resource debe llegar resuelta desde el UseCase mediante un DTO o read model.
 
+### Capacidades compartidas entre surfaces
+
+Una intención de negocio que clientes y administración pueden ejecutar es una
+sola capacidad del feature. Comparte Controller, FormRequest, Command, UseCase,
+puertos, Actions de dominio y resultado de aplicación; la surface no duplica el
+flujo ni crea variantes `Admin` y `Customer` de esos artefactos.
+
+El FormRequest autoriza la capacidad base con `UserContext` y una `UserSurface`
+explícita. Antes de invocar el UseCase, un Action interno de alcance y
+proyección interpreta los permisos del principal y produce criterios tipados:
+
+- fuerza las restricciones que el actor no puede escoger, por ejemplo
+  `is_active = true` para clientes;
+- admite filtros, orden o búsquedas ampliados solo cuando un permiso explícito
+  los concede;
+- selecciona la proyección de campos autorizada sin permitir que el Resource
+  vuelva a decidir acceso;
+- entrega al UseCase criterios ya autorizados, sin valores `admin`, `client` o
+  `UserSurface` como reglas de dominio.
+
+El UseCase conserva una única intención y devuelve datos suficientes para las
+proyecciones autorizadas. Un API Resource sigue siendo un transformador puro:
+recibe la proyección resuelta, no consulta permisos, no fuerza filtros y no
+realiza queries. Solo se separan controllers, requests o casos de uso cuando
+las intenciones, contratos de entrada o efectos de negocio sean realmente
+distintos.
+
 Las implementaciones de Resources en `broker-service` no constituyen precedente cuando violan estas reglas.
 
 ## Support

@@ -45,8 +45,8 @@ sustituir los BDS ni las reglas técnicas.
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
   runs y placement operativos.
-- [`rewards/`](roadmap/rewards/README.md): RWD1 inventariado; CPA bloqueada por
-  fórmula y contratos de Auth/Finance pendientes.
+- [`rewards/`](roadmap/rewards/README.md): RWD1 inventariado; RWD2 documenta
+  verificación CPA, progreso y ledger `pending`, con settlement diferido.
 
 ## Jerarquía de autoridad
 

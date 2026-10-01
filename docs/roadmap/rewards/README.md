@@ -1,74 +1,67 @@
 # Roadmap del feature Rewards
 
-Estado: **Inventario RWD1 completado; primera vertical CPA bloqueada por fórmula y contratos externos**
-Dependencias: `Rules R2`, `Subscriptions S1`, evento V1 de `auth-service` y
-frontera financiera para verificar depósitos y solicitar el pago
-Última revisión: 2026-09-28
+Estado: **RWD1 inventariado; RWD2 listo para implementación documentalmente**
+Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
+Finance interno para depósitos certificados
+Última revisión: 2026-09-30
 
 ## Objetivo
 
-`Rewards` registra en la tabla `rewards`, ledger propio de IB, las obligaciones
-económicas que originan CPA, volumen, PnL y estrategias futuras. IB conserva la
-causa, el snapshot y el estado de la recompensa; Finance es la autoridad de su
-settlement.
+`Rewards` registra las obligaciones económicas de IB y conserva su causa,
+snapshot y estado. Finance es autoridad del settlement. RWD2 implementará CPA
+hasta la creación idempotente de una obligación `pending`; settlement, reversas
+y compensaciones no pertenecen a esta entrega.
 
 ## Posición en la secuencia
 
-Rules aporta reglas, versiones y asignaciones históricas. Subscriptions aporta
-el contexto histórico de beneficiario, plan, programa y placement. Auth origina
-el hecho de adquisición CPA y Finance confirma el asentamiento de una obligación.
+Auth origina el contexto CPA. Rules, Programs y Subscriptions fijan su
+configuración comercial. Modules/Broker obtiene evidencia normalizada desde
+Broker Service y Finance; Rewards la interpreta y conserva el progreso y el
+ledger.
 
 ```mermaid
 flowchart LR
-    Auth[auth-service] --> CPA[Rewards CPA]
-    Rules[Rules R2] --> CPA
-    Subs[Subscriptions S1] --> CPA
-    CPA --> Ledger[Ledger IB]
-    Ledger --> Finance[Finance]
-    Finance --> Ledger
+    Auth[auth-service] --> Contexto[Contexto CPA]
+    Rules[Rules y Programs] --> Contexto
+    Subs[Subscriptions] --> Contexto
+    Broker[Broker Service: volumen cerrado] --> Modules[Modules/Broker]
+    Finance[Finance: depósitos certificados] --> Modules
+    Contexto --> Rewards[Rewards CPA]
+    Modules --> Rewards
+    Rewards --> Progress[Progreso CPA]
+    Rewards --> Ledger[Reward pending]
 ```
 
-## Primera entrega: RWD1 — CPA
-
-Captura de una adquisición CPA desde Auth, congelación de su contexto y creación
-idempotente de una obligación en el ledger de IB. La solicitud a Finance y la
-transición de `pending` a `settled` pertenecen a la misma vertical, pero no se
-implementan hasta cerrar sus bloqueos.
+## RWD1 — inventario
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
-| 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado; entrega bloqueada |
-| 2. Modelo de dominio | Pendiente | Bloqueado por fórmula CPA |
-| 3. Entregas verticales | Pendiente | — |
-| 4. Modelo de datos | Pendiente | — |
-| 5. Implementación y contract tests | Pendiente | — |
+| 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado y corregido |
+
+## RWD2 — verificación CPA, progreso y ledger `pending`
+
+| Etapa | Documento | Estado |
+| --- | --- | --- |
+| 2. Modelo de dominio | [`02-cpa-domain-model.md`](02-cpa-domain-model.md) | Listo |
+| 3. Entregas verticales | [`03-cpa-vertical-deliveries.md`](03-cpa-vertical-deliveries.md) | Listo |
+| 4. Modelo de datos | [`04-cpa-data-model.md`](04-cpa-data-model.md) | Listo |
+| 5. Implementación y contract tests | [`05-cpa-implementation-plan.md`](05-cpa-implementation-plan.md) | Listo para comenzar |
 
 ## Decisiones confirmadas
 
-- La tabla `rewards` es el ledger de recompensas de IB; conserva la causa y el
-  snapshot de cada obligación.
-- Una recompensa nace `pending` y solo pasa a `settled` con confirmación de
-  Finance (`BR-REWARD-008`).
-- CPA entra por Kafka mediante `auth.account.registered` V1.
-- El hecho CPA exige `user_id` e `ib_user_id`. IB captura el contexto al
-  recibir el hecho y deduplica las redeliveries por ese par; no exige
-  `event_id` ni `occurred_at` al productor.
-- El SharedKernel de IB usará `Currency`, `Money` y `PositiveMoney` exactos en
-  minor units; no usa `float` ni FX. `Number` queda diferido.
-
-## Bloqueos de RWD1
-
-- Fórmula CPA: importe, moneda, beneficiario y distribución siguen pendientes.
-- Finance expone la consulta S2S paginada de depósitos externos asentados por
-  usuario y rango. Broker la compone como fachada de métricas CPA junto con el
-  volumen cerrado; ese contrato no decide elegibilidad ni reemplaza el feed
-  global M3.
-- Settlement y la frontera definitiva de Rewards continúan pendientes de la
-  fórmula CPA, Auth y del primer consumidor real.
-
-La configuración ya puede congelar una regla CPA fija y los símbolos CPA del programa. La captura real desde Auth, la evaluación y cualquier pago continúan bloqueados por los contratos anteriores.
+- La captura CPA permanece idempotente por referido e IB y congela requisitos,
+  versión de regla y símbolos/grupos CPA.
+- CPA no participa en Progression, pesos ni red multinivel.
+- El módulo Broker obtiene volumen cerrado de Broker Service y depósitos
+  certificados directamente de Finance; Broker Service no compone depósitos.
+- Los requisitos de volumen y depósito se satisfacen acumulativamente y sin FX.
+- Cada contexto tiene un solo progreso visible. `reward_id` se conserva en
+  `cpa_context`, nunca en el progreso.
+- Una evaluación calificada crea una única Reward `pending`; Finance solo decide
+  su settlement posterior.
 
 ## Próximo paso
 
-Cerrar la fórmula CPA, Auth y el contrato de settlement. Después, abrir
-`02-domain-model.md` para modelar el ledger y sus transiciones.
+Implementar RWD2 por las tres entregas definidas y validar el envelope real de
+`auth.account.registered` V1, Broker Service y Finance antes de cerrar la
+evidencia contractual.

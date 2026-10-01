@@ -1,71 +1,54 @@
 # Rewards RWD1: inventario de casos de uso
 
-Estado: **Completado; primera vertical bloqueada**
-Dependencias: [`README.md`](README.md), [`rewards.bds.md`](../../bds/rewards.bds.md),
-Rules R2, Subscriptions S1, `auth-service` y Finance
-Última revisión: 2026-09-28
+Estado: **Completado y corregido por RWD2**
+Dependencias: Rules R2, Subscriptions S1, Programs, Modules M5,
+`auth.account.registered` V1 y Finance interno
+Última revisión: 2026-09-30
 
 ## Propósito
 
-Inventariar la primera vertical de Rewards: CPA. No define aún la fórmula
-económica ni implementa pagos. Establece el ledger propio de IB, la captura
-idempotente del hecho y la frontera que separa obligación de settlement.
+Inventariar CPA como la primera capacidad de Rewards y separar con precisión la
+causa económica de IB, la evidencia de módulos y el settlement de Finance.
+RWD1 no define el transporte ni implementa pagos.
 
 ## Actores
 
-- **auth-service:** emite el hecho de registro/adquisición CPA.
-- **Rewards:** captura el hecho, resuelve contexto, conserva el ledger y solicita
-  el pago cuando la obligación es calculable.
-- **Rules:** aporta regla, asignación y versión económicas vigentes.
-- **Subscriptions:** aporta beneficiario y contexto histórico aplicable.
-- **Finance:** recibe la solicitud y confirma el settlement; no decide la causa
-  de la recompensa.
-- **Administrador de IB:** consulta el ledger y su evidencia; no altera la causa
-  ni fuerza un settlement.
+- **auth-service:** emite el hecho de registro CPA con referido e IB.
+- **Programs y Rules:** aportan programa, símbolo, regla y requisitos vigentes
+  que se congelan al capturar el contexto.
+- **Modules/Broker:** obtiene volumen cerrado de Broker Service y depósitos
+  certificados de Finance como evidencia separada.
+- **Rewards:** captura contexto, evalúa requisitos, mantiene progreso y crea la
+  obligación `pending` cuando corresponde.
+- **Finance:** certifica depósitos y, en una vertical posterior, confirma el
+  settlement; no decide la causa ni elegibilidad de una Reward.
+- **Cliente y administración:** consultan progreso según su ámbito autorizado.
 
 ## Inventario RWD1
 
 | Área | Intención | Resultado observable | Estado |
 | --- | --- | --- | --- |
-| Entrada CPA | Consumir `auth.account.registered` V1 | Se valida un hecho con `user_id` e `ib_user_id`; las redeliveries del mismo par no generan una segunda captura. | Aceptado |
-| Contexto | Congelar contexto CPA al recibir el hecho | El referido, plan, programa, asignación, versión, scope y condiciones aplicables quedan auditables y no cambian por modificaciones posteriores. | Aceptado |
-| Ledger | Registrar obligación CPA | Existe una recompensa idempotente en la tabla `rewards`, ledger de IB, con causa y snapshot inmutables y estado inicial `pending`. | Bloqueado por fórmula CPA |
-| Pago | Solicitar settlement a Finance | La solicitud usa una clave idempotente y referencia la recompensa del ledger; Finance recibe el contexto mínimo verificable. | Bloqueado por fórmula y frontera Finance |
-| Settlement | Confirmar transacción asentada | Finance confirma el settlement y Rewards cambia el estado de la misma recompensa de `pending` a `settled`, conservando evidencia de la confirmación. | Bloqueado por frontera Finance |
-| Administración | Consultar ledger | Administración observa causa, snapshot, estado y referencias financieras sin mutar la recompensa. | Diferido a la vertical CPA |
-| Volumen / PnL | Evaluar otras estrategias | Se procesan hechos y métricas propios de cada estrategia. | Diferido |
-| Reversas / reintentos | Corregir ciclo financiero | Se establecen estados, compensaciones y política de reintento. | Pendiente de decisión BDS |
+| Entrada CPA | Consumir `auth.account.registered` V1 | El par referido + IB no crea un segundo contexto ante redelivery. | Aceptado |
+| Contexto | Congelar requisitos CPA | Programa, módulo, asignación, versión, símbolos/grupos y requisitos permanecen auditables e inmutables. | Aceptado |
+| Evidencia | Obtener volumen y depósito | Broker Service aporta solo volumen cerrado; Modules/Broker consulta Finance para depósito certificado. | Aceptado |
+| Evaluación | Verificar requisitos CPA | Volumen y depósito se validan acumulativamente desde la captura, sin pesos ni red. | Aceptado |
+| Progreso | Exponer estado actual | Existe un único progreso por contexto, sin historial de intentos. | Aceptado |
+| Ledger | Registrar obligación | Al calificar se crea una sola Reward `pending` con causa y snapshot. | Aceptado |
+| Settlement | Asentar la obligación | Finance confirma el settlement de la Reward. | Diferido |
 
 ## Decisiones cerradas
 
-1. La tabla `rewards` es el ledger de Rewards y pertenece a IB; Finance solo es
-   autoridad del settlement (`BR-REWARD-005`).
-2. La recompensa se registra `pending` y pasa a `settled` únicamente tras la
-   confirmación de Finance (`BR-REWARD-008`).
-3. Kafka es la vía primaria de entrada CPA. El contrato requerido es
-   `auth.account.registered` V1 con `user_id` e `ib_user_id`, no un endpoint
-   HTTP alternativo.
-4. El par `user_id` + `ib_user_id` es la clave de idempotencia de la captura
-   del hecho Auth. El instante de captura es el de recepción en IB.
-5. `Money`, `PositiveMoney` y `Currency` serán value objects del SharedKernel
-   de IB: minor units exactas, código ISO 4217 y precisión; no `float` ni FX.
-   `Number` se difiere hasta tener semántica transversal independiente.
-6. El precedente de `broker-service` solo orienta el patrón de Kafka, snapshots
-   e importes minor-unit; no transfiere su fórmula ni sus contratos internos.
+1. IB es autoridad del contexto, la evaluación y el ledger; Finance es autoridad
+   de depósitos certificados y settlement.
+2. La estrategia CPA se selecciona por `module_code + strategy_type`; sus
+   requisitos e importes proceden de la versión de regla congelada.
+3. `reward_id` pertenece a `cpa_context`. El progreso no crea, copia ni decide
+   una Reward.
+4. Las consultas de progreso incluyen una superficie cliente restringida al IB
+   autenticado y una administrativa paginada y filtrable.
 
-## Bloqueos y decisiones pendientes
+## Pendiente fuera de RWD2
 
-| Tema | Propietario | Condición de desbloqueo |
-| --- | --- | --- |
-| Fórmula CPA | Negocio / Rewards | Definir importe, moneda, beneficiario y si existe distribución multinivel. |
-| Verificación de depósitos Finance | Rewards + Finance | Diseñar una consulta S2S por usuario y rango temporal que certifique depósitos externos ya asentados. Los endpoints actuales de direcciones crypto no bastan: son paginados y no filtran por fecha. |
-| Solicitud y confirmación Finance | Rewards + Finance | Diseñar el puerto/Data V1 de solicitud idempotente y la confirmación de settlement. `transfer-credits` exige `idempotency_key` y rechaza reutilizarlo con parámetros distintos. |
-| Estados posteriores | Rewards / BDS | Definir fallo, reintento, reversa y compensación sin alterar la causa ni el snapshot. |
-
-## Criterios de salida
-
-- Actores, intenciones, resultados, dependencias y bloqueos de RWD1 están
-  explícitos.
-- Se distingue el ledger de obligaciones de IB del settlement de Finance.
-- Ninguna fórmula CPA, contrato externo o transición no acordada se presenta
-  como decisión cerrada.
+- Contrato de solicitud, confirmación, reversa y compensación de settlement.
+- Otras estrategias de recompensa: volumen, PnL y distribución multinivel.
+- Política definitiva de reintentos financieros posteriores a `pending`.

@@ -31,6 +31,12 @@ Cada tipo registrado debe declarar:
 
 El registry o factory recibe contexto tipado. No inspecciona silenciosamente el entorno ni acepta nombres de clases provenientes de configuración de usuario.
 
+## Estrategias de ejecución de Rewards
+
+La strategy que valida la configuración publicada no tiene por qué ser la que ejecuta una recompensa. Rewards mantiene un registry de ejecución separado, resuelto por el par cerrado `module_code + strategy_type`. La strategy de ejecución recibe únicamente contexto CPA inmutable y evidencia normalizada de Modules; no conoce clientes HTTP, tokens, modelos de proveedores ni respuestas de SDK.
+
+Para CPA, la strategy evalúa requisitos acumulativos y puede producir una decisión tipada de `pending`, `qualified` o error recuperable. La creación idempotente de la Reward y la actualización del progreso pertenecen al caso de uso de Rewards, no a la strategy ni al proveedor de evidencia.
+
 ## Configuración
 
 Toda configuración debe usar una unión discriminada:
