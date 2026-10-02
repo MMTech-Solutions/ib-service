@@ -1488,6 +1488,21 @@
                                 "description": "Requires ib.rewards.manage on admin_panel. Returns CPA progress with administrative audit fields; filters and counter-only pagination live in meta."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Cancel reward",
+                            "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}, {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}"}, {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}"}], "body": {"mode": "raw", "raw": "{\n  \"reason_code\": \"admin.cancelled\"\n}"}, "url": {"raw": "{{BASE_URL}}/api/ib/v1/admin/rewards/{{REWARD_ID}}/cancel", "host": ["{{BASE_URL}}"], "path": ["api", "ib", "v1", "admin", "rewards", "{{REWARD_ID}}", "cancel"]}, "description": "Requires ib.rewards.manage; validates Finance before cancellation."},
+                            "response": []
+                        },
+                        {
+                            "name": "Reverse reward",
+                            "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}, {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}"}, {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}"}], "body": {"mode": "raw", "raw": "{\n  \"reason_code\": \"admin.reversal\"\n}"}, "url": {"raw": "{{BASE_URL}}/api/ib/v1/admin/rewards/{{REWARD_ID}}/reverse", "host": ["{{BASE_URL}}"], "path": ["api", "ib", "v1", "admin", "rewards", "{{REWARD_ID}}", "reverse"]}, "description": "Requires ib.rewards.manage; creates an idempotent Finance reversal."},
+                            "response": []
+                        },
+                        {
+                            "name": "Compensate reward",
+                            "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}, {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}"}, {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}"}], "body": {"mode": "raw", "raw": "{\n  \"idempotency_key\": \"{{REWARD_COMPENSATION_IDEMPOTENCY_KEY}}\",\n  \"amount_minor\": 2500,\n  \"reason_code\": \"admin.compensation\"\n}"}, "url": {"raw": "{{BASE_URL}}/api/ib/v1/admin/rewards/{{REWARD_ID}}/compensations", "host": ["{{BASE_URL}}"], "path": ["api", "ib", "v1", "admin", "rewards", "{{REWARD_ID}}", "compensations"]}, "description": "Requires ib.rewards.manage; creates and settles a compensation Reward."},
+                            "response": []
                         }
                     ]
                 }
@@ -1623,6 +1638,16 @@
         {
             "key": "PROGRAM_ID",
             "value": "",
+            "type": "string"
+        },
+        {
+            "key": "REWARD_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "REWARD_COMPENSATION_IDEMPOTENCY_KEY",
+            "value": "postman-reward-compensation-1",
             "type": "string"
         },
         {

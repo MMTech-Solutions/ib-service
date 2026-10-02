@@ -44,7 +44,10 @@ use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgres
 use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateVersionController;
 use App\Features\Progression\Http\V1\Controllers\ListActivityEvaluationsController;
 use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationController;
+use App\Features\Rewards\Http\V1\Controllers\CancelRewardController;
+use App\Features\Rewards\Http\V1\Controllers\CreateRewardCompensationController;
 use App\Features\Rewards\Http\V1\Controllers\ListCpaVerificationProgressController;
+use App\Features\Rewards\Http\V1\Controllers\ReverseRewardController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ShowRuleAssignmentController;
@@ -166,6 +169,9 @@ Route::prefix('ib/v1')
                 Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)
                     ->defaults('user_surface', UserSurface::AdminPanel->value)
                     ->name('ib.v1.admin.rewards.cpa-progress.index');
+                Route::post('rewards/{reward}/cancel', CancelRewardController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.cancel');
+                Route::post('rewards/{reward}/reverse', ReverseRewardController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.reverse');
+                Route::post('rewards/{reward}/compensations', CreateRewardCompensationController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.compensations.store');
             });
 
         Route::prefix('customer')

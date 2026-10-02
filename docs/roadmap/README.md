@@ -12,13 +12,13 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
-| [`Modules`](modules/README.md) | M1-M4 completados; M5 en curso | M5: actividad Broker S2S y configuración instrumental de Programs | 2026-09-30 |
+| [`Modules`](modules/README.md) | M1-M5 implementados; validación S2S pendiente | M5: actividad Broker S2S y configuración instrumental de Programs | 2026-10-02 |
 | [`Plans`](plans/README.md) | P1 + P0.3 completados | Extensión Progression publicada | 2026-09-17 |
 | [`Programs`](programs/README.md) | PR1 y P2 completados; BR-PROGRAM-015 cerrado | Sin extensión pendiente de Progression | 2026-09-29 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
-| [`Rewards`](rewards/README.md) | RWD1 inventariado; RWD2 y RWD3.1 implementados; contract tests pendientes | CPA, progreso, ledger y settlement síncrono | 2026-10-02 |
+| [`Rewards`](rewards/README.md) | RWD1 inventariado; RWD2 y RWD3.1/RWD3.2 implementados; contract tests pendientes | CPA, progreso, ledger, settlement y correcciones | 2026-10-02 |
 
 ## Secuencia entre features
 

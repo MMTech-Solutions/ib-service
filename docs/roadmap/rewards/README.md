@@ -1,6 +1,6 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2/RV1-RV3 y RWD3.1 implementados; validación contractual pendiente**
+Estado: **RWD1 inventariado; RWD2/RV1-RV3 y RWD3.1/RWD3.2 implementados; validación contractual pendiente**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-09-30
@@ -52,6 +52,7 @@ flowchart LR
 | Etapa | Documento | Estado |
 | --- | --- | --- |
 | 6. Settlement síncrono CPA | [`06-rwd3-settlement-sync.md`](06-rwd3-settlement-sync.md) | RWD3.1 implementado; validación contractual pendiente |
+| 7. Correcciones y reconciliación selectiva | [`07-rwd3-corrections-and-reconciliation.md`](07-rwd3-corrections-and-reconciliation.md) | RWD3.2 implementado; validación contractual pendiente |
 
 ## Decisiones confirmadas
 
@@ -66,12 +67,9 @@ flowchart LR
 - Una evaluación calificada crea una única Reward `pending`; RWD3.1 la envía a
   Finance con idempotencia estable y transiciona a `settled` solo ante comisión
   `posted` creada o duplicada.
-- `pending` y `failed` son seleccionables por el runner de settlement; Finance
-  conserva el asiento y IB conserva solo su resumen operativo.
+- `pending` y `failed` son seleccionables por el runner de settlement; Finance conserva el asiento y IB conserva solo su resumen operativo.
+- Cancelación, reversa y compensación son administrativas, idempotentes y auditables. La reconciliación recurrente solo trata incertidumbre u holds, nunca el histórico financiero confirmado.
 
 ## Próximo paso
 
-Validar el envelope real de `auth.account.registered` V1 y los contratos de
-Broker Service y Finance, incluido `ib/commission-events`, antes de cerrar
-RWD2/RWD3.1. RWD3.2 tratará reversas, compensaciones, cancelación y
-reconciliación.
+Validar el envelope real de `auth.account.registered` V1 y los contratos de Broker Service y Finance, incluido settlement, reversa y consulta `ib/commission-events`, antes de cerrar RWD2/RWD3.

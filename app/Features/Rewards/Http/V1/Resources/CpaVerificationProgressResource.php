@@ -47,6 +47,8 @@ final readonly class CpaVerificationProgressResource
             'rule_id' => $this->progress->rule_id,
             'rule_version_id' => $this->progress->rule_version_id,
             'reward_id' => $this->progress->reward_id,
+            'reward_financial_status' => $this->progress->reward_financial_status,
+            'reward_reconciliation_hold_code' => $this->progress->reward_reconciliation_hold_code,
             'last_error_code' => $this->progress->last_error_code,
         ]];
     }

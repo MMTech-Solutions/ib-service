@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Features\Modules\Catalog\Exceptions\ModuleConcurrencyException;
 use App\Features\Modules\Catalog\Exceptions\ModuleNotFoundException;
+use App\Features\Rewards\Exceptions\RewardReconciliationBlockedException;
 use App\Support\Exceptions\ApiException;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Exceptions\Handler;
@@ -48,6 +49,22 @@ final class ApiExceptionHandlingTest extends TestCase
 
         $this->assertFalse($payload['success']);
         $this->assertSame('MODULE_CONCURRENCY_CONFLICT', $payload['error']['code']);
+    }
+
+    public function test_reward_business_exceptions_render_as_normalized_http_errors(): void
+    {
+        $handler = $this->app->make(ExceptionHandler::class);
+
+        $response = $handler->render(
+            Request::create('/api/ib/v1/admin/rewards/reward-id/reverse', 'POST'),
+            RewardReconciliationBlockedException::create(),
+        );
+
+        $this->assertSame(409, $response->getStatusCode());
+        $payload = json_decode((string) $response->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertFalse($payload['success']);
+        $this->assertSame('REWARD_RECONCILIATION_BLOCKED', $payload['error']['code']);
     }
 
     public function test_only_api_exceptions_are_excluded_from_reporting(): void

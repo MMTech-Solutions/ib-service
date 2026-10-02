@@ -20,6 +20,7 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
     {
         $paginator = $this->connection->table('cpa_contexts as contexts')
             ->join('cpa_verification_progress as progress', 'progress.cpa_context_id', '=', 'contexts.id')
+            ->leftJoin('rewards', 'rewards.id', '=', 'contexts.reward_id')
             ->when($query->ib_user_id !== null, fn ($builder) => $builder->where('contexts.ib_user_id', $query->ib_user_id))
             ->when($query->referred_user_id !== null, fn ($builder) => $builder->where('contexts.referred_user_id', $query->referred_user_id))
             ->when($query->program_id !== null, fn ($builder) => $builder->where('contexts.program_id', $query->program_id))
@@ -35,6 +36,7 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
                 'progress.observed_deposit_minor', 'progress.required_deposit_minor', 'progress.currency_code',
                 'progress.volume_satisfied', 'progress.deposit_satisfied', 'progress.observed_from',
                 'progress.observed_until', 'progress.last_evaluated_at', 'progress.last_error_code',
+                'rewards.status as reward_financial_status', 'rewards.reconciliation_hold_code as reward_reconciliation_hold_code',
             ], 'page', $query->page);
 
         return new CpaVerificationProgressPageData(
@@ -75,6 +77,8 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
             rule_version_id: (string) $row->rule_version_id,
             reward_id: $row->reward_id === null ? null : (string) $row->reward_id,
             last_error_code: $row->last_error_code === null ? null : (string) $row->last_error_code,
+            reward_financial_status: $row->reward_financial_status === null ? null : (string) $row->reward_financial_status,
+            reward_reconciliation_hold_code: $row->reward_reconciliation_hold_code === null ? null : (string) $row->reward_reconciliation_hold_code,
         );
     }
 

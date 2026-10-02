@@ -13,11 +13,11 @@ PropFirm, Copy Trading o Broker Service.
 | --- | --- | --- |
 | 1. Inventario de casos de uso | [`01-use-case-inventory.md`](01-use-case-inventory.md) | Completado |
 | 2. Agregados, estados y transacciones | [`02-domain-model.md`](02-domain-model.md) | Completado para M1 |
-| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1-M4 completados; M5 en curso |
+| 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | M1-M5 implementados; validación S2S pendiente |
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
-Última revisión: 2026-09-28.
+Última revisión: 2026-10-02.
 
 ## Decisiones confirmadas
 

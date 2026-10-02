@@ -13,20 +13,19 @@ use App\Features\Rewards\Contracts\Ports\Input\CaptureCpaContextPort;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
 use App\Features\Rewards\DTOs\CaptureCpaContextResultData;
 use App\Features\Rewards\Exceptions\CpaCaptureNotApplicableException;
+use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rules\Contracts\Data\V1\ResolveCpaRuleContextQueryData;
 use App\Features\Rules\Contracts\Ports\Input\ResolveCpaRuleContextPort;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextQueryData;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
-use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Str;
 
 final class CaptureCpaContextUseCase implements CaptureCpaContextPort
 {
     public function __construct(
-        private readonly ConnectionInterface $connection,
+        private readonly RewardRepositoryFactory $repositoryFactory,
         private readonly ResolveSubscriptionContextPort $subscriptions,
         private readonly ResolveProgramContextPort $programs,
         private readonly ResolveProgramCpaSymbolsPort $programCpaSymbols,
@@ -36,7 +35,8 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
 
     public function execute(CaptureCpaContextData $data): CaptureCpaContextResultData
     {
-        $existing = $this->existing($data);
+        $repository = $this->repositoryFactory->make();
+        $existing = $repository->findCpaContextId($data);
         if ($existing !== null) {
             return new CaptureCpaContextResultData($existing, false);
         }
@@ -91,53 +91,16 @@ final class CaptureCpaContextUseCase implements CaptureCpaContextPort
         ];
 
         try {
-            return $this->connection->transaction(function () use ($data, $context, $rule, $symbols, $requirements): CaptureCpaContextResultData {
-                $existing = $this->existing($data);
-                if ($existing !== null) {
-                    return new CaptureCpaContextResultData($existing, false);
-                }
+            $captured = $repository->captureCpaContext($data, $context, $rule, $symbols, $requirements);
 
-                $contextId = (string) Str::uuid7();
-                $this->connection->table('cpa_contexts')->insert([
-                    'id' => $contextId,
-                    'referred_user_id' => $data->referred_user_id,
-                    'ib_user_id' => $data->ib_user_id,
-                    'plan_id' => $context->plan_id,
-                    'program_id' => $context->program_id,
-                    'module_id' => (string) $rule->module_id,
-                    'rule_assignment_id' => (string) $rule->rule_assignment_id,
-                    'rule_id' => (string) $rule->rule_id,
-                    'rule_version_id' => (string) $rule->rule_version_id,
-                    'symbols_snapshot' => json_encode(array_map(static fn ($symbol): array => $symbol->toArray(), $symbols), JSON_THROW_ON_ERROR),
-                    'requirements_snapshot' => json_encode($requirements, JSON_THROW_ON_ERROR),
-                    'captured_at' => $data->captured_at,
-                ]);
-                $this->connection->table('cpa_verification_progress')->insert([
-                    'id' => (string) Str::uuid7(), 'cpa_context_id' => $contextId,
-                    'referred_user_id' => $data->referred_user_id, 'ib_user_id' => $data->ib_user_id,
-                    'status' => 'pending', 'observed_volume' => '0', 'required_volume' => $requirements['required_volume'],
-                    'volume_unit_code' => $requirements['volume_unit_code'], 'observed_deposit_minor' => 0,
-                    'required_deposit_minor' => $requirements['required_deposit_minor'], 'currency_code' => $requirements['currency_code'],
-                    'volume_satisfied' => false, 'deposit_satisfied' => false, 'observed_from' => $data->captured_at,
-                    'created_at' => $data->captured_at, 'updated_at' => $data->captured_at,
-                ]);
-
-                return new CaptureCpaContextResultData($contextId, true);
-            });
+            return new CaptureCpaContextResultData($captured['id'], $captured['created']);
         } catch (UniqueConstraintViolationException) {
-            $existing = $this->existing($data);
+            $existing = $repository->findCpaContextId($data);
             if ($existing !== null) {
                 return new CaptureCpaContextResultData($existing, false);
             }
 
             throw CpaCaptureNotApplicableException::create('cpa_context_concurrency_conflict');
         }
-    }
-
-    private function existing(CaptureCpaContextData $data): ?string
-    {
-        $id = $this->connection->table('cpa_contexts')->where('referred_user_id', $data->referred_user_id)->where('ib_user_id', $data->ib_user_id)->value('id');
-
-        return $id === null ? null : (string) $id;
     }
 }
