@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 0.8
-- **Estado:** R2 cierra asignaciones históricas con scope `all`; RWD2 define la verificación CPA, su progreso y la creación de la obligación `pending`
+- **Versión:** 0.9
+- **Estado:** RWD3.1 añade el settlement síncrono e idempotente de Rewards CPA en Finance
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -71,7 +71,10 @@ erDiagram
 | BR-REWARD-005 | IB es fuente de verdad de por qué existe una recompensa; el dominio financiero es fuente de verdad de si el dinero fue asentado. |
 | BR-REWARD-006 | El procesamiento pausado de un módulo detiene sus nuevos cálculos y pagos sin modificar reglas ni snapshots publicados. |
 | BR-REWARD-007 | Pausar o desactivar un módulo no revierte automáticamente recompensas ya calculadas ni settlements confirmados. |
-| BR-REWARD-008 | Una recompensa nace en estado `pending` en el ledger de IB y solo transiciona a `settled` cuando Finance confirma que la transacción fue asentada. La causa y el snapshot de la recompensa no se sustituyen durante esa transición. |
+| BR-REWARD-008 | Una recompensa CPA nace en estado `pending` y solo transiciona a `settled` cuando Finance confirma síncronamente una comisión `posted`, creada o recuperada por idempotencia. La causa y el snapshot no se sustituyen durante esa transición. |
+| BR-REWARD-009 | Un fallo de integración o contrato de Finance deja la Reward en `failed`. `pending` y `failed` son reintentables; cada reintento usa la misma clave idempotente de settlement. |
+| BR-REWARD-010 | IB conserva únicamente el resumen operativo del settlement: proveedor, referencia financiera, clave idempotente, contador, último intento, error sanitizado y fecha de settlement. Finance conserva el asiento financiero definitivo. |
+| BR-REWARD-011 | RWD3.1 asienta solo Rewards CPA mediante `commission_type = cpa`, a favor del beneficiario de la Reward y en la wallet Finance derivada como `lowercase(currency_code) + '-main'`. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
@@ -122,8 +125,8 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 
 ## Decisiones pendientes
 
-- Estados distintos de `pending` y `settled`, y sus transiciones definitivas.
-- Política de reintentos, reversas y compensaciones financieras.
+- Transición `pending -> cancelled`, sus condiciones y autorización.
+- Reversas, compensaciones y reconciliación financiera posterior al settlement.
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
 - Capacidades mínimas que cada estrategia exige a los módulos proveedores.

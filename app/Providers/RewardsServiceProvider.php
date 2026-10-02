@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Features\Rewards\Console\SettlePendingRewardsCommand;
 use App\Features\Rewards\Console\VerifyCpaContextsCommand;
 use App\Features\Rewards\Contracts\Ports\Input\CaptureCpaContextPort;
+use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface;
 use App\Features\Rewards\Contracts\Repositories\CpaVerificationProgressRepositoryInterface;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlCpaVerificationProgressRepository;
+use App\Features\Rewards\Services\Adapters\FinanceRewardSettlementGateway;
 use App\Features\Rewards\UseCases\CaptureCpaContextUseCase;
+use App\Features\Rewards\UseCases\SettlePendingRewardsUseCase;
 use App\Features\Rewards\UseCases\VerifyCpaContextsUseCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
@@ -19,7 +23,9 @@ final class RewardsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CaptureCpaContextPort::class, CaptureCpaContextUseCase::class);
+        $this->app->singleton(RewardSettlementGatewayInterface::class, FinanceRewardSettlementGateway::class);
         $this->app->singleton(VerifyCpaContextsUseCase::class);
+        $this->app->singleton(SettlePendingRewardsUseCase::class);
         $this->app->singleton(
             CpaVerificationProgressRepositoryInterface::class,
             fn (): PostgreSqlCpaVerificationProgressRepository => new PostgreSqlCpaVerificationProgressRepository(DB::connection()),
@@ -28,7 +34,8 @@ final class RewardsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->commands([VerifyCpaContextsCommand::class]);
+        $this->commands([VerifyCpaContextsCommand::class, SettlePendingRewardsCommand::class]);
         Schedule::command('rewards:verify-cpa')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+        Schedule::command('rewards:settle-pending')->everyMinute()->onOneServer()->withoutOverlapping();
     }
 }
