@@ -1,6 +1,6 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2/RV1-RV3 y RWD3.1/RWD3.2 implementados; validación contractual pendiente**
+Estado: **RWD1 inventariado; RWD2/RV1-RV3 y RWD3.1/RWD3.2 implementados; RWD4 en descubrimiento contractual**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-09-30
@@ -54,6 +54,12 @@ flowchart LR
 | 6. Settlement síncrono CPA | [`06-rwd3-settlement-sync.md`](06-rwd3-settlement-sync.md) | RWD3.1 implementado; validación contractual pendiente |
 | 7. Correcciones y reconciliación selectiva | [`07-rwd3-corrections-and-reconciliation.md`](07-rwd3-corrections-and-reconciliation.md) | RWD3.2 implementado; validación contractual pendiente |
 
+## RWD4 — volumen tradeado y PnL negativo
+
+| Etapa | Documento | Estado |
+| --- | --- | --- |
+| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | En curso; contratos externos pendientes |
+
 ## Decisiones confirmadas
 
 - La captura CPA permanece idempotente por referido e IB y congela requisitos,
@@ -72,4 +78,4 @@ flowchart LR
 
 ## Próximo paso
 
-Validar el envelope real de `auth.account.registered` V1 y los contratos de Broker Service y Finance, incluido settlement, reversa y consulta `ib/commission-events`, antes de cerrar RWD2/RWD3.
+Confirmar los contratos de Broker y Finance requeridos por RWD4 antes de habilitar la ejecución económica de volumen porcentual o PnL. La validación contractual pendiente de CPA/RWD3 permanece independiente.

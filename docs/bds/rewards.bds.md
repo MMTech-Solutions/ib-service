@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.0
-- **Estado:** RWD3.2 añade cancelación, reversa, compensación y reconciliación selectiva de Rewards CPA
+- **Versión:** 1.1
+- **Estado:** RWD3.2 implementado; RWD4 define Rewards por volumen tradeado y PnL negativo, pendientes de contratos S2S de evidencia
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -27,6 +27,9 @@ El catálogo de reglas —identidad, versiones publicadas e inmutables y asignac
 | Contexto CPA | Snapshot que fija referido, plan, programa, asignación, versión de regla, scope y condiciones aplicables a una adquisición. |
 | Progreso de verificación CPA | Estado observable y único de los requisitos de un contexto CPA. No es un historial de intentos ni una recompensa. |
 | Evidencia CPA | Hechos verificables de actividad o depósito que una estrategia usa para evaluar un contexto CPA; no incluye una decisión de elegibilidad. |
+| Run de Reward | Ejecución durable que congela el corte, configuración y red aplicables antes de calcular Rewards. No es un historial de intentos financieros. |
+| Reward de volumen | Obligación originada por una posición cerrada elegible y distribuida a la red configurada. |
+| PnL neto del período | Variación de balance de una cuenta, menos depósitos certificados netos de retiros del mismo período. |
 
 ## Relaciones
 
@@ -79,6 +82,16 @@ erDiagram
 | BR-REWARD-013 | Una Reward `settled` puede revertirse una sola vez mediante un evento Finance `reversal` idempotente que referencia su comisión original. La reversa no borra ni reescribe el asiento inicial. |
 | BR-REWARD-014 | Una compensación crea una nueva Reward independiente, enlazada a la reversada, con importe explícito positivo y la misma moneda y precisión congeladas. No reutiliza el contexto CPA ni modifica la Reward origen. |
 | BR-REWARD-015 | La reconciliación recurrente consulta solo operaciones financieras inciertas o Rewards con hold; no reconsulta el historial confirmado por antigüedad. Una contradicción verificable activa un hold y solo una consulta posterior consistente puede retirarlo. |
+| BR-REWARD-016 | Las Rewards de volumen y PnL resuelven la red multinivel al inicio de su run y conservan los beneficiarios y niveles resueltos. Un cambio posterior de red no reescribe una distribución iniciada. |
+| BR-REWARD-017 | La strategy solicita a Identity como máximo la profundidad mayor que pueda remunerar la configuración congelada. Si el proveedor no admite límite, IB descarta localmente los niveles no remunerables sin alterar el snapshot. |
+| BR-REWARD-018 | La Reward de volumen es idempotente por posición fuente, beneficiario, nivel de distribución, asignación y versión de regla. Los modos `event`, `periodic` y `both` comparten esa misma identidad. |
+| BR-REWARD-019 | La configuración de volumen pertenece al programa y tiene vigencia. Sus modos admisibles son `event`, `periodic` y `both`; cambiarla no modifica Rewards ya creadas. |
+| BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
+| BR-REWARD-021 | Una Reward de volumen de comisión fija usa volumen cerrado, rate del nivel y valor de comisión congelados. Una comisión porcentual exige que Broker entregue la comisión fuente normalizada; si falta, no se calcula una Reward. |
+| BR-REWARD-022 | Una configuración PnL pertenece al programa, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. Los períodos son UTC, semiabiertos y solo se evalúan después de cerrados. |
+| BR-REWARD-023 | Para una cuenta y período, `pnl_neto = balance_final - balance_inicial - (depósitos_certificados - retiros_certificados)`. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto de ese resultado. |
+| BR-REWARD-024 | Una Reward PnL es idempotente por cuenta, período cerrado, beneficiario, nivel, asignación y versión de regla. |
+| BR-REWARD-025 | Las evidencias conservan referencias de Broker y Finance que justifican una Reward, pero no sustituyen el ledger ni delegan en proveedores la elegibilidad, la red, el importe o settlement. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
@@ -128,11 +141,14 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Reward asentada.
 - Reward cancelada, revertida o compensada.
 - Discrepancia financiera detectada o resuelta.
+- Run de Reward iniciado o cerrado.
+- Reward de volumen calculada.
+- Período PnL evaluado.
 
 ## Decisiones pendientes
 
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
-- Capacidades mínimas que cada estrategia exige a los módulos proveedores.
-- Fórmulas definitivas de volumen, PnL y distribución multinivel distintas de CPA.
+- Contrato S2S definitivo de evento de posición cerrada, comisión fuente y precisión de `server_group` para volumen.
+- Contratos S2S definitivos de cuentas/balances Broker y depósitos/retiros certificados Finance para PnL.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

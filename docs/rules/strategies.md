@@ -37,6 +37,8 @@ La strategy que valida la configuración publicada no tiene por qué ser la que 
 
 Para CPA, la strategy evalúa requisitos acumulativos y puede producir una decisión tipada de `pending`, `qualified` o error recuperable. La creación idempotente de la Reward y la actualización del progreso pertenecen al caso de uso de Rewards, no a la strategy ni al proveedor de evidencia.
 
+Para volumen y PnL, la strategy de ejecución recibe hechos normalizados y un snapshot de red ya resuelto. No llama a IAM, Broker ni Finance. El pipeline propietario resuelve la red limitada por el mayor nivel pagable, congela el resultado en el run y aplica la idempotencia persistente antes de crear el ledger. Las strategies no compensan la ausencia de moneda, precisión, comisión fuente, balance o flujo certificado mediante valores por defecto.
+
 ## Configuración
 
 Toda configuración debe usar una unión discriminada:

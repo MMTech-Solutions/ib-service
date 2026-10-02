@@ -10,7 +10,7 @@ Business Domain Specifications. Describen conceptos, invariantes, cálculos, est
 
 - [`plans-and-subscriptions.bds.md`](bds/plans-and-subscriptions.bds.md): planes, programas, módulos, suscripciones y placement.
 - [`progression.bds.md`](bds/progression.bds.md): contribuciones multi-módulo, ponderación por puntos y runs de progresión.
-- [`rewards.bds.md`](bds/rewards.bds.md): reglas reutilizables, asignaciones, recompensas y contexto CPA.
+- [`rewards.bds.md`](bds/rewards.bds.md): reglas reutilizables, asignaciones, CPA, volumen tradeado, PnL y recompensas.
 
 ### [`rules/`](rules/README.md)
 
@@ -46,8 +46,8 @@ sustituir los BDS ni las reglas técnicas.
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
   runs y placement operativos.
-- [`rewards/`](roadmap/rewards/README.md): RWD1 inventariado; RWD2 documenta
-  verificación CPA, progreso y ledger `pending`, con settlement diferido.
+- [`rewards/`](roadmap/rewards/README.md): RWD2 y RWD3 implementados; RWD4
+  documenta el descubrimiento contractual de volumen tradeado y PnL negativo.
 
 ## Jerarquía de autoridad
 

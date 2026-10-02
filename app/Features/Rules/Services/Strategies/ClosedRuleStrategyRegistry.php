@@ -17,9 +17,13 @@ final class ClosedRuleStrategyRegistry implements RuleStrategyRegistryInterface
     {
         $points = new PointsPerQuantityUnitStrategy;
         $cpa = new CpaFixedAmountStrategy;
+        $volume = new TradedVolumeCommissionStrategy;
+        $pnl = new NegativePnlShareStrategy;
         $this->definitions = [
             $points->type() => $points,
             $cpa->type() => $cpa,
+            $volume->type() => $volume,
+            $pnl->type() => $pnl,
         ];
     }
 

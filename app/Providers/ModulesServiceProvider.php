@@ -13,10 +13,12 @@ use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
 use App\Features\Modules\Catalog\UseCases\ListCpaEvidenceUseCase;
 use App\Features\Modules\Catalog\UseCases\ListInstrumentCatalogUseCase;
 use App\Features\Modules\Catalog\UseCases\ListProgressionActivitiesUseCase;
+use App\Features\Modules\Catalog\UseCases\ListVolumeRewardActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveModulesUseCase;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ListInstrumentCatalogPort;
 use App\Features\Modules\Contracts\Ports\Input\ListProgressionActivitiesPort;
+use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +33,7 @@ final class ModulesServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ResolveModulesPort::class, ResolveModulesUseCase::class);
         $this->app->singleton(ListProgressionActivitiesPort::class, ListProgressionActivitiesUseCase::class);
+        $this->app->singleton(ListVolumeRewardActivitiesPort::class, ListVolumeRewardActivitiesUseCase::class);
         $this->app->singleton(ListInstrumentCatalogPort::class, ListInstrumentCatalogUseCase::class);
         $this->app->singleton(ListCpaEvidencePort::class, ListCpaEvidenceUseCase::class);
         $this->app->singleton(ModuleActivityRejectionEvidence::class);

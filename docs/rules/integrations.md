@@ -145,6 +145,12 @@ La capacidad CPA de `Modules/Broker` compone dos consultas de solo lectura: los 
 
 Rewards consume un puerto V1 de Modules especializado en evidencia CPA. El adapter de Modules pagina, limita y normaliza las dos fuentes, conserva la trazabilidad de sus referencias y traduce indisponibilidad, timeout y contrato inválido a errores tipados. No mantiene una transacción local abierta durante ninguna llamada. Finance se invoca desde IB con identidad S2S y la moneda se filtra de forma exacta antes de entregar evidencia a Rewards.
 
+### Evidencia RWD4 de Broker y Finance
+
+El puerto de actividad de volumen de RWD4 es distinto de `ListProgressionActivitiesPort`: conserva el contrato M3 sin cambios y declara los campos económicos que necesita una Reward. Mientras Broker no publique moneda, precisión y, para porcentaje, comisión fuente, Modules puede transportar la ausencia como contrato incompleto pero Rewards no puede crear una obligación económica.
+
+PnL requiere una capacidad diferente: Broker aporta cuenta, balances de corte y grupo de servidor; Finance aporta depósitos y retiros certificados por cuenta e intervalo. La consulta Finance de depósitos CPA por usuario no se reutiliza para PnL. Ningún endpoint, payload o evento de estas capacidades se considera definido hasta contar con contrato del proveedor y prueba S2S.
+
 ## Decisiones pendientes
 
 - Confirmar `ib-service.events.v1` como nombre del topic de salida.
@@ -156,3 +162,4 @@ Rewards consume un puerto V1 de Modules especializado en evidencia CPA. El adapt
 - Cerrar el payload requerido por Notification Center y su estrategia de bootstrap.
 - Determinar si PropFirm necesita topic/esquema propio o puede consumir eventos comunes.
 - Decidir el propietario interno o fachada de capacidades IAM compartidas por varias features.
+- Confirmar el contrato limitado de upline de IAM y los contratos de evidencia RWD4 de Broker y Finance.
