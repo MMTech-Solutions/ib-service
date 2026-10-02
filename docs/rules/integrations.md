@@ -153,7 +153,9 @@ El evento Avro `com.mmt.platform.PositionClosed` versión 1, emitido por Trading
 
 `mmtech/iam-rbac` 1.13 decodifica el Confluent Wire Format antes de entregar el mensaje al handler, pero no expone el subject/version resuelto ni una identidad autenticada del productor. IB exige `content_type = application/avro`, valida la forma V1 decodificada y conserva solo referencias técnicas. No aplica una allowlist de productores hasta que el transporte entregue una identidad verificable; esta limitación no se sustituye con headers inventados.
 
-PnL requiere una capacidad diferente: Broker aporta cuenta, balances de corte y grupo de servidor; Finance aporta depósitos y retiros certificados por cuenta e intervalo. La consulta Finance de depósitos CPA por usuario no se reutiliza para PnL. Ningún endpoint, payload o evento de estas capacidades se considera definido hasta contar con contrato del proveedor y prueba S2S.
+PnL usa una capacidad diferente y propiedad de Rewards. Broker aporta las cuentas operativas, congela el corte UTC real, lee el balance actual de la cuenta y resuelve los depósitos y retiros asentados en el intervalo semiabierto desde la baseline anterior. Finance no participa directamente en esta consulta; su endpoint de depósitos CPA por usuario no se reutiliza para PnL.
+
+El puerto V1 de Rewards envía a Broker las baselines persistidas por IB. Una cuenta sin baseline recibe un primer corte sin PnL; desde el segundo corte Broker devuelve el PnL firmado y referencias opacas de los movimientos utilizados. Timeout, `409` y 5xx son recuperables; un 2xx incompatible u otro error contractual es permanente. El runner futuro debe persistir la respuesta antes de resolver red o crear Rewards y reutilizar ese snapshot en sus reintentos.
 
 ## Decisiones pendientes
 
@@ -166,4 +168,4 @@ PnL requiere una capacidad diferente: Broker aporta cuenta, balances de corte y 
 - Cerrar el payload requerido por Notification Center y su estrategia de bootstrap.
 - Determinar si PropFirm necesita topic/esquema propio o puede consumir eventos comunes.
 - Decidir el propietario interno o fachada de capacidades IAM compartidas por varias features.
-- Confirmar el contrato limitado de upline de IAM y los contratos de evidencia RWD4 de Broker y Finance.
+- Completar la evidencia S2S del contrato de PnL de Broker y del límite de profundidad de IAM.

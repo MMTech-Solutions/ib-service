@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.3
-- **Estado:** RWD4.1 implementado para Rewards por volumen; RWD4.2 (PnL negativo) y la validación contractual S2S externa permanecen pendientes
+- **Versión:** 1.4
+- **Estado:** RWD4.1 implementado; contrato proveedor de RWD4.2a implementado y pendiente de validación S2S; runner PnL pendiente
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -29,7 +29,7 @@ El catálogo de reglas —identidad, versiones publicadas e inmutables y asignac
 | Evidencia CPA | Hechos verificables de actividad o depósito que una estrategia usa para evaluar un contexto CPA; no incluye una decisión de elegibilidad. |
 | Run de Reward | Ejecución durable que congela el corte, configuración y red aplicables antes de calcular Rewards. No es un historial de intentos financieros. |
 | Reward de volumen | Obligación originada por una posición cerrada elegible y distribuida a la red configurada. |
-| PnL neto del período | Variación de balance de una cuenta, menos depósitos certificados netos de retiros del mismo período. |
+| PnL neto del período | Variación de balance de una cuenta de trading, menos sus depósitos netos de retiros asentados durante el mismo período. |
 
 ## Relaciones
 
@@ -89,10 +89,10 @@ erDiagram
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
 | BR-REWARD-021 | La base distribuible de volumen se obtiene de la posición: modalidad fija = `closed_volume × participation_rate`; modalidad porcentual = `broker_granted_commission × participation_rate`. La base se distribuye por nivel conforme a la plantilla congelada. Cada resultado aplica además `personal_rate` del beneficiario y, solo si es Master IB, su `master_rate`; los tres valores se congelan en la Reward. |
 | BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Los modos `event` y `both` usan el evento de Trading únicamente como disparador para consultar la posición autoritativa en Broker. Un `409 CLOSED_POSITION_NOT_READY`, timeout o 5xx no crea Reward y conserva una recepción reintentable con backoff. |
-| BR-REWARD-022 | Una configuración PnL pertenece al programa, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. Los períodos son UTC, semiabiertos y solo se evalúan después de cerrados. |
-| BR-REWARD-023 | Para una cuenta y período, `pnl_neto = balance_final - balance_inicial - (depósitos_certificados - retiros_certificados)`. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto de ese resultado. |
+| BR-REWARD-022 | Una configuración PnL pertenece al programa, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. La cadencia determina cuándo vence el siguiente run; cada período es el intervalo UTC semiabierto entre dos cortes reales consecutivos de la cuenta. |
+| BR-REWARD-023 | Broker es autoridad del balance y flujo de caja de la cuenta. Para un período sucesivo, `pnl_neto = balance_final - balance_inicial - (depósitos_asentados - retiros_asentados)`. El primer corte de cada cuenta establece únicamente la baseline y no calcula ni remunera historia anterior. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto del resultado firmado. |
 | BR-REWARD-024 | Una Reward PnL es idempotente por cuenta, período cerrado, beneficiario, nivel, asignación y versión de regla. |
-| BR-REWARD-025 | Las evidencias conservan referencias de Broker y Finance que justifican una Reward, pero no sustituyen el ledger ni delegan en proveedores la elegibilidad, la red, el importe o settlement. |
+| BR-REWARD-025 | Las evidencias conservan referencias de los proveedores que justifican una Reward. Para PnL, IB conserva el snapshot de balance, totales y referencias opacas entregados por Broker; no copia movimientos completos ni delega la elegibilidad, la red, el importe de Reward o settlement. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
@@ -151,5 +151,5 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
 - Confirmación futura de Trading Account Service como emisor posterior a la persistencia para eliminar la carrera conocida del modo `event`; `event` y `both` ya están autorizados mediante receipts recuperables.
-- Contratos S2S definitivos de cuentas/balances Broker y depósitos/retiros certificados Finance para PnL.
+- Validación S2S reproducible del contrato de cuentas, balances y flujo de caja PnL publicado por Broker.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

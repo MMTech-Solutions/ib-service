@@ -12,6 +12,9 @@ return [
         'batch_size' => (int) env('REWARDS_VOLUME_BATCH_SIZE', 100),
         'claim_lease_seconds' => (int) env('REWARDS_VOLUME_CLAIM_LEASE_SECONDS', 60),
     ],
+    'negative_pnl' => [
+        'broker_timeout_seconds' => (int) env('REWARDS_PNL_BROKER_TIMEOUT_SECONDS', 15),
+    ],
     'cpa' => [
         'batch_size' => (int) env('REWARDS_CPA_BATCH_SIZE', 100),
         'incremental_evidence' => filter_var(env('REWARDS_CPA_INCREMENTAL_EVIDENCE', false), FILTER_VALIDATE_BOOL),

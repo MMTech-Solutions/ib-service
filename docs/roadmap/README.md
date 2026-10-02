@@ -18,7 +18,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
-| [`Rewards`](rewards/README.md) | RWD1 inventariado; RWD2, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2 pendiente | CPA, progreso, ledger, settlement, correcciones, volumen y PnL | 2026-10-02 |
+| [`Rewards`](rewards/README.md) | RWD1 inventariado; RWD2, RWD3.1/RWD3.2, RWD4.1 y contrato RWD4.2a implementados; runner PnL pendiente | CPA, progreso, ledger, settlement, correcciones, volumen y PnL | 2026-10-03 |
 
 ## Secuencia entre features
 

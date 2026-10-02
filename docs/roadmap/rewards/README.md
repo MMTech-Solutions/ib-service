@@ -1,9 +1,9 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2 pendiente**
+Estado: **RWD1 inventariado; RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente, runner pendiente**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
-Última revisión: 2026-10-02
+Última revisión: 2026-10-03
 
 ## Objetivo
 
@@ -58,7 +58,7 @@ flowchart LR
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
-| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1 implementado; RWD4.2 y contratos externos pendientes |
+| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1 implementado; contrato RWD4.2a pendiente de evidencia S2S y runner RWD4.2 pendiente |
 
 ## Decisiones confirmadas
 
@@ -78,4 +78,4 @@ flowchart LR
 
 ## Próximo paso
 
-Confirmar los contratos de Broker y Finance requeridos por RWD4.2 antes de implementar PnL negativo y completar la evidencia S2S de volumen. La validación contractual pendiente de CPA/RWD3 permanece independiente.
+Completar la evidencia S2S del contrato PnL Broker–IB y del límite de profundidad IAM; después implementar el runner económico RWD4.2. La validación contractual pendiente de CPA/RWD3 permanece independiente.
