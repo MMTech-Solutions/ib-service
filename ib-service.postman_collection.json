@@ -1458,6 +1458,38 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Rewards",
+                    "item": [
+                        {
+                            "name": "List CPA verification progress",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/rewards/cpa-progress?page=1&per_page=100&ib_user_id={{IB_USER_ID}}&referred_user_id={{REFERRED_USER_ID}}&program_id={{PROGRAM_ID}}&module_id={{MODULE_ID}}&status=pending",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "rewards", "cpa-progress"],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "ib_user_id", "value": "{{IB_USER_ID}}", "description": "Filter by IB user UUID.", "disabled": true},
+                                        {"key": "referred_user_id", "value": "{{REFERRED_USER_ID}}", "description": "Filter by referred user UUID.", "disabled": true},
+                                        {"key": "program_id", "value": "{{PROGRAM_ID}}", "description": "Filter by program UUID.", "disabled": true},
+                                        {"key": "module_id", "value": "{{MODULE_ID}}", "description": "Filter by module UUID.", "disabled": true},
+                                        {"key": "status", "value": "pending", "description": "Filter by pending, qualified or error.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Requires ib.rewards.manage on admin_panel. Returns CPA progress with administrative audit fields; filters and counter-only pagination live in meta."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         },
@@ -1506,6 +1538,34 @@
                                     "path": ["api", "ib", "v1", "customer", "subscriptions", "current"]
                                 },
                                 "description": "Requires ib.subscriptions.read. Returns the authenticated user's open subscription or 404 when none exists."
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Rewards",
+                    "item": [
+                        {
+                            "name": "List my CPA verification progress",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{CUSTOMER_USERINFO}}", "type": "text"}
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/customer/rewards/cpa-progress?page=1&per_page=100&status=pending",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "customer", "rewards", "cpa-progress"],
+                                    "query": [
+                                        {"key": "page", "value": "1", "description": "Positive page number. Defaults to 1.", "disabled": true},
+                                        {"key": "per_page", "value": "100", "description": "Results per page from 1 to 100. Defaults to 100.", "disabled": true},
+                                        {"key": "status", "value": "pending", "description": "Filter by pending, qualified or error.", "disabled": true}
+                                    ]
+                                },
+                                "description": "Uses authenticated ownership: only CPA contexts whose IB is the gateway principal are returned. No administrative audit fields or provider evidence are exposed."
                             },
                             "response": []
                         }
@@ -1587,6 +1647,16 @@
         },
         {
             "key": "MODULE_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "IB_USER_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "REFERRED_USER_ID",
             "value": "",
             "type": "string"
         },

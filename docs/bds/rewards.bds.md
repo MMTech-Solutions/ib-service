@@ -93,6 +93,7 @@ erDiagram
 | BR-CPA-016 | Al calificar un contexto CPA, IB conserva en la Reward la evidencia normalizada que la justifica. Cada hecho conserva proveedor, tipo e identificador fuente; la evidencia no sustituye el ledger ni el progreso CPA. |
 | BR-CPA-017 | El modo incremental solo es válido si cada proveedor garantiza que no publicará, corregirá ni retirará hechos anteriores a un corte confirmado. Hasta verificar ese contrato, IB debe reevaluar el intervalo completo desde la captura. |
 | BR-CPA-018 | El ledger `rewards` es genérico. La relación específica de CPA se conserva de forma inversa, única e inmutable mediante `cpa_context.reward_id`; una Reward no exige ni contiene un contexto CPA. |
+| BR-CPA-019 | La lectura cliente del progreso CPA queda limitada al IB propietario del contexto. La lectura administrativa requiere la capacidad de gestión de Rewards y puede exponer únicamente los identificadores y errores sanitizados necesarios para auditoría. |
 
 ## Ejemplo de reutilización CPA
 

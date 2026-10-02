@@ -1,6 +1,6 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2/RV1 en curso**
+Estado: **RWD1 inventariado; RWD2/RV1-RV3 implementados; validación contractual pendiente**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-09-30
@@ -45,7 +45,7 @@ flowchart LR
 | 2. Modelo de dominio | [`02-cpa-domain-model.md`](02-cpa-domain-model.md) | Listo |
 | 3. Entregas verticales | [`03-cpa-vertical-deliveries.md`](03-cpa-vertical-deliveries.md) | Listo |
 | 4. Modelo de datos | [`04-cpa-data-model.md`](04-cpa-data-model.md) | Listo |
-| 5. Implementación y contract tests | [`05-cpa-implementation-plan.md`](05-cpa-implementation-plan.md) | RV1 en curso |
+| 5. Implementación y contract tests | [`05-cpa-implementation-plan.md`](05-cpa-implementation-plan.md) | RV1-RV3 implementados; contract tests pendientes |
 
 ## Decisiones confirmadas
 
@@ -62,6 +62,6 @@ flowchart LR
 
 ## Próximo paso
 
-Implementar RWD2 por las tres entregas definidas y validar el envelope real de
-`auth.account.registered` V1, Broker Service y Finance antes de cerrar la
-evidencia contractual.
+Validar el envelope real de `auth.account.registered` V1 y los contratos de
+Broker Service y Finance antes de cerrar RWD2. Settlement permanece fuera de
+esta vertical.

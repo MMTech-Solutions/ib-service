@@ -1,6 +1,6 @@
 # RWD2: implementación y contract tests
 
-Estado: **RV1 en curso**
+Estado: **RV1-RV3 implementados; contract tests pendientes**
 
 RV2 conserva evidencia inmutable por Reward y hecho fuente; no usa el progreso
 como historial de intentos ni como ledger de actividad.
@@ -26,9 +26,9 @@ como historial de intentos ni como ledger de actividad.
 - Auth, Broker Service y Finance se validan como identidades S2S conocidas.
 - El runner no abre transacciones durante I/O remoto y registra correlation ID,
   fuente, corte y resultado sin registrar tokens ni payloads sensibles.
-- Las rutas de RV3 usan `UserContext`: cliente limitado al IB principal;
-  administración autorizada y paginada. Postman, Resources y pruebas se
-  actualizan en el mismo cambio de rutas.
+- Las rutas de RV3 usan `UserContext`: cliente limitado por propiedad al IB
+  principal; administración autorizada mediante `ib.rewards.manage` y paginada.
+  Postman, Resources y pruebas se actualizan en el mismo cambio de rutas.
 - El contrato de Auth debe verificarse contra su envelope V1 real antes de
   activar RV1. Las pruebas de Broker Service y Finance son contract tests, no
   sustitutos por fixtures de producción.

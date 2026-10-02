@@ -1,6 +1,6 @@
 # RWD2: entregas verticales CPA
 
-Estado: **RV1 en curso; RV2 y RV3 listos para comenzar**
+Estado: **RV1, RV2 y RV3 implementados; validación contractual pendiente**
 Última revisión: 2026-09-30
 
 ## RV1 — captura y progreso
@@ -34,6 +34,12 @@ tokens, URLs internas, depósitos individuales ni payloads de proveedor.
 **Aceptación:** `data` contiene directamente el recurso o colección; filtros y
 paginación viven en `meta`; pruebas demuestran aislamiento de cliente y permiso
 administrativo.
+
+**Implementación:** cliente queda limitado por propiedad al IB del `UserContext`
+y no recibe evidencia ni campos administrativos. Administración exige
+`ib.rewards.manage`, puede filtrar por IB, referido, programa, módulo y estado,
+y recibe `reward_id` y el error sanitizado. La paginación expone contadores, no
+URLs.
 
 ## Fuera de RWD2
 

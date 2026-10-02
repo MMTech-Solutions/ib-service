@@ -44,6 +44,7 @@ use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgres
 use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateVersionController;
 use App\Features\Progression\Http\V1\Controllers\ListActivityEvaluationsController;
 use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationController;
+use App\Features\Rewards\Http\V1\Controllers\ListCpaVerificationProgressController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ShowRuleAssignmentController;
@@ -69,6 +70,7 @@ use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionCon
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ReleaseSubscriptionPlacementController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowCurrentSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowSubscriptionController;
+use App\SharedFeatures\User\Context\UserSurface;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('ib/v1')
@@ -161,6 +163,9 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.activity-evaluations.index');
                 Route::get('activity-evaluations/{activity_evaluation}', ShowActivityEvaluationController::class)
                     ->name('ib.v1.admin.activity-evaluations.show');
+                Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)
+                    ->defaults('user_surface', UserSurface::AdminPanel->value)
+                    ->name('ib.v1.admin.rewards.cpa-progress.index');
             });
 
         Route::prefix('customer')
@@ -168,5 +173,8 @@ Route::prefix('ib/v1')
                 Route::post('subscriptions', ApplyForSubscriptionController::class)->name('ib.v1.customer.subscriptions.store');
                 Route::get('subscriptions/current', ShowCurrentSubscriptionController::class)
                     ->name('ib.v1.customer.subscriptions.current');
+                Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)
+                    ->defaults('user_surface', UserSurface::CustomerApp->value)
+                    ->name('ib.v1.customer.rewards.cpa-progress.index');
             });
     });
