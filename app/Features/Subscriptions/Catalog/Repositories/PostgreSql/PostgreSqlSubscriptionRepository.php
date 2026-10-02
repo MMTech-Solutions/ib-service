@@ -23,6 +23,7 @@ use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\Subscripti
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\SubscriptionPlacementRecord;
 use App\Features\Subscriptions\Catalog\Repositories\PostgreSql\Models\SubscriptionRecord;
 use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -117,6 +118,17 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         );
 
         return $matches;
+    }
+
+    public function earliestActivatedAt(): ?string
+    {
+        $activatedAt = SubscriptionRecord::query()
+            ->whereNotNull('activated_at')
+            ->min('activated_at');
+
+        return $activatedAt === null
+            ? null
+            : CarbonImmutable::parse((string) $activatedAt)->utc()->toISOString();
     }
 
     public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array

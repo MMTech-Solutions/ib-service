@@ -1,7 +1,7 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.2
-- **Estado:** RWD3.2 implementado; RWD4 define Rewards por volumen tradeado y PnL negativo, pendientes de contratos S2S de evidencia
+- **Versión:** 1.3
+- **Estado:** RWD4.1 implementado para Rewards por volumen; RWD4.2 (PnL negativo) y la validación contractual S2S externa permanecen pendientes
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
@@ -88,7 +88,7 @@ erDiagram
 | BR-REWARD-019 | La configuración de volumen pertenece al programa y tiene vigencia. Sus modos admisibles son `event`, `periodic` y `both`; cambiarla no modifica Rewards ya creadas. |
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
 | BR-REWARD-021 | La base distribuible de volumen se obtiene de la posición: modalidad fija = `closed_volume × participation_rate`; modalidad porcentual = `broker_granted_commission × participation_rate`. La base se distribuye por nivel conforme a la plantilla congelada. Cada resultado aplica además `personal_rate` del beneficiario y, solo si es Master IB, su `master_rate`; los tres valores se congelan en la Reward. |
-| BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Hasta que el emisor de un evento de posición cerrada sea también la autoridad que ya persistió dicho cierre, un evento directo a IB no prueba que Broker haya materializado la posición y no puede disparar una Reward. |
+| BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Los modos `event` y `both` usan el evento de Trading únicamente como disparador para consultar la posición autoritativa en Broker. Un `409 CLOSED_POSITION_NOT_READY`, timeout o 5xx no crea Reward y conserva una recepción reintentable con backoff. |
 | BR-REWARD-022 | Una configuración PnL pertenece al programa, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. Los períodos son UTC, semiabiertos y solo se evalúan después de cerrados. |
 | BR-REWARD-023 | Para una cuenta y período, `pnl_neto = balance_final - balance_inicial - (depósitos_certificados - retiros_certificados)`. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto de ese resultado. |
 | BR-REWARD-024 | Una Reward PnL es idempotente por cuenta, período cerrado, beneficiario, nivel, asignación y versión de regla. |
@@ -150,6 +150,6 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
-- Confirmación futura de Trading Account Service como emisor posterior a la persistencia para habilitar el modo de volumen `event`; mientras tanto el modo autorizado es `periodic`.
+- Confirmación futura de Trading Account Service como emisor posterior a la persistencia para eliminar la carrera conocida del modo `event`; `event` y `both` ya están autorizados mediante receipts recuperables.
 - Contratos S2S definitivos de cuentas/balances Broker y depósitos/retiros certificados Finance para PnL.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

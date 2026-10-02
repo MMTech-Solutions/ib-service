@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Programs\Catalog\Http\V1\Controllers;
 
+use App\Features\Programs\Catalog\Http\V1\Commands\ReplaceProgramVolumeRewardConfigurationCommand;
 use App\Features\Programs\Catalog\Http\V1\Requests\ReplaceProgramVolumeRewardConfigurationRequest;
 use App\Features\Programs\Catalog\UseCases\ReplaceProgramVolumeRewardConfigurationUseCase;
 use Illuminate\Http\JsonResponse;
@@ -15,8 +16,9 @@ final class ReplaceProgramVolumeRewardConfigurationController
 
     public function __invoke(ReplaceProgramVolumeRewardConfigurationRequest $request, ReplaceProgramVolumeRewardConfigurationUseCase $useCase): JsonResponse
     {
-        $data = $request->validated();
-
-        return $this->success($useCase->execute((string) $data['plan'], (string) $data['program'], (string) ($data['mode'] ?? 'periodic')), 'Program volume reward configuration replaced successfully.');
+        return $this->success(
+            $useCase->execute(ReplaceProgramVolumeRewardConfigurationCommand::fromRequest($request)),
+            'Program volume reward configuration replaced successfully.',
+        );
     }
 }

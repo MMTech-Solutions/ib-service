@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Features\Rewards\Contracts\Repositories;
+namespace App\Features\Rewards\Repositories;
 
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use Carbon\CarbonImmutable;
 
 interface RewardRepositoryInterface
 {
+    public function persistVolumeReward(PersistVolumeRewardData $data): bool;
+
     public function findCpaContextId(CaptureCpaContextData $data): ?string;
 
     /** @param array<int, object> $symbols @param array<string, mixed> $requirements */

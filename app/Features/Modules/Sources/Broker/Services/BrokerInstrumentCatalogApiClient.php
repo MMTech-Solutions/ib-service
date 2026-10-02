@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Modules\Sources\Broker\Services;
 
+use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionInvalidResponseException;
 use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionNotReadyException;
 use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionUnavailableException;
 use App\Features\Modules\Contracts\Exceptions\BrokerInstrumentCatalogUnavailableException;
@@ -74,8 +75,11 @@ final class BrokerInstrumentCatalogApiClient
             throw BrokerClosedPositionNotReadyException::create();
         }
         $body = $response->json();
-        if (! $response->successful() || ! is_array($body) || ! is_array($body['data'] ?? null)) {
+        if ($response->serverError()) {
             throw BrokerClosedPositionUnavailableException::create();
+        }
+        if (! $response->successful() || ! is_array($body) || ! is_array($body['data'] ?? null)) {
+            throw BrokerClosedPositionInvalidResponseException::create();
         }
 
         return $body['data'];

@@ -23,15 +23,58 @@ final class TradingPositionClosedTopicHandler implements TopicMessageHandlerInte
     public function handle(ConsumerMessage $message): void
     {
         $body = $message->getBody();
-        $headers = $message->getHeaders();
-        $orderId = is_array($body) ? ($body['id'] ?? $body['position_id'] ?? null) : null;
-        $traderId = $headers['login'] ?? (is_array($body) ? ($body['login'] ?? null) : null);
+        $headers = $message->getHeaders() ?? [];
+        $contentType = $this->header($headers, 'content_type');
+        if ($contentType !== 'application/avro' || ! is_array($body)) {
+            Log::warning('Rejected trading position closed reward event contract.');
+
+            return;
+        }
+
+        $id = $body['id'] ?? null;
+        $orderId = $body['order_id'] ?? $id;
+        if ($id !== null && isset($body['order_id']) && (string) $id !== (string) $body['order_id']) {
+            Log::warning('Rejected trading position closed reward event identifiers.');
+
+            return;
+        }
+
+        $headerLogin = $this->header($headers, 'login');
+        $payloadLogin = $body['login'] ?? null;
+        if ($headerLogin !== null && $payloadLogin !== null && $headerLogin !== (string) $payloadLogin) {
+            Log::warning('Rejected trading position closed reward event login mismatch.');
+
+            return;
+        }
+        $traderId = $payloadLogin ?? $headerLogin;
         $moduleId = $this->config->get('rewards.volume.broker_module_id');
-        if (! is_scalar($orderId) || ! is_scalar($traderId) || ! is_string($moduleId) || $moduleId === '') {
+        if (! is_scalar($orderId) || trim((string) $orderId) === '' || ! is_scalar($traderId) || trim((string) $traderId) === '' || ! is_string($moduleId) || $moduleId === '') {
             Log::warning('Rejected trading position closed reward event.');
 
             return;
         }
-        $this->receipts->execute(new RecordVolumeRewardEventData($moduleId, (string) $orderId, (string) $traderId, ['id' => (string) $orderId, 'login' => (string) $traderId]));
+        $this->receipts->execute(new RecordVolumeRewardEventData(
+            $moduleId,
+            (string) $orderId,
+            (string) $traderId,
+            [
+                'contract_subject' => 'com.mmt.platform.PositionClosed',
+                'contract_version' => 1,
+                'topic' => $message->getTopicName(),
+                'partition' => $message->getPartition(),
+                'offset' => $message->getOffset(),
+            ],
+        ));
+    }
+
+    /** @param array<string, mixed> $headers */
+    private function header(array $headers, string $name): ?string
+    {
+        $value = $headers[$name] ?? null;
+        if (is_array($value)) {
+            $value = $value[0] ?? null;
+        }
+
+        return is_scalar($value) ? (string) $value : null;
     }
 }

@@ -124,6 +124,22 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
         return $matches;
     }
 
+    public function earliestActivatedAt(): ?string
+    {
+        $activated = array_values(array_filter(array_map(
+            static fn (Subscription $subscription): ?string => $subscription->activatedAt,
+            $this->subscriptions,
+        )));
+
+        if ($activated === []) {
+            return null;
+        }
+
+        sort($activated);
+
+        return $activated[0];
+    }
+
     public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array
     {
         $matches = [];

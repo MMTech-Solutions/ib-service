@@ -36,4 +36,15 @@ final class CalculateVolumeRewardAmountActionTest extends TestCase
 
         self::assertNull($money);
     }
+
+    public function test_it_rounds_half_up_once_at_currency_precision(): void
+    {
+        config()->set('rewards.minimum_amount_major', '0.001');
+
+        $money = (new CalculateVolumeRewardAmountAction)->execute(new VolumeRewardCalculationData(
+            'fixed', '1', '0', '0.005', '1', '1', false, '1', 'USD', 2,
+        ));
+
+        self::assertSame(1, $money?->minorUnits);
+    }
 }

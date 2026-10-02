@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Features\Rewards\UseCases;
 
 use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface;
-use App\Features\Rewards\Contracts\Repositories\RewardRepositoryInterface;
 use App\Features\Rewards\DTOs\RewardSettlementRequestData;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use Carbon\CarbonImmutable;
 
 final class SettlePendingRewardsUseCase

@@ -9,6 +9,7 @@ use App\Features\Modules\Contracts\Data\V1\ResolveClosedVolumeRewardActivityQuer
 use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
 use App\Features\Modules\Contracts\Exceptions\ModuleNotFoundException;
+use App\Features\Modules\Contracts\Exceptions\VolumeRewardModuleNotOperationalException;
 use App\Features\Modules\Contracts\Ports\Input\ResolveClosedVolumeRewardActivityPort;
 use App\Features\Modules\Sources\Broker\Services\BrokerInstrumentCatalogApiClient;
 use Carbon\CarbonImmutable;
@@ -27,7 +28,9 @@ final class ResolveClosedVolumeRewardActivityUseCase implements ResolveClosedVol
             throw ModuleNotFoundException::forIds([$query->module_id]);
         }
         if (! $module->isActive || $module->processingStatus->value !== 'running' || $module->code !== 'broker') {
-            throw InvalidProgressionActivityQueryException::withMessage('Closed volume reward activity is unavailable for this module.');
+            throw VolumeRewardModuleNotOperationalException::forCondition(
+                ! $module->isActive ? 'inactive' : $module->processingStatus->value,
+            );
         }
 
         return $this->activity($module->id, $this->broker->closedPosition($query->order_id, $query->external_trader_id));

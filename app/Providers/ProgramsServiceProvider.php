@@ -12,11 +12,15 @@ use App\Features\Programs\Catalog\UseCases\ResolveProgramCpaSymbolsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramProgressionConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgressionTargetProgramUseCase;
+use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardDistributionLimitUseCase;
+use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardProgramConfigurationUseCase;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramCpaSymbolsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
 use App\Features\Programs\PaymentTemplates\Repositories\InMemory\InMemoryPaymentTemplateRepository;
 use App\Features\Programs\PaymentTemplates\Repositories\PostgreSql\PostgreSqlPaymentTemplateRepository;
 use App\Features\Programs\ProgressionTemplates\Repositories\InMemory\InMemoryProgressionTemplateRepository;
@@ -34,6 +38,8 @@ final class ProgramsServiceProvider extends ServiceProvider
         $this->app->singleton(ResolveProgramProgressionConfigurationPort::class, ResolveProgramProgressionConfigurationUseCase::class);
         $this->app->singleton(ResolveProgramSubscriptionContextPort::class, ResolveProgramSubscriptionContextUseCase::class);
         $this->app->singleton(ResolveProgressionTargetProgramPort::class, ResolveProgressionTargetProgramUseCase::class);
+        $this->app->singleton(ResolveVolumeRewardDistributionLimitPort::class, ResolveVolumeRewardDistributionLimitUseCase::class);
+        $this->app->singleton(ResolveVolumeRewardProgramConfigurationPort::class, ResolveVolumeRewardProgramConfigurationUseCase::class);
         $this->app->singleton(
             'programs.repositories.memory',
             fn (): InMemoryProgramRepository => new InMemoryProgramRepository,

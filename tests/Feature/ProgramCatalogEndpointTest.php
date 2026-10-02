@@ -118,6 +118,36 @@ final class ProgramCatalogEndpointTest extends TestCase
         ])->assertUnprocessable()->assertJsonPath('error.code', 'MODULE_NOT_ENABLED_ON_PLAN');
     }
 
+    public function test_operator_can_replace_volume_reward_mode_with_periodic_as_default(): void
+    {
+        $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
+            'code' => 'volume-plan',
+            'name' => 'Volume plan',
+            'progression_period' => 'monthly',
+        ])->assertCreated()->json('data');
+        $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan['id']}/programs", [
+            'code' => 'volume-program',
+            'name' => 'Volume program',
+            'entry_threshold' => 0,
+        ])->assertCreated()->json('data');
+        $path = "/api/ib/v1/admin/plans/{$plan['id']}/programs/{$program['id']}/volume-reward-configuration";
+
+        $this->gatewayJson('PUT', $path)
+            ->assertOk()
+            ->assertJsonPath('data.mode', 'periodic')
+            ->assertJsonMissingPath('data.configuration');
+
+        $this->gatewayJson('PUT', $path, ['mode' => 'event'])
+            ->assertOk()
+            ->assertJsonPath('data.mode', 'event');
+        $this->gatewayJson('PUT', $path, ['mode' => 'both'])
+            ->assertOk()
+            ->assertJsonPath('data.mode', 'both');
+
+        self::assertSame(3, DB::table('program_volume_reward_configurations')->where('program_id', $program['id'])->count());
+        self::assertSame(1, DB::table('program_volume_reward_configurations')->where('program_id', $program['id'])->whereNull('ends_at')->count());
+    }
+
     public function test_archived_plans_reject_program_mutations(): void
     {
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [

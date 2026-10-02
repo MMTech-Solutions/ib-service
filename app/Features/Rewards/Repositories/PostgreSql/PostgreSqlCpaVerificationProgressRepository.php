@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
-use App\Features\Rewards\Contracts\Repositories\CpaVerificationProgressRepositoryInterface;
 use App\Features\Rewards\DTOs\CpaVerificationProgressData;
 use App\Features\Rewards\DTOs\CpaVerificationProgressListQueryData;
 use App\Features\Rewards\DTOs\CpaVerificationProgressPageData;
+use App\Features\Rewards\Repositories\CpaVerificationProgressRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
 use stdClass;

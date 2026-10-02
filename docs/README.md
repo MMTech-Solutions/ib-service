@@ -46,8 +46,8 @@ sustituir los BDS ni las reglas técnicas.
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
   runs y placement operativos.
-- [`rewards/`](roadmap/rewards/README.md): RWD2 y RWD3 implementados; RWD4
-  documenta el descubrimiento contractual de volumen tradeado y PnL negativo.
+- [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
+  RWD4.2 conserva pendiente el PnL negativo y sus contratos externos.
 
 ## Jerarquía de autoridad
 

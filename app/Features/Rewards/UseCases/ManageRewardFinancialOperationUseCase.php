@@ -7,7 +7,6 @@ namespace App\Features\Rewards\UseCases;
 use App\Features\Rewards\Actions\ValidateRewardFinancialEventAction;
 use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
 use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface;
-use App\Features\Rewards\Contracts\Repositories\RewardRepositoryInterface;
 use App\Features\Rewards\DTOs\ManageRewardFinancialOperationData;
 use App\Features\Rewards\DTOs\RewardFinancialOperationData;
 use App\Features\Rewards\DTOs\RewardReversalRequestData;
@@ -15,6 +14,7 @@ use App\Features\Rewards\DTOs\RewardSettlementRequestData;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use Carbon\CarbonImmutable;
 
 final class ManageRewardFinancialOperationUseCase

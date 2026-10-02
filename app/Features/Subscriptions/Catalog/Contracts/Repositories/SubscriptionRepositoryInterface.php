@@ -33,6 +33,8 @@ interface SubscriptionRepositoryInterface
      */
     public function listPlacementContextsAt(string $externalUserId, string $occurredAt): array;
 
+    public function earliestActivatedAt(): ?string;
+
     /** @return list<ProgressionWindowSubscriptionData> */
     public function listForProgressionWindow(string $planId, string $windowStartsAt, string $windowEndsAt): array;
 

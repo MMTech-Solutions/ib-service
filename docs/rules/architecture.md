@@ -42,7 +42,6 @@ app/
 │       │   ├── Ports/
 │       │   │   ├── Input/
 │       │   │   └── Output/
-│       │   ├── Repositories/
 │       │   ├── Strategies/
 │       │   ├── Data/
 │       │   │   └── V1/
@@ -51,6 +50,9 @@ app/
 │       ├── ValueObjects/
 │       ├── Models/
 │       ├── Repositories/
+│       │   ├── *RepositoryInterface.php
+│       │   ├── InMemory/
+│       │   └── PostgreSql/
 │       ├── Factories/
 │       ├── Services/
 │       │   ├── Adapters/
@@ -447,7 +449,8 @@ Inicialmente todos los bindings de `Modules`, sus puertos, adapters, repositorie
 
 El repository abstrae una colección o fuente de datos relevante para el dominio, aunque la implementación consulte PostgreSQL, memoria, otro microservicio o un SDK.
 
-- Cada repository tiene una interfaz en `Contracts/Repositories` y al menos una implementación en `Repositories`.
+- Cada repository tiene su interfaz directamente en `Repositories/` y al menos una implementación en un subdirectorio por tecnología o fuente, por ejemplo `Repositories/PostgreSql/` o `Repositories/InMemory/`.
+- Repositories e interfaces de repository son detalles internos del feature propietario: no viven en `Contracts` ni pueden consumirse desde otro feature.
 - Cada repository se obtiene mediante su factory en `Factories`; UseCases, Actions, Jobs y Services nunca instancian un repository directamente.
 - La factory expone únicamente `make(...)` y retorna la interfaz correspondiente.
 - La factory es el punto de composición y puede seleccionar implementaciones persistentes, remotas o en memoria usando contexto tipado.

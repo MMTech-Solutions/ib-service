@@ -4,20 +4,80 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
-use App\Features\Rewards\Contracts\Repositories\RewardRepositoryInterface;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\Exceptions\RewardNotFoundException;
 use App\Features\Rewards\Exceptions\RewardReconciliationBlockedException;
+use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 
 final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 {
     public function __construct(private readonly ConnectionInterface $connection) {}
+
+    public function persistVolumeReward(PersistVolumeRewardData $data): bool
+    {
+        return $this->connection->transaction(function () use ($data): bool {
+            if ($this->connection->table('rewards')->where('origin_idempotency_key', $data->origin_idempotency_key)->exists()) {
+                return false;
+            }
+
+            $rewardId = (string) Str::uuid7();
+            $now = CarbonImmutable::now('UTC');
+            try {
+                $this->connection->table('rewards')->insert([
+                    'id' => $rewardId,
+                    'beneficiary_user_id' => $data->beneficiary_user_id,
+                    'plan_id' => $data->plan_id,
+                    'program_id' => $data->program_id,
+                    'module_id' => $data->module_id,
+                    'rule_assignment_id' => $data->rule_assignment_id,
+                    'rule_id' => $data->rule_id,
+                    'rule_version_id' => $data->rule_version_id,
+                    'amount_minor' => $data->amount_minor,
+                    'currency_code' => $data->currency_code,
+                    'currency_precision' => $data->currency_precision,
+                    'status' => 'pending',
+                    'commission_type' => 'volume',
+                    'network_level' => $data->network_level,
+                    'summary_snapshot' => json_encode($data->summary_snapshot, JSON_THROW_ON_ERROR),
+                    'settlement_idempotency_key' => 'ib-service:reward:'.$rewardId.':settlement',
+                    'origin_idempotency_key' => $data->origin_idempotency_key,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } catch (UniqueConstraintViolationException $exception) {
+                if ($this->connection->table('rewards')->where('origin_idempotency_key', $data->origin_idempotency_key)->exists()) {
+                    return false;
+                }
+
+                throw $exception;
+            }
+
+            $this->connection->table('reward_evidence')->insert([
+                'id' => (string) Str::uuid7(),
+                'reward_id' => $rewardId,
+                'evidence_provider' => 'broker_service',
+                'evidence_type' => 'closed_trading_volume',
+                'source_activity_id' => $data->source_activity_id,
+                'subject_external_user_id' => $data->subject_external_user_id,
+                'quantity' => $data->quantity,
+                'unit_code' => $data->unit_code,
+                'occurred_at' => $data->occurred_at,
+                'instrument_reference' => $data->instrument_reference,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            return true;
+        });
+    }
 
     public function findCpaContextId(CaptureCpaContextData $data): ?string
     {

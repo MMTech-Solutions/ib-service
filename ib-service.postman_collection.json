@@ -857,6 +857,29 @@
                                 "description": "Atomically replaces the current program symbol set. Broker is consulted before the transaction; group and currency are derived from its live catalogue. Requires ib.programs.manage."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Replace program volume reward configuration",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {"key": "Accept", "value": "application/json"},
+                                    {"key": "Content-Type", "value": "application/json"},
+                                    {"key": "X-Internal-Gateway", "value": "{{GATEWAY_INTERNAL_SECRET}}", "type": "text"},
+                                    {"key": "X-Userinfo", "value": "{{ADMIN_USERINFO}}", "type": "text"}
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"mode\": \"periodic\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}/volume-reward-configuration",
+                                    "host": ["{{BASE_URL}}"],
+                                    "path": ["api", "ib", "v1", "admin", "plans", "{{PLAN_ID}}", "programs", "{{PROGRAM_ID}}", "volume-reward-configuration"]
+                                },
+                                "description": "Requires ib.programs.manage. Replaces the historical mode with periodic, event or both; omitting mode defaults to periodic. data is the configuration object."
+                            },
+                            "response": []
                         }
                     ]
                 },

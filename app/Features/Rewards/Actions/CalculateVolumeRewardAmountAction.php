@@ -21,18 +21,28 @@ final class CalculateVolumeRewardAmountAction
             return null;
         }
 
-        $amount = bcmul($source, $data->participation_rate, 12);
-        $amount = bcmul($amount, $data->template_level_rate, 12);
-        $amount = bcmul($amount, $data->personal_rate, 12);
+        $factors = [$source, $data->participation_rate, $data->template_level_rate, $data->personal_rate];
         if ($data->is_master) {
-            $amount = bcmul($amount, $data->master_rate, 12);
+            $factors[] = $data->master_rate;
         }
-        if (bccomp($amount, (string) config('rewards.minimum_amount_major', '0.01'), 12) === -1) {
+        $scale = array_sum(array_map(self::decimalScale(...), $factors));
+        $amount = array_shift($factors);
+        foreach ($factors as $factor) {
+            $amount = bcmul($amount, $factor, $scale);
+        }
+
+        $minimum = (string) config('rewards.minimum_amount_major', '0.01');
+        if (bccomp($amount, $minimum, max($scale, self::decimalScale($minimum))) === -1) {
             return null;
         }
 
         $money = PositiveMoney::fromDecimalMajorRounded($amount, Currency::from($data->currency_code, $data->currency_precision));
 
         return $money->minorUnits > 0 ? $money : null;
+    }
+
+    private static function decimalScale(string $value): int
+    {
+        return strlen(explode('.', $value, 2)[1] ?? '');
     }
 }

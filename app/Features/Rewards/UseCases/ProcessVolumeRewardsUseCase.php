@@ -1,0 +1,352 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Features\Rewards\UseCases;
+
+use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesQueryData;
+use App\Features\Modules\Contracts\Data\V1\ResolveClosedVolumeRewardActivityQueryData;
+use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
+use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionInvalidResponseException;
+use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionNotReadyException;
+use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionUnavailableException;
+use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
+use App\Features\Modules\Contracts\Exceptions\VolumeRewardModuleNotOperationalException;
+use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
+use App\Features\Modules\Contracts\Ports\Input\ResolveClosedVolumeRewardActivityPort;
+use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardDistributionLimitQueryData;
+use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardProgramConfigurationQueryData;
+use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
+use App\Features\Rewards\Actions\CalculateVolumeRewardAmountAction;
+use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineQueryData;
+use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
+use App\Features\Rewards\DTOs\PersistVolumeRewardData;
+use App\Features\Rewards\DTOs\VolumeRewardActivityProcessingResultData;
+use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
+use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
+use App\Features\Rules\Contracts\Data\V1\ResolveVolumeRewardRuleContextQueryData;
+use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
+use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextQueryData;
+use App\Features\Subscriptions\Contracts\Ports\Input\ResolveRewardBackfillStartPort;
+use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
+use Carbon\CarbonImmutable;
+use Throwable;
+
+final class ProcessVolumeRewardsUseCase
+{
+    public function __construct(
+        private readonly VolumeRewardProcessingRepositoryFactory $processingRepositoryFactory,
+        private readonly RewardRepositoryFactory $rewardRepositoryFactory,
+        private readonly ResolveClosedVolumeRewardActivityPort $closedActivity,
+        private readonly ListVolumeRewardActivitiesPort $activities,
+        private readonly ResolveVolumeRewardDistributionLimitPort $distributionLimit,
+        private readonly ResolveVolumeRewardProgramConfigurationPort $programConfiguration,
+        private readonly ResolveRewardUplinePort $upline,
+        private readonly ResolveSubscriptionContextPort $subscriptions,
+        private readonly ResolveRewardBackfillStartPort $backfillStart,
+        private readonly ResolveVolumeRewardRuleContextPort $rules,
+        private readonly CalculateVolumeRewardAmountAction $calculateAmount,
+    ) {}
+
+    /** @return array{event_processed: int, event_retryable: int, event_rejected: int, rewards_created: int, rewards_skipped: int, periodic_pages: int} */
+    public function execute(int $limit): array
+    {
+        $result = ['event_processed' => 0, 'event_retryable' => 0, 'event_rejected' => 0, 'rewards_created' => 0, 'rewards_skipped' => 0, 'periodic_pages' => 0];
+        $repository = $this->processingRepositoryFactory->make();
+        $leaseSeconds = max((int) config('rewards.volume.claim_lease_seconds', 60), 1);
+
+        for ($processed = 0; $processed < $limit; $processed++) {
+            $now = CarbonImmutable::now('UTC');
+            $receipt = $repository->claimNextEvent($now, $now->addSeconds($leaseSeconds));
+            if ($receipt === null) {
+                break;
+            }
+
+            try {
+                $activity = $this->closedActivity->execute(new ResolveClosedVolumeRewardActivityQueryData(
+                    (string) $receipt->module_id,
+                    (string) $receipt->order_id,
+                    (string) $receipt->external_trader_id,
+                ));
+                $activityResult = $this->processActivity($activity, 'event');
+                if ($activityResult->retry_code !== null) {
+                    $this->retryReceipt($receipt, $activityResult->retry_code);
+                    $result['event_retryable']++;
+
+                    continue;
+                }
+
+                $repository->markEventProcessed((string) $receipt->id, (string) $receipt->claim_token, CarbonImmutable::now('UTC'));
+                $result['event_processed']++;
+                $result['rewards_created'] += $activityResult->created;
+                $result['rewards_skipped'] += $activityResult->skipped;
+            } catch (BrokerClosedPositionInvalidResponseException|InvalidProgressionActivityQueryException $exception) {
+                $repository->markEventRejected((string) $receipt->id, (string) $receipt->claim_token, $exception->getErrorCode(), CarbonImmutable::now('UTC'));
+                $result['event_rejected']++;
+            } catch (BrokerClosedPositionNotReadyException|BrokerClosedPositionUnavailableException|VolumeRewardModuleNotOperationalException $exception) {
+                $this->retryReceipt($receipt, $exception->getErrorCode());
+                $result['event_retryable']++;
+            } catch (Throwable) {
+                $this->retryReceipt($receipt, 'volume_reward_processing_failed');
+                $result['event_retryable']++;
+            }
+        }
+
+        $this->processPeriodicPage($limit, $leaseSeconds, $result);
+
+        return $result;
+    }
+
+    /** @param array{event_processed: int, event_retryable: int, event_rejected: int, rewards_created: int, rewards_skipped: int, periodic_pages: int} $result */
+    private function processPeriodicPage(int $limit, int $leaseSeconds, array &$result): void
+    {
+        $moduleId = config('rewards.volume.broker_module_id');
+        if (! is_string($moduleId) || $moduleId === '') {
+            return;
+        }
+
+        $now = CarbonImmutable::now('UTC');
+        $run = $this->processingRepositoryFactory->make()->claimPeriodicRun(
+            $moduleId,
+            $this->backfillStart->execute()->activated_at,
+            $now,
+            $now->addSeconds($leaseSeconds),
+        );
+        if ($run === null) {
+            return;
+        }
+
+        $processing = $this->processingRepositoryFactory->make();
+        try {
+            $limitContext = $this->distributionLimit->execute(new ResolveVolumeRewardDistributionLimitQueryData(
+                module_id: $moduleId,
+                occurred_from: CarbonImmutable::parse((string) $run->occurred_from)->utc()->toISOString(),
+                occurred_until: CarbonImmutable::parse((string) $run->occurred_until)->utc()->toISOString(),
+                channel: 'periodic',
+            ));
+            if ($limitContext === null) {
+                $processing->completePeriodicPage((string) $run->id, (string) $run->claim_token, null, CarbonImmutable::now('UTC'));
+                $result['periodic_pages']++;
+
+                return;
+            }
+
+            $page = $this->activities->execute(new ListVolumeRewardActivitiesQueryData(
+                module_id: $moduleId,
+                occurred_from: (string) $run->occurred_from,
+                occurred_until: (string) $run->occurred_until,
+                instrument_references: $limitContext->instrument_references,
+                cursor: $run->cursor === null ? null : (string) $run->cursor,
+                limit: $limit,
+            ));
+            if ($page->module_condition !== 'running' || ! $page->provider_invoked) {
+                $this->retryRun($run, $page->rejection_code ?? 'module_not_operational');
+
+                return;
+            }
+
+            foreach ($page->activities as $activity) {
+                $activityResult = $this->processActivity($activity, 'periodic');
+                if ($activityResult->retry_code !== null) {
+                    $this->retryRun($run, $activityResult->retry_code);
+
+                    return;
+                }
+                $result['rewards_created'] += $activityResult->created;
+                $result['rewards_skipped'] += $activityResult->skipped;
+            }
+
+            $processing->completePeriodicPage((string) $run->id, (string) $run->claim_token, $page->next_cursor, CarbonImmutable::now('UTC'));
+            $result['periodic_pages']++;
+        } catch (Throwable) {
+            $this->retryRun($run, 'periodic_page_failed');
+        }
+    }
+
+    private function processActivity(VolumeRewardActivityData $activity, string $channel): VolumeRewardActivityProcessingResultData
+    {
+        if ($activity->currency_code === null || $activity->currency_precision === null) {
+            return VolumeRewardActivityProcessingResultData::retryable('activity_economic_contract_incomplete');
+        }
+
+        $occurredAt = CarbonImmutable::parse($activity->occurred_at)->utc();
+        $limit = $this->distributionLimit->execute(new ResolveVolumeRewardDistributionLimitQueryData(
+            module_id: $activity->module_id,
+            occurred_from: $occurredAt->toISOString(),
+            occurred_until: $occurredAt->addMicrosecond()->toISOString(),
+            channel: $channel,
+        ));
+        if ($limit === null) {
+            return VolumeRewardActivityProcessingResultData::completed(0, 1);
+        }
+
+        $upline = $this->upline->resolve(new ResolveRewardUplineQueryData(
+            $activity->subject_external_user_id,
+            $limit->max_distribution_level,
+        ));
+        if (! $upline->isResolved() || $upline->resolved_at === null) {
+            return VolumeRewardActivityProcessingResultData::retryable($upline->failure_code ?? 'upline_unavailable');
+        }
+
+        $created = 0;
+        $skipped = 0;
+        foreach ($upline->beneficiaries as $beneficiary) {
+            $subscription = $this->subscriptions->resolve(new ResolveSubscriptionContextQueryData(
+                $beneficiary->beneficiary_external_user_id,
+                $activity->occurred_at,
+            ));
+            if (! $subscription->found() || $subscription->context === null) {
+                $skipped++;
+
+                continue;
+            }
+            $context = $subscription->context;
+            if ($context->activated_at === '' || $occurredAt->lt(CarbonImmutable::parse($context->activated_at)->utc())) {
+                $skipped++;
+
+                continue;
+            }
+
+            $configuration = $this->programConfiguration->execute(new ResolveVolumeRewardProgramConfigurationQueryData(
+                program_id: $context->program_id,
+                module_id: $activity->module_id,
+                instrument_reference: $activity->instrument_reference,
+                distribution_level: $beneficiary->distribution_level,
+                occurred_at: $activity->occurred_at,
+                channel: $channel,
+            ));
+            if ($configuration === null) {
+                $skipped++;
+
+                continue;
+            }
+            if ($configuration->commission_type === 'percentage' && $activity->broker_granted_commission === null) {
+                return VolumeRewardActivityProcessingResultData::retryable('activity_economic_contract_incomplete');
+            }
+
+            $rule = $this->rules->execute(new ResolveVolumeRewardRuleContextQueryData(
+                $context->program_id,
+                $activity->module_id,
+                $activity->unit_code,
+                $activity->occurred_at,
+            ));
+            if (! $rule->found()) {
+                $skipped++;
+
+                continue;
+            }
+
+            $money = $this->calculateAmount->execute(new VolumeRewardCalculationData(
+                commission_type: $configuration->commission_type,
+                quantity: $activity->quantity,
+                broker_granted_commission: $activity->broker_granted_commission ?? '0',
+                participation_rate: $configuration->commission_value,
+                template_level_rate: $configuration->template_level_rate,
+                personal_rate: $context->personal_rate,
+                is_master: $context->is_master,
+                master_rate: $context->master_rate,
+                currency_code: $activity->currency_code,
+                currency_precision: $activity->currency_precision,
+            ));
+            if ($money === null) {
+                $skipped++;
+
+                continue;
+            }
+
+            $originKey = 'volume:'.hash('sha256', implode('|', [
+                $activity->module_id,
+                $activity->source_activity_id,
+                $beneficiary->beneficiary_external_user_id,
+                (string) $beneficiary->distribution_level,
+                (string) $rule->rule_assignment_id,
+                (string) $rule->rule_version_id,
+            ]));
+            $wasCreated = $this->rewardRepositoryFactory->make()->persistVolumeReward(new PersistVolumeRewardData(
+                beneficiary_user_id: $beneficiary->beneficiary_external_user_id,
+                plan_id: $context->plan_id,
+                program_id: $context->program_id,
+                module_id: $activity->module_id,
+                rule_assignment_id: (string) $rule->rule_assignment_id,
+                rule_id: (string) $rule->rule_id,
+                rule_version_id: (string) $rule->rule_version_id,
+                amount_minor: $money->minorUnits,
+                currency_code: $money->currency->code(),
+                currency_precision: $money->currency->precision(),
+                network_level: $beneficiary->distribution_level,
+                origin_idempotency_key: $originKey,
+                summary_snapshot: [
+                    'channel' => $channel,
+                    'module_id' => $activity->module_id,
+                    'source_activity_id' => $activity->source_activity_id,
+                    'source_external_user_id' => $activity->subject_external_user_id,
+                    'occurred_at' => $activity->occurred_at,
+                    'distribution_resolved_at' => $upline->resolved_at,
+                    'distribution_level' => $beneficiary->distribution_level,
+                    'subscription_id' => $context->subscription_id,
+                    'placement_id' => $context->placement_id,
+                    'program_volume_configuration_id' => $configuration->program_volume_configuration_id,
+                    'program_volume_mode' => $configuration->mode,
+                    'program_symbol_configuration_id' => $configuration->program_symbol_configuration_id,
+                    'payment_template_version_binding_id' => $configuration->plan_payment_template_version_binding_id,
+                    'payment_template_version_id' => $configuration->payment_template_version_id,
+                    'commission_type' => $configuration->commission_type,
+                    'commission_value' => $configuration->commission_value,
+                    'template_level_rate' => $configuration->template_level_rate,
+                    'personal_rate' => $context->personal_rate,
+                    'is_master' => $context->is_master,
+                    'master_rate' => $context->master_rate,
+                    'quantity' => $activity->quantity,
+                    'unit_code' => $activity->unit_code,
+                    'broker_granted_commission' => $activity->broker_granted_commission,
+                    'instrument_reference' => $activity->instrument_reference,
+                    'configured_currency_code' => $configuration->configured_currency_code,
+                    'currency_code' => $money->currency->code(),
+                    'currency_precision' => $money->currency->precision(),
+                ],
+                source_activity_id: $activity->source_activity_id,
+                subject_external_user_id: $activity->subject_external_user_id,
+                quantity: $activity->quantity,
+                unit_code: $activity->unit_code,
+                occurred_at: $activity->occurred_at,
+                instrument_reference: $activity->instrument_reference,
+            ));
+            $wasCreated ? $created++ : $skipped++;
+        }
+
+        return VolumeRewardActivityProcessingResultData::completed($created, $skipped);
+    }
+
+    private function retryReceipt(object $receipt, string $errorCode): void
+    {
+        $now = CarbonImmutable::now('UTC');
+        $this->processingRepositoryFactory->make()->markEventRetryable(
+            (string) $receipt->id,
+            (string) $receipt->claim_token,
+            $errorCode,
+            $this->nextAttemptAt($now, (int) ($receipt->attempt_count ?? 1)),
+        );
+    }
+
+    private function retryRun(object $run, string $errorCode): void
+    {
+        $now = CarbonImmutable::now('UTC');
+        $this->processingRepositoryFactory->make()->markPeriodicRunRetryable(
+            (string) $run->id,
+            (string) $run->claim_token,
+            $errorCode,
+            $now,
+            $this->nextAttemptAt($now, (int) ($run->attempt_count ?? 1)),
+        );
+    }
+
+    private function nextAttemptAt(CarbonImmutable $now, int $attemptCount): CarbonImmutable
+    {
+        $baseDelay = max((int) config('rewards.volume.retry_delay_seconds', 60), 1);
+        $multiplier = 2 ** min(max($attemptCount - 1, 0), 10);
+
+        return $now->addSeconds($baseDelay * $multiplier);
+    }
+}

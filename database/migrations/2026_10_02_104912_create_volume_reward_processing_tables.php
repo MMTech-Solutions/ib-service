@@ -4,22 +4,17 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('program_volume_reward_configurations', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('program_id')->constrained('programs')->restrictOnDelete();
-            $table->string('mode', 16)->default('periodic');
-            $table->timestampTz('starts_at');
-            $table->timestampTz('ends_at')->nullable();
-            $table->timestampTz('created_at');
-            $table->timestampTz('updated_at');
-            $table->index(['program_id', 'starts_at'], 'program_volume_rewards_program_start_index');
-        });
+        if (Schema::hasColumn('program_volume_reward_configurations', 'trigger_mode')) {
+            DB::statement('ALTER TABLE program_volume_reward_configurations RENAME COLUMN trigger_mode TO mode');
+        }
+        DB::statement("ALTER TABLE program_volume_reward_configurations ALTER COLUMN mode SET DEFAULT 'periodic'");
         Schema::create('volume_reward_runs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('module_id')->constrained('modules')->restrictOnDelete();
@@ -64,6 +59,8 @@ return new class extends Migration
         });
         Schema::dropIfExists('volume_reward_event_receipts');
         Schema::dropIfExists('volume_reward_runs');
-        Schema::dropIfExists('program_volume_reward_configurations');
+        if (Schema::hasColumn('program_volume_reward_configurations', 'mode')) {
+            DB::statement('ALTER TABLE program_volume_reward_configurations RENAME COLUMN mode TO trigger_mode');
+        }
     }
 };

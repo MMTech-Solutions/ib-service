@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Factories;
 
-use App\Features\Rewards\Contracts\Repositories\CpaVerificationProgressRepositoryInterface;
+use App\Features\Rewards\Repositories\CpaVerificationProgressRepositoryInterface;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 

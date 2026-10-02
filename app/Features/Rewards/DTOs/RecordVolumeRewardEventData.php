@@ -8,5 +8,6 @@ use Spatie\LaravelData\Data;
 
 final class RecordVolumeRewardEventData extends Data
 {
+    /** @param array<string, int|string|null> $transport_snapshot */
     public function __construct(public readonly string $module_id, public readonly string $order_id, public readonly string $external_trader_id, public readonly array $transport_snapshot) {}
 }
