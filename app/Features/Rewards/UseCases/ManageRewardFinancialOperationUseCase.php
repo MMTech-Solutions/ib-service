@@ -46,7 +46,7 @@ final class ManageRewardFinancialOperationUseCase
         try {
             $event = $this->financialGateway->findByIdempotencyKey((string) $reward->settlement_idempotency_key);
             if ($event !== null) {
-                if (! $this->validateFinancialEvent->matches($reward, $event, 'cpa')) {
+                if (! $this->validateFinancialEvent->matches($reward, $event)) {
                     $this->hold($data->reward_id, 'FINANCE_RECONCILIATION_MISMATCH');
                     throw new RewardSettlementException('finance_reconciliation_mismatch');
                 }
@@ -100,6 +100,8 @@ final class ManageRewardFinancialOperationUseCase
                 reward_id: $compensationId, beneficiary_user_id: (string) $reward->beneficiary_user_id, amount_minor: $amountMinor,
                 currency_code: (string) $reward->currency_code, currency_precision: (int) $reward->currency_precision,
                 idempotency_key: 'ib-service:reward:'.$compensationId.':settlement',
+                commission_type: (string) $reward->commission_type,
+                network_level: (int) $reward->network_level,
             ));
             $this->repository()->markCompensationSettled($compensationId, $result->provider, $result->reference_id, CarbonImmutable::now('UTC'));
             $this->complete($data->reward_id, (string) $operation->id, null, $compensationId);

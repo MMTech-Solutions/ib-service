@@ -24,7 +24,7 @@ final class IamResolveRewardUplineAdapter implements ResolveRewardUplinePort
         }
 
         try {
-            $result = $this->referralNetwork->getUpline($query->subject_external_user_id);
+            $result = $this->referralNetwork->getUpline($query->subject_external_user_id, $query->max_distribution_level + 1);
             if (! $result->isSuccess()) {
                 return ResolveRewardUplineResultData::failed('unavailable');
             }

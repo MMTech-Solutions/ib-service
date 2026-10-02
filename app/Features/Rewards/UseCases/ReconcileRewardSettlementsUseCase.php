@@ -41,7 +41,7 @@ final class ReconcileRewardSettlementsUseCase
 
                     continue;
                 }
-                $type = $reward->status === 'reversal_pending' || $reward->status === 'reversal_failed' ? 'reversal' : 'cpa';
+                $type = $reward->status === 'reversal_pending' || $reward->status === 'reversal_failed' ? 'reversal' : (string) $reward->commission_type;
                 if (! $this->matches($reward, $event, $type)) {
                     $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_RECONCILIATION_MISMATCH', CarbonImmutable::now('UTC'));
                     $result['held']++;

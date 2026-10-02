@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'repository' => env('REWARDS_REPOSITORY', 'postgresql'),
+    'minimum_amount_major' => env('REWARDS_MINIMUM_AMOUNT_MAJOR', '0.01'),
     'cpa' => [
         'batch_size' => (int) env('REWARDS_CPA_BATCH_SIZE', 100),
         'incremental_evidence' => filter_var(env('REWARDS_CPA_INCREMENTAL_EVIDENCE', false), FILTER_VALIDATE_BOOL),

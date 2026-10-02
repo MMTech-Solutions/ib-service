@@ -27,7 +27,7 @@ final class RewardUplineAdapterTest extends TestCase
             new IbUplineLevelItem(3, new IbReferralUserItem('root')),
         ]));
         $service = Mockery::mock(ReferralNetworkServiceInterface::class);
-        $service->shouldReceive('getUpline')->once()->with('referred')->andReturn($response);
+        $service->shouldReceive('getUpline')->once()->with('referred', 2)->andReturn($response);
 
         $result = (new IamResolveRewardUplineAdapter($service))->resolve(new ResolveRewardUplineQueryData('referred', 1));
 

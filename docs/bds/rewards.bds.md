@@ -88,6 +88,7 @@ erDiagram
 | BR-REWARD-019 | La configuración de volumen pertenece al programa y tiene vigencia. Sus modos admisibles son `event`, `periodic` y `both`; cambiarla no modifica Rewards ya creadas. |
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
 | BR-REWARD-021 | La base distribuible de volumen se obtiene de la posición: modalidad fija = `closed_volume × participation_rate`; modalidad porcentual = `broker_granted_commission × participation_rate`. La base se distribuye por nivel conforme a la plantilla congelada. Cada resultado aplica además `personal_rate` del beneficiario y, solo si es Master IB, su `master_rate`; los tres valores se congelan en la Reward. |
+| BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Hasta que el emisor de un evento de posición cerrada sea también la autoridad que ya persistió dicho cierre, un evento directo a IB no prueba que Broker haya materializado la posición y no puede disparar una Reward. |
 | BR-REWARD-022 | Una configuración PnL pertenece al programa, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. Los períodos son UTC, semiabiertos y solo se evalúan después de cerrados. |
 | BR-REWARD-023 | Para una cuenta y período, `pnl_neto = balance_final - balance_inicial - (depósitos_certificados - retiros_certificados)`. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto de ese resultado. |
 | BR-REWARD-024 | Una Reward PnL es idempotente por cuenta, período cerrado, beneficiario, nivel, asignación y versión de regla. |
@@ -149,6 +150,6 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
-- Contrato S2S definitivo de evento de posición cerrada, comisión fuente y precisión de `server_group` para volumen.
+- Confirmación futura de Trading Account Service como emisor posterior a la persistencia para habilitar el modo de volumen `event`; mientras tanto el modo autorizado es `periodic`.
 - Contratos S2S definitivos de cuentas/balances Broker y depósitos/retiros certificados Finance para PnL.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

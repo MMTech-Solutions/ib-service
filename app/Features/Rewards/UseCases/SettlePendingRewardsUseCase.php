@@ -38,6 +38,8 @@ final class SettlePendingRewardsUseCase
                     currency_code: (string) $claim->currency_code,
                     currency_precision: (int) $claim->currency_precision,
                     idempotency_key: (string) $claim->settlement_idempotency_key,
+                    commission_type: (string) $claim->commission_type,
+                    network_level: (int) $claim->network_level,
                 ));
                 $repository->markRewardSettled((string) $claim->id, (string) $claim->settlement_lock_token, $settlement->provider, $settlement->reference_id, CarbonImmutable::now('UTC'));
                 $result['settled']++;

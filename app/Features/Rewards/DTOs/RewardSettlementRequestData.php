@@ -13,5 +13,7 @@ final readonly class RewardSettlementRequestData
         public string $currency_code,
         public int $currency_precision,
         public string $idempotency_key,
+        public string $commission_type = 'cpa',
+        public int $network_level = 1,
     ) {}
 }

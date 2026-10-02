@@ -36,14 +36,14 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
                     'source_service' => (string) $this->config->get('finance.source_service'),
                     'ib_user_id' => $request->beneficiary_user_id,
                     'system_wallet_slug' => strtolower($request->currency_code).'-main',
-                    'commission_type' => 'cpa',
+                    'commission_type' => $request->commission_type,
                     'reason_code' => 'ib_reward_settlement',
                     'reason_label' => 'IB reward settlement',
                     'amount_minor' => $request->amount_minor,
                     'reference_type' => 'reward',
                     'reference_id' => $request->reward_id,
                     'source_client_id' => $request->reward_id,
-                    'network_level' => 1,
+                    'network_level' => $request->network_level,
                     'metadata' => ['reward_id' => $request->reward_id],
                 ]);
         } catch (ConnectionException) {
@@ -169,7 +169,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             && is_int($event['id'] ?? null)
             && ($event['status'] ?? null) === 'posted'
             && ($event['idempotency_key'] ?? null) === $request->idempotency_key
-            && ($event['commission_type'] ?? null) === 'cpa'
+            && ($event['commission_type'] ?? null) === $request->commission_type
             && ($event['ib_user_id'] ?? null) === $request->beneficiary_user_id
             && (int) ($event['amount_minor'] ?? -1) === $request->amount_minor
             && ($event['reference_type'] ?? null) === 'reward'

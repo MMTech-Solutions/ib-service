@@ -88,6 +88,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
                 'id' => $rewardId, 'beneficiary_user_id' => $context->ib_user_id, 'plan_id' => $context->plan_id, 'program_id' => $context->program_id, 'module_id' => $context->module_id,
                 'rule_assignment_id' => $context->rule_assignment_id, 'rule_id' => $context->rule_id, 'rule_version_id' => $context->rule_version_id,
                 'amount_minor' => $amount->minorUnits, 'currency_code' => $currency->code(), 'currency_precision' => $currency->precision(), 'status' => 'pending',
+                'commission_type' => 'cpa', 'network_level' => 1,
                 'summary_snapshot' => json_encode(['observed_volume' => $volume, 'observed_deposit_minor' => $depositMinor, 'observed_until' => $now], JSON_THROW_ON_ERROR), 'created_at' => $now, 'updated_at' => $now,
             ]);
             foreach ($evidence->volume_facts as $fact) {
@@ -103,7 +104,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
     public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt): ?object
     {
         return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt): ?object {
-            $reward = $this->connection->table('rewards')->join('cpa_contexts', 'cpa_contexts.reward_id', '=', 'rewards.id')->join('rules', 'rules.id', '=', 'rewards.rule_id')->where('rules.strategy_type', 'cpa_fixed_amount')
+            $reward = $this->connection->table('rewards')
                 ->where(function ($query) use ($retryAt): void {
                     $query->where('rewards.status', 'pending')->orWhere(function ($retryable) use ($retryAt): void {
                         $retryable->where('rewards.status', 'failed')->where(function ($lastAttempt) use ($retryAt): void {
@@ -183,7 +184,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
         }
         $id = (string) Str::uuid7();
         $this->connection->transaction(function () use ($id, $reward, $operation, $amountMinor, $reasonCode, $at): void {
-            $this->connection->table('rewards')->insert(['id' => $id, 'compensates_reward_id' => $reward->id, 'beneficiary_user_id' => $reward->beneficiary_user_id, 'plan_id' => $reward->plan_id, 'program_id' => $reward->program_id, 'module_id' => $reward->module_id, 'rule_assignment_id' => $reward->rule_assignment_id, 'rule_id' => $reward->rule_id, 'rule_version_id' => $reward->rule_version_id, 'amount_minor' => $amountMinor, 'currency_code' => $reward->currency_code, 'currency_precision' => $reward->currency_precision, 'status' => 'pending', 'summary_snapshot' => json_encode(['compensates_reward_id' => $reward->id, 'reason_code' => $reasonCode], JSON_THROW_ON_ERROR), 'settlement_idempotency_key' => 'ib-service:reward:'.$id.':settlement', 'created_at' => $at, 'updated_at' => $at]);
+            $this->connection->table('rewards')->insert(['id' => $id, 'compensates_reward_id' => $reward->id, 'beneficiary_user_id' => $reward->beneficiary_user_id, 'plan_id' => $reward->plan_id, 'program_id' => $reward->program_id, 'module_id' => $reward->module_id, 'rule_assignment_id' => $reward->rule_assignment_id, 'rule_id' => $reward->rule_id, 'rule_version_id' => $reward->rule_version_id, 'amount_minor' => $amountMinor, 'currency_code' => $reward->currency_code, 'currency_precision' => $reward->currency_precision, 'status' => 'pending', 'commission_type' => $reward->commission_type, 'network_level' => $reward->network_level, 'summary_snapshot' => json_encode(['compensates_reward_id' => $reward->id, 'reason_code' => $reasonCode], JSON_THROW_ON_ERROR), 'settlement_idempotency_key' => 'ib-service:reward:'.$id.':settlement', 'created_at' => $at, 'updated_at' => $at]);
             $this->connection->table('reward_financial_operations')->where('id', $operation->id)->update(['compensation_reward_id' => $id, 'updated_at' => $at]);
         });
 

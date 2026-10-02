@@ -89,7 +89,7 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
     /** @param array<string, mixed> $item */
     private function activity(string $moduleId, array $item): VolumeRewardActivityData
     {
-        foreach (['source_activity_id', 'subject_external_user_id', 'metric_code', 'unit_code', 'quantity', 'occurred_at', 'symbol_id', 'server_group_id'] as $field) {
+        foreach (['source_activity_id', 'subject_external_user_id', 'metric_code', 'unit_code', 'quantity', 'occurred_at', 'symbol_id', 'server_group_id', 'currency_code', 'broker_granted_commission'] as $field) {
             if (! isset($item[$field]) || ! is_string($item[$field])) {
                 throw InvalidProgressionActivityQueryException::withMessage('Broker returned an invalid volume reward activity.');
             }
@@ -99,7 +99,7 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
         }
 
         $precision = $item['currency_precision'] ?? null;
-        if ($precision !== null && ! is_int($precision)) {
+        if (! is_int($precision) || $precision < 0) {
             throw InvalidProgressionActivityQueryException::withMessage('Broker returned an invalid server group currency precision.');
         }
 
@@ -111,9 +111,9 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
             quantity: $item['quantity'],
             occurred_at: CarbonImmutable::parse($item['occurred_at'])->utc()->toIso8601String(),
             instrument_reference: 'broker:server_group:'.$item['server_group_id'].':symbol:'.$item['symbol_id'],
-            currency_code: isset($item['currency_code']) && is_string($item['currency_code']) ? strtoupper($item['currency_code']) : null,
+            currency_code: strtoupper($item['currency_code']),
             currency_precision: $precision,
-            broker_granted_commission: isset($item['broker_granted_commission']) && is_string($item['broker_granted_commission']) ? $item['broker_granted_commission'] : null,
+            broker_granted_commission: $item['broker_granted_commission'],
         );
     }
 

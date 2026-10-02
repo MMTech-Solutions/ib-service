@@ -149,6 +149,8 @@ Rewards consume un puerto V1 de Modules especializado en evidencia CPA. El adapt
 
 El puerto de actividad de volumen de RWD4 es distinto de `ListProgressionActivitiesPort`: conserva el contrato M3 sin cambios y declara los campos económicos que necesita una Reward. Mientras Broker no publique moneda, precisión y, para porcentaje, comisión fuente, Modules puede transportar la ausencia como contrato incompleto pero Rewards no puede crear una obligación económica.
 
+El evento `PositionClosed` emitido por Trading y consumido tanto por Broker como por IB tiene una condición de carrera: IB puede consultar Broker antes de que Broker haya procesado y persistido el cierre. Por ello, hasta que Trading Account Service sea la autoridad de la posición y publique el evento únicamente después de persistirla, RWD4 usa el feed `periodic` de Broker como modo predeterminado y no habilita la creación de Rewards por ese evento. Un `409 CLOSED_POSITION_NOT_READY` es recuperable, no evidencia económica ni causa de pago.
+
 PnL requiere una capacidad diferente: Broker aporta cuenta, balances de corte y grupo de servidor; Finance aporta depósitos y retiros certificados por cuenta e intervalo. La consulta Finance de depósitos CPA por usuario no se reutiliza para PnL. Ningún endpoint, payload o evento de estas capacidades se considera definido hasta contar con contrato del proveedor y prueba S2S.
 
 ## Decisiones pendientes

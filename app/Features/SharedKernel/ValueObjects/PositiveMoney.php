@@ -37,4 +37,24 @@ final class PositiveMoney
 
         return new self((int) $minorUnits, $currency);
     }
+
+    public static function fromDecimalMajorRounded(string $amount, Currency $currency): self
+    {
+        Validator::validate(['amount' => $amount], [
+            'amount' => ['required', 'string', 'regex:/^\d+(?:\.\d+)?$/'],
+        ]);
+
+        if (bccomp($amount, '0', 8) !== 1) {
+            throw new InvalidArgumentException('Money amount must be a positive decimal string.');
+        }
+
+        $factor = bcpow('10', (string) $currency->precision(), 0);
+        $scaled = bcmul($amount, $factor, 12);
+        $minorUnits = bcadd($scaled, '0.5', 0);
+        if (bccomp($minorUnits, (string) PHP_INT_MAX, 0) === 1) {
+            throw new InvalidArgumentException('Money amount exceeds supported minor units.');
+        }
+
+        return new self((int) $minorUnits, $currency);
+    }
 }
