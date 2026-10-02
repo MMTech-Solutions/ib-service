@@ -22,5 +22,11 @@ final class SubscriptionChangeData extends Data
         public readonly ?bool $previous_is_fixed,
         public readonly ?bool $next_is_fixed,
         public readonly string $occurred_at,
+        public readonly ?string $previous_personal_rate,
+        public readonly ?bool $previous_is_master,
+        public readonly ?string $previous_master_rate,
+        public readonly ?string $next_personal_rate,
+        public readonly ?bool $next_is_master,
+        public readonly ?string $next_master_rate,
     ) {}
 }

@@ -29,6 +29,9 @@ final class Subscription
         public ?string $activatedAt,
         public ?string $closedAt,
         public readonly ?string $replacesSubscriptionId,
+        public string $personalRate,
+        public bool $isMaster,
+        public string $masterRate,
         public int $lockVersion,
         public array $placements,
         public array $changes,
@@ -60,6 +63,9 @@ final class Subscription
             activatedAt: null,
             closedAt: null,
             replacesSubscriptionId: null,
+            personalRate: '1',
+            isMaster: false,
+            masterRate: '1',
             lockVersion: 1,
             placements: [],
             changes: [],
@@ -109,6 +115,9 @@ final class Subscription
             activatedAt: $now,
             closedAt: null,
             replacesSubscriptionId: null,
+            personalRate: '1',
+            isMaster: false,
+            masterRate: '1',
             lockVersion: 1,
             placements: [
                 SubscriptionPlacement::open(
@@ -154,6 +163,9 @@ final class Subscription
         SubscriptionActorKind $actorKind,
         ?string $actorExternalUserId,
         ?string $reason,
+        string $personalRate,
+        bool $isMaster,
+        string $masterRate,
         Closure $generateId,
         string $now,
     ): self {
@@ -167,6 +179,9 @@ final class Subscription
             activatedAt: $now,
             closedAt: null,
             replacesSubscriptionId: $replacesSubscriptionId,
+            personalRate: $personalRate,
+            isMaster: $isMaster,
+            masterRate: $masterRate,
             lockVersion: 1,
             placements: [
                 SubscriptionPlacement::open(
@@ -199,6 +214,64 @@ final class Subscription
         );
 
         return $subscription;
+    }
+
+    public function updateRewardRates(
+        string $personalRate,
+        bool $isMaster,
+        string $masterRate,
+        string $operationId,
+        SubscriptionActorKind $actorKind,
+        ?string $actorExternalUserId,
+        ?string $reason,
+        Closure $generateId,
+        string $now,
+    ): bool {
+        if ($this->status->isTerminal()) {
+            throw SubscriptionInvariantException::withMessage(
+                "Subscription [{$this->id}] is terminal and immutable.",
+            );
+        }
+
+        $this->assertRewardRates($personalRate, $masterRate);
+        $personalRate = $this->normalizeRate($personalRate);
+        $masterRate = $this->normalizeRate($masterRate);
+
+        if ($this->personalRate === $personalRate && $this->isMaster === $isMaster && $this->masterRate === $masterRate) {
+            return false;
+        }
+
+        $previousPersonalRate = $this->personalRate;
+        $previousIsMaster = $this->isMaster;
+        $previousMasterRate = $this->masterRate;
+        $this->personalRate = $personalRate;
+        $this->isMaster = $isMaster;
+        $this->masterRate = $masterRate;
+        $this->updatedAt = $now;
+
+        $this->recordChange(
+            id: $generateId(),
+            operationId: $operationId,
+            action: SubscriptionChangeAction::UpdateRewardRates,
+            actorKind: $actorKind,
+            actorExternalUserId: $actorExternalUserId,
+            reason: $reason,
+            previousStatus: $this->status,
+            nextStatus: $this->status,
+            previousProgramId: $this->currentPlacement()?->programId,
+            nextProgramId: $this->currentPlacement()?->programId,
+            previousIsFixed: $this->currentPlacement()?->isFixed(),
+            nextIsFixed: $this->currentPlacement()?->isFixed(),
+            occurredAt: $now,
+            previousPersonalRate: $previousPersonalRate,
+            previousIsMaster: $previousIsMaster,
+            previousMasterRate: $previousMasterRate,
+            nextPersonalRate: $this->personalRate,
+            nextIsMaster: $this->isMaster,
+            nextMasterRate: $this->masterRate,
+        );
+
+        return true;
     }
 
     public function currentPlacement(): ?SubscriptionPlacement
@@ -536,6 +609,12 @@ final class Subscription
         ?bool $previousIsFixed,
         ?bool $nextIsFixed,
         string $occurredAt,
+        ?string $previousPersonalRate = null,
+        ?bool $previousIsMaster = null,
+        ?string $previousMasterRate = null,
+        ?string $nextPersonalRate = null,
+        ?bool $nextIsMaster = null,
+        ?string $nextMasterRate = null,
     ): void {
         $this->changes[] = SubscriptionChange::record(
             id: $id,
@@ -552,6 +631,12 @@ final class Subscription
             previousIsFixed: $previousIsFixed,
             nextIsFixed: $nextIsFixed,
             occurredAt: $occurredAt,
+            previousPersonalRate: $previousPersonalRate,
+            previousIsMaster: $previousIsMaster,
+            previousMasterRate: $previousMasterRate,
+            nextPersonalRate: $nextPersonalRate,
+            nextIsMaster: $nextIsMaster,
+            nextMasterRate: $nextMasterRate,
         );
     }
 
@@ -587,6 +672,10 @@ final class Subscription
         if ($this->lockVersion <= 0) {
             throw SubscriptionInvariantException::withMessage('lock_version must be greater than zero.');
         }
+
+        $this->assertRewardRates($this->personalRate, $this->masterRate);
+        $this->personalRate = $this->normalizeRate($this->personalRate);
+        $this->masterRate = $this->normalizeRate($this->masterRate);
 
         if ($this->origin === SubscriptionOrigin::UserApplication) {
             if ($this->requiresApproval === null) {
@@ -631,6 +720,26 @@ final class Subscription
 
         $this->assertTimestampOrder();
         $this->assertPlacementHistory();
+    }
+
+    private function assertRewardRates(string $personalRate, string $masterRate): void
+    {
+        if (! preg_match('/^\d+(?:\.\d{1,8})?$/', $personalRate) || bccomp($personalRate, '0', 8) === -1 || bccomp($personalRate, '1', 8) === 1) {
+            throw SubscriptionInvariantException::withMessage(
+                'personal_rate must be a decimal between zero and one with at most eight fractional digits.',
+            );
+        }
+
+        if (! preg_match('/^\d+(?:\.\d{1,8})?$/', $masterRate) || bccomp($masterRate, '1', 8) === -1) {
+            throw SubscriptionInvariantException::withMessage(
+                'master_rate must be a decimal greater than or equal to one with at most eight fractional digits.',
+            );
+        }
+    }
+
+    private function normalizeRate(string $rate): string
+    {
+        return bcadd($rate, '0', 8);
     }
 
     private function assertPendingShape(): void

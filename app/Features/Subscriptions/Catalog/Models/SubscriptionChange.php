@@ -27,6 +27,12 @@ final class SubscriptionChange
         public readonly ?bool $previousIsFixed,
         public readonly ?bool $nextIsFixed,
         public readonly string $occurredAt,
+        public readonly ?string $previousPersonalRate = null,
+        public readonly ?bool $previousIsMaster = null,
+        public readonly ?string $previousMasterRate = null,
+        public readonly ?string $nextPersonalRate = null,
+        public readonly ?bool $nextIsMaster = null,
+        public readonly ?string $nextMasterRate = null,
     ) {
         $this->assertValid();
     }
@@ -46,6 +52,12 @@ final class SubscriptionChange
         ?bool $previousIsFixed,
         ?bool $nextIsFixed,
         string $occurredAt,
+        ?string $previousPersonalRate = null,
+        ?bool $previousIsMaster = null,
+        ?string $previousMasterRate = null,
+        ?string $nextPersonalRate = null,
+        ?bool $nextIsMaster = null,
+        ?string $nextMasterRate = null,
     ): self {
         return new self(
             id: $id,
@@ -62,6 +74,12 @@ final class SubscriptionChange
             previousIsFixed: $previousIsFixed,
             nextIsFixed: $nextIsFixed,
             occurredAt: $occurredAt,
+            previousPersonalRate: $previousPersonalRate,
+            previousIsMaster: $previousIsMaster,
+            previousMasterRate: $previousMasterRate,
+            nextPersonalRate: $nextPersonalRate,
+            nextIsMaster: $nextIsMaster,
+            nextMasterRate: $nextMasterRate,
         );
     }
 
@@ -114,6 +132,7 @@ final class SubscriptionChange
             SubscriptionChangeAction::FixPlacement => $this->assertFixPlacementMatrix(),
             SubscriptionChangeAction::ReleasePlacement => $this->assertReleasePlacementMatrix(),
             SubscriptionChangeAction::ProgressionPlacement => $this->assertChangeProgramMatrix(),
+            SubscriptionChangeAction::UpdateRewardRates => $this->assertUpdateRewardRatesMatrix(),
         };
     }
 
@@ -263,6 +282,22 @@ final class SubscriptionChange
             || $this->nextIsFixed !== false) {
             throw SubscriptionInvariantException::withMessage(
                 'Release placement must unfix the same program without moving it.',
+            );
+        }
+    }
+
+    private function assertUpdateRewardRatesMatrix(): void
+    {
+        if ($this->previousStatus !== $this->nextStatus
+            || ! in_array($this->nextStatus, [SubscriptionStatus::Pending, SubscriptionStatus::Active], true)
+            || $this->previousPersonalRate === null
+            || $this->previousIsMaster === null
+            || $this->previousMasterRate === null
+            || $this->nextPersonalRate === null
+            || $this->nextIsMaster === null
+            || $this->nextMasterRate === null) {
+            throw SubscriptionInvariantException::withMessage(
+                'Update reward rates must preserve a pending or active subscription status.',
             );
         }
     }

@@ -1,9 +1,9 @@
 # Subscriptions S1: modelo de datos
 
-Estado: **Completado para S1**
+Estado: **Completado para S1; extensión de rates de Rewards implementada**
 Dependencias satisfechas: etapas 1 a 3; `Programs P2` y `Rules R2`
 Entrega objetivo: S1 — Suscripciones y placement administrativo
-Última revisión: 2026-09-15
+Última revisión: 2026-10-02
 
 ## Propósito
 
@@ -57,6 +57,9 @@ archivo.
 - `activated_at timestamp with time zone` nullable
 - `closed_at timestamp with time zone` nullable
 - `replaces_subscription_id uuid` nullable, self-FK con restrict
+- `personal_rate decimal(9,8)` no nullable, default `1`
+- `is_master boolean` no nullable, default `false`
+- `master_rate decimal(16,8)` no nullable, default `1`
 - `lock_version bigint` no nullable, default `1`
 - `created_at`, `updated_at` no nullable y con zona horaria
 
@@ -72,6 +75,10 @@ archivo.
 - `activated_at`, cuando existe, no precede a `created_at`.
 - `closed_at`, cuando existe, no precede a `created_at` ni a `activated_at` cuando esta última existe.
 - `replaces_subscription_id <> id` cuando existe.
+- `personal_rate` pertenece a `[0, 1]` y `master_rate >= 1`.
+
+`subscription_changes` conserva para `update_reward_rates` los tres valores
+anteriores y los tres posteriores; las demás acciones los dejan nulos.
 
 La transición inicial también se valida en el caso de uso: una
 `user_application` con snapshot `true` nace `pending`; con snapshot `false`

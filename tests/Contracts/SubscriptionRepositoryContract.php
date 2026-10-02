@@ -549,6 +549,9 @@ abstract class SubscriptionRepositoryContract extends TestCase
             actorKind: SubscriptionActorKind::Iam,
             actorExternalUserId: $this->actorId(),
             reason: 'Upgrade',
+            personalRate: '1',
+            isMaster: false,
+            masterRate: '1',
             generateId: static fn (): string => (string) Str::uuid7(),
             now: $now,
         );

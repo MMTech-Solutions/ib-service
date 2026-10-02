@@ -23,6 +23,8 @@ final class SubscriptionChangeRecord extends Model
         return [
             'previous_is_fixed' => 'boolean',
             'next_is_fixed' => 'boolean',
+            'previous_is_master' => 'boolean',
+            'next_is_master' => 'boolean',
             'occurred_at' => 'immutable_datetime',
         ];
     }

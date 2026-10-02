@@ -111,6 +111,9 @@ final class ChangeSubscriptionPlanUseCase
                 actorKind: SubscriptionActorKind::Iam,
                 actorExternalUserId: $command->actorExternalUserId,
                 reason: $command->reason,
+                personalRate: $subscription->personalRate,
+                isMaster: $subscription->isMaster,
+                masterRate: $subscription->masterRate,
                 generateId: $generateId,
                 now: $now,
             );

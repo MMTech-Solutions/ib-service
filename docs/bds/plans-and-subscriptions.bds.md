@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.14
+- **Versión:** 0.15
 - **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan; S1 cierra las reglas de solicitud, aprobación, suscripción, placement y fijación administrativa; Progression cierra el período obligatorio del plan, el umbral cero del primer programa y el retiro inmediato de módulos
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -39,6 +39,9 @@ Los programas pueden seleccionar símbolos de sus módulos habilitados. Cada sel
 | Suscripción activa | Suscripción aprobada con placement que admite nueva actividad de progresión o recompensa. |
 | Suscripción rechazada | Solicitud terminada por decisión administrativa motivada; no puede reabrirse. |
 | Suscripción terminada | Suscripción inmutable que conserva el contexto histórico después de una cancelación o cambio de plan. |
+| Personal rate | Multiplicador individual de una suscripción IB beneficiaria, entre `0` y `1`; reduce su participación económica cuando es inferior a `1`. |
+| Master IB | Marca administrativa de una suscripción beneficiaria que habilita su `master_rate`. |
+| Master rate | Multiplicador adicional de una suscripción marcada como Master IB; es como mínimo `1` y no tiene efecto económico mientras `is_master = false`. |
 | Placement | Programa actual del usuario dentro del plan suscrito. Puede estar libre para Progression o fijado administrativamente. |
 | Fijación administrativa | Bloqueo explícito del placement en un programa, atribuible por administrador e instante, que suspende Progression sin suspender Rewards. Puede conservar un motivo cuando se proporciona. |
 | Actividad elegible para progresión | Actividad ocurrida mientras la suscripción estaba activa y su placement no estaba fijado. |
@@ -140,6 +143,9 @@ erDiagram
 | BR-SUBSCRIPTION-021 | El usuario solo consulta su suscripción abierta y nunca accede mediante este dominio a su historial `rejected` o `ended`. Administración puede consultar todos los estados y el historial. |
 | BR-SUBSCRIPTION-022 | Desactivar un plan no termina sus suscripciones abiertas, pero impide ejecutar para ellas nuevos runs de Progression y nuevos cálculos o pagos de Rewards mientras el plan permanezca inactivo. |
 | BR-SUBSCRIPTION-023 | Un plan no puede archivarse mientras conserve alguna suscripción `pending` o `active`. |
+| BR-SUBSCRIPTION-024 | Toda suscripción nace con `personal_rate = 1`, `is_master = false` y `master_rate = 1`. Solo administración puede modificar esos atributos mientras la suscripción esté abierta; las terminales son inmutables. |
+| BR-SUBSCRIPTION-025 | `personal_rate` se limita al intervalo `[0, 1]`. `master_rate` es mayor o igual que `1` y solo multiplica una Reward cuando `is_master = true`; de lo contrario su factor efectivo es `1`. |
+| BR-SUBSCRIPTION-026 | Cada actualización administrativa efectiva de rates registra actor, instante, motivo opcional y snapshots anterior y posterior. Repetir exactamente los valores vigentes no crea auditoría ni cambia versión. Un cambio de plan conserva los rates vigentes en la suscripción entrante. |
 
 ## Ladder de umbrales
 

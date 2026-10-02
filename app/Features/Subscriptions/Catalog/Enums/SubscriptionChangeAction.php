@@ -16,4 +16,5 @@ enum SubscriptionChangeAction: string
     case FixPlacement = 'fix_placement';
     case ReleasePlacement = 'release_placement';
     case ProgressionPlacement = 'progression_placement';
+    case UpdateRewardRates = 'update_reward_rates';
 }

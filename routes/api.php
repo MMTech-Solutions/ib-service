@@ -73,6 +73,7 @@ use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionCon
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ReleaseSubscriptionPlacementController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowCurrentSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ShowSubscriptionController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\UpdateSubscriptionRewardRatesController;
 use App\SharedFeatures\User\Context\UserSurface;
 use Illuminate\Support\Facades\Route;
 
@@ -162,6 +163,8 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.subscriptions.placement.fix');
                 Route::post('subscriptions/{subscription}/placement/release', ReleaseSubscriptionPlacementController::class)
                     ->name('ib.v1.admin.subscriptions.placement.release');
+                Route::patch('subscriptions/{subscription}/reward-rates', UpdateSubscriptionRewardRatesController::class)
+                    ->name('ib.v1.admin.subscriptions.reward-rates.update');
                 Route::get('activity-evaluations', ListActivityEvaluationsController::class)
                     ->name('ib.v1.admin.activity-evaluations.index');
                 Route::get('activity-evaluations/{activity_evaluation}', ShowActivityEvaluationController::class)

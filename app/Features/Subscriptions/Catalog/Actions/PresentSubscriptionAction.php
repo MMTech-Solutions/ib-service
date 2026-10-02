@@ -26,6 +26,9 @@ final class PresentSubscriptionAction
             activated_at: $subscription->activatedAt,
             closed_at: $subscription->closedAt,
             replaces_subscription_id: $subscription->replacesSubscriptionId,
+            personal_rate: $subscription->personalRate,
+            is_master: $subscription->isMaster,
+            master_rate: $subscription->masterRate,
             lock_version: $subscription->lockVersion,
             current_placement: $this->placementData($subscription->currentPlacement()),
             created_at: $subscription->createdAt,
@@ -45,6 +48,9 @@ final class PresentSubscriptionAction
             activated_at: $subscription->activatedAt,
             closed_at: $subscription->closedAt,
             replaces_subscription_id: $subscription->replacesSubscriptionId,
+            personal_rate: $subscription->personalRate,
+            is_master: $subscription->isMaster,
+            master_rate: $subscription->masterRate,
             lock_version: $subscription->lockVersion,
             current_placement: $this->placementData($subscription->currentPlacement()),
             changes: array_map(
@@ -87,6 +93,12 @@ final class PresentSubscriptionAction
             previous_is_fixed: $change->previousIsFixed,
             next_is_fixed: $change->nextIsFixed,
             occurred_at: $change->occurredAt,
+            previous_personal_rate: $change->previousPersonalRate,
+            previous_is_master: $change->previousIsMaster,
+            previous_master_rate: $change->previousMasterRate,
+            next_personal_rate: $change->nextPersonalRate,
+            next_is_master: $change->nextIsMaster,
+            next_master_rate: $change->nextMasterRate,
         );
     }
 }

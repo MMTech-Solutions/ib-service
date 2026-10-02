@@ -1,9 +1,9 @@
 # Roadmap del feature Subscriptions
 
-Estado: **S1 completada; extensión P0.2 de Progression completada**
+Estado: **S1 completada; extensiones P0.2 de Progression y rates de Rewards completadas**
 Dependencias satisfechas: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
-Última revisión: 2026-09-17
+Última revisión: 2026-10-02
 
 ## Objetivo
 
@@ -63,6 +63,10 @@ flowchart LR
   placement con actividad elegible posterior.
 - Toda mutación administrativa conserva actor e instante. Solo el rechazo
   exige motivo; las demás acciones lo conservan cuando se proporciona.
+- Toda suscripción conserva `personal_rate`, `is_master` y `master_rate`.
+  Administración los actualiza de forma auditable mientras la suscripción está
+  abierta; un cambio de plan los transporta a la nueva suscripción y Rewards
+  congela los valores efectivos del beneficiario al crear una obligación.
 - S1 se habilita completa, con permisos propios para customer y administración;
   no expone solicitudes pendientes sin su moderación administrativa.
 

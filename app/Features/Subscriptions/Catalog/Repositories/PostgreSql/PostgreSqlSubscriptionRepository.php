@@ -210,6 +210,9 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
                     'status' => $subscription->status->value,
                     'activated_at' => $subscription->activatedAt,
                     'closed_at' => $subscription->closedAt,
+                    'personal_rate' => $subscription->personalRate,
+                    'is_master' => $subscription->isMaster,
+                    'master_rate' => $subscription->masterRate,
                     'lock_version' => $nextLockVersion,
                     'updated_at' => $subscription->updatedAt,
                 ]);
@@ -402,6 +405,12 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
                     ? null
                     : (bool) $change->next_is_fixed,
                 occurredAt: $change->occurred_at->utc()->toISOString(),
+                previousPersonalRate: $change->previous_personal_rate === null ? null : (string) $change->previous_personal_rate,
+                previousIsMaster: $change->previous_is_master === null ? null : (bool) $change->previous_is_master,
+                previousMasterRate: $change->previous_master_rate === null ? null : (string) $change->previous_master_rate,
+                nextPersonalRate: $change->next_personal_rate === null ? null : (string) $change->next_personal_rate,
+                nextIsMaster: $change->next_is_master === null ? null : (bool) $change->next_is_master,
+                nextMasterRate: $change->next_master_rate === null ? null : (string) $change->next_master_rate,
             ))
             ->all();
 
@@ -419,6 +428,9 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             replacesSubscriptionId: $record->replaces_subscription_id === null
                 ? null
                 : (string) $record->replaces_subscription_id,
+            personalRate: (string) $record->personal_rate,
+            isMaster: (bool) $record->is_master,
+            masterRate: (string) $record->master_rate,
             lockVersion: (int) $record->lock_version,
             placements: $placements,
             changes: $changes,
@@ -440,6 +452,9 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             'activated_at' => $subscription->activatedAt,
             'closed_at' => $subscription->closedAt,
             'replaces_subscription_id' => $subscription->replacesSubscriptionId,
+            'personal_rate' => $subscription->personalRate,
+            'is_master' => $subscription->isMaster,
+            'master_rate' => $subscription->masterRate,
             'lock_version' => $subscription->lockVersion,
             'created_at' => $subscription->createdAt,
             'updated_at' => $subscription->updatedAt,
@@ -479,6 +494,12 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             'previous_is_fixed' => $change->previousIsFixed,
             'next_is_fixed' => $change->nextIsFixed,
             'occurred_at' => $change->occurredAt,
+            'previous_personal_rate' => $change->previousPersonalRate,
+            'previous_is_master' => $change->previousIsMaster,
+            'previous_master_rate' => $change->previousMasterRate,
+            'next_personal_rate' => $change->nextPersonalRate,
+            'next_is_master' => $change->nextIsMaster,
+            'next_master_rate' => $change->nextMasterRate,
         ];
     }
 }

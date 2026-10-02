@@ -35,6 +35,7 @@ final class SubscriptionRecord extends Model
     {
         return [
             'requires_approval' => 'boolean',
+            'is_master' => 'boolean',
             'lock_version' => 'integer',
             'activated_at' => 'immutable_datetime',
             'closed_at' => 'immutable_datetime',
