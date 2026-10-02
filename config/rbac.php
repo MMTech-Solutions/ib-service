@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use App\Features\Rewards\Listeners\Kafka\AuthAccountRegisteredTopicHandler;
+use App\Features\Rewards\Listeners\Kafka\TradingPositionClosedTopicHandler;
 
 return [
     'consumer' => [
@@ -12,6 +13,7 @@ return [
         // Optional: app-specific topics to consume in the same worker.
         'handlers' => [
             env('REWARDS_AUTH_ACCOUNT_REGISTERED_TOPIC', 'auth.events.v1') => AuthAccountRegisteredTopicHandler::class,
+            env('REWARDS_VOLUME_TRADING_TOPIC', 'trading-services.events.v1') => TradingPositionClosedTopicHandler::class,
         ],
         // skip|fail: behavior when a message arrives for a topic without registered handler.
         'on_unhandled_topic' => env('RBAC_KAFKA_ON_UNHANDLED_TOPIC', 'skip'),

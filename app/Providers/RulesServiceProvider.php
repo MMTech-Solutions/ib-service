@@ -8,10 +8,12 @@ use App\Features\Rules\Assignments\Repositories\InMemory\InMemoryRuleAssignmentR
 use App\Features\Rules\Assignments\Repositories\PostgreSql\PostgreSqlRuleAssignmentRepository;
 use App\Features\Rules\Assignments\UseCases\ResolveCpaRuleContextUseCase;
 use App\Features\Rules\Assignments\UseCases\ResolvePointsContributionContextUseCase;
+use App\Features\Rules\Assignments\UseCases\ResolveVolumeRewardRuleContextUseCase;
 use App\Features\Rules\Catalog\Repositories\InMemory\InMemoryRuleRepository;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\PostgreSqlRuleRepository;
 use App\Features\Rules\Contracts\Ports\Input\ResolveCpaRuleContextPort;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
+use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
 use App\Features\Rules\Contracts\Strategies\RuleStrategyRegistryInterface;
 use App\Features\Rules\Services\Strategies\ClosedRuleStrategyRegistry;
 use Illuminate\Contracts\Foundation\Application;
@@ -28,6 +30,7 @@ final class RulesServiceProvider extends ServiceProvider
             ResolvePointsContributionContextUseCase::class,
         );
         $this->app->singleton(ResolveCpaRuleContextPort::class, ResolveCpaRuleContextUseCase::class);
+        $this->app->singleton(ResolveVolumeRewardRuleContextPort::class, ResolveVolumeRewardRuleContextUseCase::class);
         $this->app->singleton(
             'rules.repositories.memory',
             fn (): InMemoryRuleRepository => new InMemoryRuleRepository,

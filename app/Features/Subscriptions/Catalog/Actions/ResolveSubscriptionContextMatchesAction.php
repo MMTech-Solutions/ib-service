@@ -44,6 +44,10 @@ final class ResolveSubscriptionContextMatchesAction
             program_id: $placement->programId,
             placement_id: $placement->id,
             placement_condition: $placement->condition->value,
+            activated_at: (string) $subscription->activatedAt,
+            personal_rate: $subscription->personalRate,
+            is_master: $subscription->isMaster,
+            master_rate: $subscription->masterRate,
         );
     }
 }

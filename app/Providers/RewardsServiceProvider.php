@@ -13,10 +13,12 @@ use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
 use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlCpaVerificationProgressRepository;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlRewardRepository;
+use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlVolumeRewardProcessingRepository;
 use App\Features\Rewards\Services\Adapters\FinanceRewardSettlementGateway;
 use App\Features\Rewards\Services\Adapters\IamResolveRewardUplineAdapter;
 use App\Features\Rewards\UseCases\CaptureCpaContextUseCase;
 use App\Features\Rewards\UseCases\ReconcileRewardSettlementsUseCase;
+use App\Features\Rewards\UseCases\RecordVolumeRewardEventUseCase;
 use App\Features\Rewards\UseCases\SettlePendingRewardsUseCase;
 use App\Features\Rewards\UseCases\VerifyCpaContextsUseCase;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,7 @@ final class RewardsServiceProvider extends ServiceProvider
         $this->app->singleton(VerifyCpaContextsUseCase::class);
         $this->app->singleton(SettlePendingRewardsUseCase::class);
         $this->app->singleton(ReconcileRewardSettlementsUseCase::class);
+        $this->app->singleton(RecordVolumeRewardEventUseCase::class);
         $this->app->singleton(
             'rewards.cpa_progress.repositories.postgresql',
             fn (): PostgreSqlCpaVerificationProgressRepository => new PostgreSqlCpaVerificationProgressRepository(DB::connection()),
@@ -42,6 +45,7 @@ final class RewardsServiceProvider extends ServiceProvider
             'rewards.repositories.postgresql',
             fn (): PostgreSqlRewardRepository => new PostgreSqlRewardRepository(DB::connection()),
         );
+        $this->app->singleton(PostgreSqlVolumeRewardProcessingRepository::class, fn (): PostgreSqlVolumeRewardProcessingRepository => new PostgreSqlVolumeRewardProcessingRepository(DB::connection()));
     }
 
     public function boot(): void

@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
+use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramVolumeRewardConfigurationRepository;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramCpaSymbolsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramProgressionConfigurationUseCase;
@@ -43,6 +44,7 @@ final class ProgramsServiceProvider extends ServiceProvider
                 DB::connection(),
             ),
         );
+        $this->app->singleton('programs.volume-reward-configurations.repositories.postgresql', fn (): PostgreSqlProgramVolumeRewardConfigurationRepository => new PostgreSqlProgramVolumeRewardConfigurationRepository(DB::connection()));
         $this->app->singleton('programs.payment-templates.repositories.memory', fn (): InMemoryPaymentTemplateRepository => new InMemoryPaymentTemplateRepository);
         $this->app->singleton('programs.payment-templates.repositories.postgresql', fn (): PostgreSqlPaymentTemplateRepository => new PostgreSqlPaymentTemplateRepository(DB::connection()));
         $this->app->singleton('programs.progression-templates.repositories.memory', fn (): InMemoryProgressionTemplateRepository => new InMemoryProgressionTemplateRepository);
