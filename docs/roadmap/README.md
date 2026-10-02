@@ -121,6 +121,8 @@ mantiene una secuencia artificial a costa de inconsistencias.
 | Datos | El esquema de la primera entrega tiene columnas, tipos, restricciones, índices y estrategia de concurrencia definidos. |
 | Implementación | El incremento funciona de extremo a extremo y la misma suite contractual valida ambos repositorios. |
 
+Además de su evidencia funcional, toda entrega que modifique `app/Features/` debe mantener aprobada la suite `tests/Architecture/` definida en [`docs/rules/architecture-validation.md`](../rules/architecture-validation.md). Esta validación no sustituye contract tests ni validación S2S.
+
 ## Mantenimiento
 
 - El `README.md` de cada feature conserva el estado actual, las decisiones

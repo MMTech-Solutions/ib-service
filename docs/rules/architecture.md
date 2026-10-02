@@ -576,4 +576,4 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 - Límites transaccionales, Unit of Work y coordinación con outbox de integración.
 - Estrategia de consistencia entre runs, actividad tardía y settlement.
 - Contratos S2S, autenticación, observabilidad y topología de despliegue.
-- Herramienta y reglas automáticas para tests de arquitectura.
+- QG1 establece PHPUnit estático como guardrail inicial; futuras reglas se añaden a [`architecture-validation.md`](architecture-validation.md) con baseline explícito cuando exista deuda histórica.
