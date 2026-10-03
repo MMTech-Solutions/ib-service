@@ -18,13 +18,13 @@ use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardDistributionLimit
 use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardProgramConfigurationQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
-use App\Features\Rewards\Actions\CalculateVolumeRewardAmountAction;
 use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineQueryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\DTOs\VolumeRewardActivityProcessingResultData;
 use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Factories\VolumeRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
 use App\Features\Rules\Contracts\Data\V1\ResolveVolumeRewardRuleContextQueryData;
 use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
@@ -47,7 +47,7 @@ final class ProcessVolumeRewardsUseCase
         private readonly ResolveSubscriptionContextPort $subscriptions,
         private readonly ResolveRewardBackfillStartPort $backfillStart,
         private readonly ResolveVolumeRewardRuleContextPort $rules,
-        private readonly CalculateVolumeRewardAmountAction $calculateAmount,
+        private readonly VolumeRewardCalculationStrategyFactory $calculations,
     ) {}
 
     /** @return array{event_processed: int, event_retryable: int, event_rejected: int, rewards_created: int, rewards_skipped: int, periodic_pages: int} */
@@ -238,7 +238,7 @@ final class ProcessVolumeRewardsUseCase
                 continue;
             }
 
-            $money = $this->calculateAmount->execute(new VolumeRewardCalculationData(
+            $money = $this->calculations->make('traded_volume_commission')->calculate(new VolumeRewardCalculationData(
                 commission_type: $configuration->commission_type,
                 quantity: $activity->quantity,
                 broker_granted_commission: $activity->broker_granted_commission ?? '0',
@@ -249,6 +249,7 @@ final class ProcessVolumeRewardsUseCase
                 master_rate: $context->master_rate,
                 currency_code: $activity->currency_code,
                 currency_precision: $activity->currency_precision,
+                minimum_amount_major: (string) config('rewards.minimum_amount_major', '0.01'),
             ));
             if ($money === null) {
                 $skipped++;

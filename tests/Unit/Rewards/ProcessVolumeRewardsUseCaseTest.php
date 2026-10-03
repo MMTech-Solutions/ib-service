@@ -14,24 +14,30 @@ use App\Features\Programs\Contracts\Data\V1\VolumeRewardDistributionLimitData;
 use App\Features\Programs\Contracts\Data\V1\VolumeRewardProgramConfigurationData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
-use App\Features\Rewards\Actions\CalculateVolumeRewardAmountAction;
 use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineResultData;
 use App\Features\Rewards\Contracts\Data\V1\RewardUplineBeneficiaryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
+use App\Features\Rewards\Contracts\Strategies\VolumeRewardCalculationStrategyInterface;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
+use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Factories\VolumeRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use App\Features\Rewards\Repositories\VolumeRewardProcessingRepositoryInterface;
+use App\Features\Rewards\Services\Strategies\TradedVolumeCommissionCalculationStrategy;
 use App\Features\Rewards\UseCases\ProcessVolumeRewardsUseCase;
 use App\Features\Rules\Contracts\Data\V1\VolumeRewardRuleContextData;
 use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
+use App\Features\SharedKernel\ValueObjects\Currency;
+use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use App\Features\Subscriptions\Contracts\Data\V1\ResolveRewardBackfillStartData;
 use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextResultData;
 use App\Features\Subscriptions\Contracts\Data\V1\SubscriptionContextData;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveRewardBackfillStartPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class ProcessVolumeRewardsUseCaseTest extends TestCase
@@ -70,8 +76,25 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
         self::assertSame(1, $result['event_rejected']);
     }
 
-    public function test_event_and_periodic_paths_share_the_same_economic_idempotency_key(): void
+    /** @return iterable<string, array{bool}> */
+    public static function calculationImplementations(): iterable
     {
+        yield 'real calculation' => [false];
+        yield 'substituted calculation' => [true];
+    }
+
+    #[DataProvider('calculationImplementations')]
+    public function test_event_and_periodic_paths_share_the_same_economic_idempotency_key(bool $substitute): void
+    {
+        config()->set('rewards.minimum_amount_major', '0.02');
+        if ($substitute) {
+            $calculation = Mockery::mock(VolumeRewardCalculationStrategyInterface::class);
+            $calculation->shouldReceive('calculate')->twice()->withArgs(function (VolumeRewardCalculationData $input): bool {
+                return $input->minimum_amount_major === '0.02' && $input->quantity === '2'
+                    && $input->participation_rate === '0.25' && $input->template_level_rate === '0.5';
+            })->andReturn(PositiveMoney::fromDecimalMajorRounded('1.23', Currency::from('USD', 2)));
+            app()->instance(TradedVolumeCommissionCalculationStrategy::class, $calculation);
+        }
         $moduleId = '00000000-0000-7000-8000-000000000001';
         config()->set('rewards.volume.broker_module_id', $moduleId);
         $receipt = (object) ['id' => 'receipt-1', 'module_id' => $moduleId, 'order_id' => 'order-1', 'external_trader_id' => 'login-1', 'claim_token' => 'receipt-token'];
@@ -87,8 +110,12 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
 
         $persistedKeys = [];
         $rewards = Mockery::mock(RewardRepositoryInterface::class);
-        $rewards->shouldReceive('persistVolumeReward')->twice()->withArgs(function (PersistVolumeRewardData $data) use (&$persistedKeys): bool {
+        $rewards->shouldReceive('persistVolumeReward')->twice()->withArgs(function (PersistVolumeRewardData $data) use (&$persistedKeys, $substitute): bool {
             $persistedKeys[] = $data->origin_idempotency_key;
+            self::assertSame($substitute ? 123 : 25, $data->amount_minor);
+            self::assertSame('plan-1', $data->plan_id);
+            self::assertSame('program-1', $data->program_id);
+            self::assertSame('version-1', $data->rule_version_id);
 
             return true;
         })->andReturn(true, false);
@@ -107,7 +134,9 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
             new RewardUplineBeneficiaryData('00000000-0000-7000-8000-000000000003', 0),
         ], '2026-10-02T00:00:00+00:00'));
         $subscriptions = Mockery::mock(ResolveSubscriptionContextPort::class);
-        $subscriptions->shouldReceive('resolve')->twice()->andReturn(ResolveSubscriptionContextResultData::foundContext(new SubscriptionContextData(
+        $subscriptions->shouldReceive('resolve')->twice()->withArgs(function ($query) use ($activity): bool {
+            return $query->occurred_at === $activity->occurred_at;
+        })->andReturn(ResolveSubscriptionContextResultData::foundContext(new SubscriptionContextData(
             'subscription-1', 'plan-1', 'program-1', 'placement-1', 'unfixed', '2026-09-01T00:00:00+00:00', '1', false, '1',
         )));
         $backfill = Mockery::mock(ResolveRewardBackfillStartPort::class);
@@ -126,7 +155,7 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
             $subscriptions,
             $backfill,
             $rules,
-            new CalculateVolumeRewardAmountAction,
+            app(VolumeRewardCalculationStrategyFactory::class),
         );
 
         $result = $useCase->execute(10);
@@ -150,7 +179,7 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
             Mockery::mock(ResolveSubscriptionContextPort::class),
             Mockery::mock(ResolveRewardBackfillStartPort::class),
             Mockery::mock(ResolveVolumeRewardRuleContextPort::class),
-            new CalculateVolumeRewardAmountAction,
+            app(VolumeRewardCalculationStrategyFactory::class),
         );
     }
 }

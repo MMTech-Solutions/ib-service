@@ -1,6 +1,6 @@
 # RWD-A2 — refactor de CPA y volumen
 
-Estado: **En curso; RWD-A2.1 completada**
+Estado: **En curso; RWD-A2.1 y RWD-A2.2 completadas**
 Última revisión: 2026-10-02.
 Dependencia satisfecha: [RWD-A1](09-rwd-a1-documentation-alignment.md).
 Bloquea: runner económico y cierre RWD4.2.
@@ -10,11 +10,11 @@ Bloquea: runner económico y cierre RWD4.2.
 Alinear CPA/volumen con [Strategies](../../rules/strategies.md) sin cambiar negocio.
 `VerifyCpaContextsUseCase` delega acumulación y calificación a
 `CpaFixedAmountCalculationStrategy`, resuelta mediante factory específica.
-Volumen todavía usa `CalculateVolumeRewardAmountAction` desde
-`ProcessVolumeRewardsUseCase`; su factory y las de proveedores quedan pendientes.
+`ProcessVolumeRewardsUseCase` delega a `TradedVolumeCommissionCalculationStrategy`
+mediante su factory específica. Las factories de proveedores quedan pendientes.
 
-La evidencia local existente no acredita todavía contratos S2S. Esta etapa no
-solo acredita la factory económica CPA local y no sustituye esa validación externa.
+La evidencia local acredita las factories económicas CPA y volumen, pero no
+contratos S2S ni validación con datos reales.
 
 ## RWD-A2.1 completada: extracción CPA
 
@@ -35,8 +35,27 @@ unicidad/contexto original tras cambios de programa y plan. Resultado local:
 Pint aprobado y `graphify update .` completado (5479 nodos, 13021 relaciones).
 Esta evidencia usa fixtures y dobles, no datos reales ni S2S.
 
-Pendientes para completar A2: cálculo de volumen por factory y resolución de
-proveedores por factories específicas. RWD4.2 permanece bloqueada.
+## RWD-A2.2 completada: cálculo de volumen
+
+La Strategy económica conserva la aritmética de la Action anterior, retirada:
+base fija/porcentual, tasas, comparación con mínimo antes de redondear y redondeo
+único a precisión de moneda. El DTO interno usa Laravel Data y propiedades
+readonly; recibe el mínimo explícito leído por el UseCase con default `0.01`.
+El resultado sigue siendo `PositiveMoney` o `null`, sin I/O en cálculo.
+
+La factory admite únicamente `traded_volume_commission` y rechaza otros códigos
+mediante una excepción técnica controlada por la suite de arquitectura. El
+UseCase conserva contexto histórico, receipts, reintentos y clave económica
+común entre evento/barrido. No cambia puertos ni schemas publicados.
+
+Evidencia local del 2026-10-02: 61 tests y 321 assertions aprobadas de Rewards,
+volumen, CPA y arquitectura; además 3 tests y 52 assertions de rates/contexto
+histórico de suscripciones. Las pruebas cubren bordes, sustitución vía factory,
+transmisión del mínimo y persistencia del importe retornado. Pint aprobado y
+`graphify update .` completado (5494 nodos, 13062 relaciones).
+
+Pendientes para completar A2: resolución de proveedores por factories
+específicas. RWD4.2 permanece bloqueada; esta entrega no demuestra S2S.
 
 ## Trabajo de implementación posterior
 
@@ -44,8 +63,8 @@ proveedores por factories específicas. RWD4.2 permanece bloqueada.
   congelados y evidencia normalizada; devolver cantidades y calificación tipadas.
   Resolver por factory propia. Progreso y creación transaccional permanecen en
   el UseCase; conservar evidencia incremental y reevaluación completa vigentes.
-- Resolver cálculo de volumen por factory tipada, reutilizando la aritmética de
-  la Action actual. Conservar comisión fija/porcentual, participación, plantilla,
+- Completado en A2.2: resolver cálculo de volumen por factory tipada, reutilizando
+  la aritmética de la Action retirada. Conservar comisión fija/porcentual, participación, plantilla,
   rates, mínimo y redondeo existentes; retornar dinero o ausencia de Reward.
 - Seleccionar proveedores mediante factories específicas de capacidad en el
   feature dueño: evidencia CPA/posiciones en Modules; conservar puerto y adapter

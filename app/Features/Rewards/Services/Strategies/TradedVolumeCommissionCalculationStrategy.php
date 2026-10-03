@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Features\Rewards\Actions;
+namespace App\Features\Rewards\Services\Strategies;
 
+use App\Features\Rewards\Contracts\Strategies\VolumeRewardCalculationStrategyInterface;
 use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 
-final class CalculateVolumeRewardAmountAction
+final class TradedVolumeCommissionCalculationStrategy implements VolumeRewardCalculationStrategyInterface
 {
-    public function execute(VolumeRewardCalculationData $data): ?PositiveMoney
+    public function calculate(VolumeRewardCalculationData $data): ?PositiveMoney
     {
         $source = match ($data->commission_type) {
             'fixed' => $data->quantity,
@@ -31,7 +32,7 @@ final class CalculateVolumeRewardAmountAction
             $amount = bcmul($amount, $factor, $scale);
         }
 
-        $minimum = (string) config('rewards.minimum_amount_major', '0.01');
+        $minimum = $data->minimum_amount_major;
         if (bccomp($amount, $minimum, max($scale, self::decimalScale($minimum))) === -1) {
             return null;
         }

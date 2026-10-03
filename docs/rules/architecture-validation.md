@@ -20,6 +20,10 @@ RWD-A2.1 registra explícitamente `UnsupportedCpaRewardCalculationStrategyExcept
 como excepción técnica: rechaza un código interno desconocido de la factory CPA,
 sin representar un error HTTP ni ampliar exclusiones por directorio.
 
+RWD-A2.2 registra `UnsupportedVolumeRewardCalculationStrategyException` con la
+misma responsabilidad técnica para la factory económica de volumen. Su ruta
+exacta se controla en la suite; no se amplían exclusiones por directorio.
+
 - UseCases, Actions, Controllers y Resources no importan ni usan `ConnectionInterface`, `DB`, Query Builder, Eloquent o `->table(...)` fuera del baseline.
 - Todo `RepositoryFactory` expone únicamente `make()` además de su constructor.
 - Controllers y Resources no dependen de repositories, factories ni persistencia.

@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\DTOs;
 
-final readonly class VolumeRewardCalculationData
+use Spatie\LaravelData\Data;
+
+final class VolumeRewardCalculationData extends Data
 {
     public function __construct(
-        public string $commission_type,
-        public string $quantity,
-        public string $broker_granted_commission,
-        public string $participation_rate,
-        public string $template_level_rate,
-        public string $personal_rate,
-        public bool $is_master,
-        public string $master_rate,
-        public string $currency_code,
-        public int $currency_precision,
+        public readonly string $commission_type,
+        public readonly string $quantity,
+        public readonly string $broker_granted_commission,
+        public readonly string $participation_rate,
+        public readonly string $template_level_rate,
+        public readonly string $personal_rate,
+        public readonly bool $is_master,
+        public readonly string $master_rate,
+        public readonly string $currency_code,
+        public readonly int $currency_precision,
+        public readonly string $minimum_amount_major,
     ) {}
 }
