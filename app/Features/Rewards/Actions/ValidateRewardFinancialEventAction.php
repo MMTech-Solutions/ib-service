@@ -8,6 +8,8 @@ use App\Features\Rewards\DTOs\FinanceCommissionEventData;
 
 final class ValidateRewardFinancialEventAction
 {
+    public function __construct(private readonly BuildRewardFinancialRequestAction $requests) {}
+
     public function matches(object $reward, FinanceCommissionEventData $event, ?string $type = null, ?string $expectedKey = null): bool
     {
         $type ??= (string) $reward->commission_type;
@@ -17,7 +19,7 @@ final class ValidateRewardFinancialEventAction
             && $event->minor_units === (int) $reward->currency_precision && $event->reference_type === 'reward' && $event->reference_id === $reward->id
             && $event->currency_code === $reward->currency_code
             && $event->system_wallet_slug === strtolower($reward->currency_code).'-main'
-            && $event->network_level === (int) $reward->network_level
+            && $event->network_level === $this->requests->settlement($reward)->network_level
             && ($type !== 'reversal' || $event->reverses_commission_event_id === (int) $reward->settlement_reference_id);
     }
 }

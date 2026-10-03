@@ -100,12 +100,24 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             throw new RewardSettlementException($response->serverError() ? 'finance_unavailable' : 'finance_rejected');
         }
 
-        $event = $response->json('data.0');
-        if ($event === null) {
+        $events = $response->json('data');
+        if (! is_array($events) || ! array_is_list($events) || count($events) > 1) {
+            throw new RewardSettlementException('finance_contract_invalid');
+        }
+        if ($events === []) {
             return null;
         }
-        if (! is_array($event) || ! is_int($event['id'] ?? null)) {
+        $event = $events[0];
+        if (! is_array($event) || ! is_int($event['id'] ?? null) || $event['id'] < 1
+            || ! is_int($event['amount_minor'] ?? null) || ! is_int($event['minor_units'] ?? null)
+            || ! is_int($event['network_level'] ?? null) || $event['network_level'] < 1
+            || (isset($event['reverses_commission_event_id']) && ! is_int($event['reverses_commission_event_id']))) {
             throw new RewardSettlementException('finance_contract_invalid');
+        }
+        foreach (['idempotency_key', 'commission_type', 'ib_user_id', 'reference_type', 'reference_id', 'status', 'currency_code', 'system_wallet_slug'] as $field) {
+            if (! is_string($event[$field] ?? null) || $event[$field] === '') {
+                throw new RewardSettlementException('finance_contract_invalid');
+            }
         }
 
         return new FinanceCommissionEventData(
@@ -157,7 +169,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             && ($event['ib_user_id'] ?? null) === $beneficiary && ($event['amount_minor'] ?? null) === $amount
             && ($event['network_level'] ?? null) === $networkLevel
             && ($event['reference_type'] ?? null) === 'reward' && ($event['reference_id'] ?? null) === $rewardId
-            && ($data['currency_code'] ?? null) === $currency && (int) ($data['minor_units'] ?? -1) === $precision
+            && ($data['currency_code'] ?? null) === $currency && ($data['minor_units'] ?? null) === $precision
             && ($data['system_wallet_slug'] ?? null) === strtolower($currency).'-main';
     }
 
@@ -178,7 +190,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             && ($event['reference_type'] ?? null) === 'reward'
             && ($event['reference_id'] ?? null) === $request->reward_id
             && ($data['currency_code'] ?? null) === $request->currency_code
-            && (int) ($data['minor_units'] ?? -1) === $request->currency_precision
+            && ($data['minor_units'] ?? null) === $request->currency_precision
             && ($data['system_wallet_slug'] ?? null) === strtolower($request->currency_code).'-main';
     }
 }

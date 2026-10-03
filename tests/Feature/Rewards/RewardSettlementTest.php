@@ -23,6 +23,57 @@ final class RewardSettlementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pnl_is_enabled_and_financial_level_is_frozen_across_retries(): void
+    {
+        config(['finance.base_url' => 'http://finance.test', 'rewards.settlement.retry_delay_seconds' => 0]);
+        $id = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $id)->update(['commission_type' => 'pnl', 'network_level' => 0]);
+        $response = $this->financeResponse($id, 'duplicate');
+        $response['data']['event']['commission_type'] = 'pnl';
+        Http::fake(['*' => Http::sequence()->push([], 503)->push($response)]);
+        self::assertSame(1, app(SettlePendingRewardsUseCase::class)->execute(1)['failed']);
+        $snapshot = DB::table('rewards')->where('id', $id)->value('settlement_request_snapshot');
+        self::assertSame(1, json_decode($snapshot, true)['network_level']);
+        DB::table('rewards')->where('id', $id)->update(['network_level' => 8]);
+        self::assertSame(1, app(SettlePendingRewardsUseCase::class)->execute(1)['settled']);
+        self::assertSame($snapshot, DB::table('rewards')->where('id', $id)->value('settlement_request_snapshot'));
+        Http::assertSent(fn ($request) => $request['network_level'] === 1 && $request['commission_type'] === 'pnl');
+    }
+
+    public function test_pnl_settlement_can_be_disabled_independently(): void
+    {
+        config(['rewards.negative_pnl.settlement_enabled' => false]);
+        $id = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $id)->update(['commission_type' => 'pnl', 'network_level' => 0]);
+        Http::fake();
+        self::assertSame(0, app(SettlePendingRewardsUseCase::class)->execute(1)['settled']);
+        Http::assertNothingSent();
+    }
+
+    public function test_volume_level_is_translated_without_changing_economic_level(): void
+    {
+        config(['finance.base_url' => 'http://finance.test']);
+        $id = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $id)->update(['commission_type' => 'volume', 'network_level' => 2]);
+        $response = $this->financeResponse($id, 'created');
+        $response['data']['event']['network_level'] = 3;
+        $response['data']['event']['commission_type'] = 'volume';
+        Http::fake(fn () => Http::response($response));
+        self::assertSame(1, app(SettlePendingRewardsUseCase::class)->execute(1)['settled']);
+        self::assertSame(2, DB::table('rewards')->where('id', $id)->value('network_level'));
+    }
+
+    public function test_finance_precision_must_be_an_integer(): void
+    {
+        config(['finance.base_url' => 'http://finance.test']);
+        $id = $this->seedReward('pending');
+        $response = $this->financeResponse($id, 'created');
+        $response['data']['minor_units'] = '2';
+        Http::fake(fn () => Http::response($response));
+        self::assertSame(1, app(SettlePendingRewardsUseCase::class)->execute(1)['failed']);
+        self::assertSame('finance_contract_invalid', DB::table('rewards')->where('id', $id)->value('last_settlement_error_code'));
+    }
+
     public function test_a_held_reward_does_not_block_other_settlements(): void
     {
         config()->set('finance.base_url', 'http://finance.test');

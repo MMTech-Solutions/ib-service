@@ -2,6 +2,16 @@
 
 ## Estado
 
+### Convención financiera de niveles Rewards
+
+El nivel económico de volumen/PnL empieza en cero y se conserva en IB. Para
+Finance se traduce a `nivel + 1`; CPA conserva el nivel financiero `1`.
+La solicitud se congela antes del primer envío y sus reintentos conservan clave
+y payload. Rewards ya intentadas conservan la convención anterior; las reversas
+reutilizan el nivel financiero original. Una incompatibilidad histórica exige
+hold y no autoriza cambiar payload bajo la misma clave. Moneda, precisión e
+importe se validan estrictamente sin convertir tipos recibidos.
+
 Reglas base aprobadas para comunicación externa. Los nombres definitivos de topics, envelopes y catálogos de eventos permanecen marcados como pendientes cuando corresponda.
 
 ## Principios

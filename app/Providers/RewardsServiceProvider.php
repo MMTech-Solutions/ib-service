@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Features\Rewards\Actions\BuildRewardFinancialRequestAction;
 use App\Features\Rewards\Console\ProcessNegativePnlRewardsCommand;
 use App\Features\Rewards\Console\ProcessVolumeRewardsCommand;
 use App\Features\Rewards\Console\ReconcileRewardSettlementsCommand;
@@ -59,7 +60,7 @@ final class RewardsServiceProvider extends ServiceProvider
         );
         $this->app->singleton(
             'rewards.repositories.postgresql',
-            fn (): PostgreSqlRewardRepository => new PostgreSqlRewardRepository(DB::connection()),
+            fn (): PostgreSqlRewardRepository => new PostgreSqlRewardRepository(DB::connection(), $this->app->make(BuildRewardFinancialRequestAction::class)),
         );
         $this->app->singleton('rewards.volume-processing.repositories.postgresql', fn (): PostgreSqlVolumeRewardProcessingRepository => new PostgreSqlVolumeRewardProcessingRepository(DB::connection()));
     }

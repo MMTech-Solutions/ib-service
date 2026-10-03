@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
+use App\Features\Rewards\Actions\BuildRewardFinancialRequestAction;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
 use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
@@ -20,7 +21,7 @@ use Illuminate\Support\Str;
 
 final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 {
-    public function __construct(private readonly ConnectionInterface $connection) {}
+    public function __construct(private readonly ConnectionInterface $connection, private readonly BuildRewardFinancialRequestAction $financialRequests) {}
 
     public function findNegativePnlCut(string $identityKey): ?NegativePnlCutSnapshotData
     {
@@ -189,7 +190,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
     {
         return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt, $excludedIds): ?object {
             $reward = $this->connection->table('rewards')
-                ->where('rewards.commission_type', '!=', 'pnl')
+                ->when(! config('rewards.negative_pnl.settlement_enabled', true), fn ($query) => $query->where('rewards.commission_type', '!=', 'pnl'))
                 ->whereNotIn('rewards.id', $excludedIds)
                 ->whereNull('rewards.reconciliation_hold_at')
                 ->whereNotExists(function ($query): void {
@@ -216,9 +217,16 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             if ($reward === null) {
                 return null;
             }
+            $request = $this->financialRequests->settlement($reward);
+            if ($request->network_level < 1) {
+                $this->placeReconciliationHold((string) $reward->id, 'FINANCE_LEGACY_LEVEL_INVALID', $now);
+
+                return $this->claimNextSettlement($now, $retryAt, $lockExpiresAt, [...$excludedIds, (string) $reward->id]);
+            }
+            $reward->settlement_request_snapshot = json_encode(get_object_vars($request), JSON_THROW_ON_ERROR);
             $token = (string) Str::uuid7();
             $key = $reward->settlement_idempotency_key ?? 'ib-service:reward:'.$reward->id.':settlement';
-            $this->connection->table('rewards')->where('id', $reward->id)->update(['settlement_idempotency_key' => $key, 'settlement_attempt_count' => (int) $reward->settlement_attempt_count + 1, 'last_settlement_attempt_at' => $now, 'settlement_lock_token' => $token, 'settlement_lock_expires_at' => $lockExpiresAt, 'updated_at' => $now]);
+            $this->connection->table('rewards')->where('id', $reward->id)->update(['settlement_request_snapshot' => $reward->settlement_request_snapshot, 'settlement_idempotency_key' => $key, 'settlement_attempt_count' => (int) $reward->settlement_attempt_count + 1, 'last_settlement_attempt_at' => $now, 'settlement_lock_token' => $token, 'settlement_lock_expires_at' => $lockExpiresAt, 'updated_at' => $now]);
             $reward->settlement_idempotency_key = $key;
             $reward->settlement_lock_token = $token;
 

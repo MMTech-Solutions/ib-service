@@ -3,6 +3,29 @@
 Estado: **En curso; contrato histórico, RWD4.2.1 y RWD4.2.2 completados localmente; operatividad/S2S pospuestas para activación y cierre**
 Última revisión: 2026-10-03
 
+## Entrega de cierre local E2E
+
+Decisión vigente: generación y settlement PnL habilitados por defecto al completar
+el código, con controles independientes para desactivarlos explícitamente.
+La validación integrada posterior usará ib-labs como fuente y generador de
+actividad cuando ese proyecto esté listo. No bloquea desarrollo ni habilitación;
+sigue pendiente para declarar completo el E2E. Esta decisión sustituye las
+prescripciones anteriores de runner deshabilitado y gate S2S de activación,
+que se conservan abajo como evidencia de entregas anteriores.
+
+| Incremento | Estado | Salida |
+| --- | --- | --- |
+| Contrato financiero y settlement PnL | En curso | Solicitud congelada, niveles traducidos y controles independientes |
+| Coordinación financiera | Pendiente | Leases compartidas, recuperación y cancelación incierta |
+| Snapshots de volumen | Pendiente | Entradas completas antes de efectos parciales |
+| Consultas HTTP | Pendiente | Rewards por propietario y jobs/períodos administrativos |
+| Progression y regresión integrada | Pendiente | Flujo local de actividad a placement y settlement |
+
+Primer incremento: se incorpora solicitud financiera congelada y selección PnL
+condicionada por `rewards.negative_pnl.settlement_enabled` (default `true`).
+Generación `rewards.negative_pnl.enabled` también tiene default `true`.
+Pruebas focalizadas de settlement: 12 pruebas / 42 assertions aprobadas.
+
 ## Dependencias y evidencia
 
 A1 y A2.1–A2.3 están completadas; no se repite su refactor.

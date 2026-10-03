@@ -18,7 +18,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
-| [`Rewards`](rewards/README.md) | RWD2/RWD3/RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 locales; A1/A2 completadas; E2E en curso | [E2E](rewards/11-e2e-historical-pnl.md): Settlement PnL y consultas pendientes; S2S pospuesto para activación/cierre | 2026-10-03 |
+| [`Rewards`](rewards/README.md) | RWD2/RWD3/RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 locales; A1/A2 completadas; E2E en curso | [E2E](rewards/11-e2e-historical-pnl.md): Generación PnL habilitada; settlement y consultas pendientes; validación posterior con ib-labs | 2026-10-03 |
 
 ## Secuencia entre features
 

@@ -115,6 +115,7 @@ final class NegativePnlProcessingTest extends TestCase
 
     public function test_first_baseline_then_each_delayed_period_and_no_duplicate_or_settlement(): void
     {
+        config(['rewards.negative_pnl.settlement_enabled' => false]);
         $f = $this->activeFixture();
         self::assertSame(1, $this->process()['periods']);
         self::assertSame(0, DB::table('rewards')->count());
