@@ -492,7 +492,24 @@ Contribución, puntos o recompensa auditable
 - El adapter traduce el contrato técnico externo.
 - El DTO representa la observación normalizada.
 - La strategy decide cómo convertirla en contribución, puntos o recompensa.
-- Las factories de repository y strategy resuelven decisiones diferentes y no deben combinarse.
+- Las factories de repository, proveedor de evidencia y cálculo económico
+  resuelven decisiones diferentes y no deben combinarse. Exponen `make(...)`
+  mediante mapas cerrados y retornan implementaciones tipadas, sin ejecutar
+  procesos ni contener negocio; un código desconocido genera excepción tipada.
+
+La secuencia anterior representa separación de responsabilidades, no un pipeline
+de ejecución obligatorio. Cada UseCase de CPA, volumen, PnL o Progression conserva
+su orquestación, contexto, elegibilidad, red, snapshots, transacciones, idempotencia
+y reintentos. No se introduce engine genérico, cadena de pasos ni DTO universal.
+Settlement permanece independiente de generación.
+
+Rules define/valida versiones; Rewards ejecuta cálculos; el feature dueño del
+puerto obtiene evidencia. Una interfaz de proveedor se comparte solo para la misma
+capacidad, no para unir CPA, posiciones y cortes PnL. Los contratos de cálculo
+son específicos de cada modalidad y solo comparten objetos con igual semántica.
+Véase [strategies.md](strategies.md). La alineación de implementación CPA/volumen
+pertenece a [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md); no se
+declara implementada ni exige refactorizar Progression en esa etapa.
 
 ## HTTP y Resources
 

@@ -1,7 +1,7 @@
 # RWD2: entregas verticales CPA
 
 Estado: **RV1, RV2 y RV3 implementados; validación contractual pendiente**
-Última revisión: 2026-09-30
+Última revisión: 2026-10-02
 
 ## RV1 — captura y progreso
 
@@ -15,7 +15,7 @@ resultado explícito y auditable.
 
 ## RV2 — evidencia Broker y Reward `pending`
 
-Ejecutar la strategy Broker + `cpa_fixed_amount`. Modules/Broker obtiene hechos
+Evaluar la regla `cpa_fixed_amount` con evidencia Broker. Modules/Broker obtiene hechos
 de volumen de Broker Service y depósitos certificados de Finance; Rewards suma,
 evalúa y actualiza progreso. La evaluación calificada crea una sola Reward
 `pending` y escribe su id en el contexto.
@@ -44,4 +44,8 @@ URLs.
 ## Fuera de RWD2
 
 Solicitud de pago, settlement, reversa, compensación, notificaciones y cualquier
-strategy distinta de Broker + `cpa_fixed_amount`.
+modalidad distinta de CPA con evidencia Broker y regla `cpa_fixed_amount`.
+
+RWD-A1 sustituye la selección conjunta de proveedor/regla. RV1–RV3 conservan
+su evidencia; las factories y la extracción del cálculo corresponden a
+[RWD-A2](10-rwd-a2-cpa-volume-refactor.md), todavía no implementada.

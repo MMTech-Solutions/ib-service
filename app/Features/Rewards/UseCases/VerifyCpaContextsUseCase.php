@@ -7,6 +7,8 @@ namespace App\Features\Rewards\UseCases;
 use App\Features\Modules\Contracts\Data\V1\ListCpaEvidenceQueryData;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
+use App\Features\Rewards\DTOs\CpaRewardCalculationInputData;
+use App\Features\Rewards\Factories\CpaRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use Carbon\CarbonImmutable;
 use Throwable;
@@ -17,6 +19,7 @@ final class VerifyCpaContextsUseCase
         private readonly RewardRepositoryFactory $repositoryFactory,
         private readonly ResolveModulesPort $modules,
         private readonly ListCpaEvidencePort $evidence,
+        private readonly CpaRewardCalculationStrategyFactory $calculations,
     ) {}
 
     public function execute(int $limit): array
@@ -50,9 +53,17 @@ final class VerifyCpaContextsUseCase
                     (int) $requirements['currency_precision'],
                     $symbols,
                 ));
-                $volume = $this->sumVolume($incrementalEvidence ? (string) $context->observed_volume : '0', $delta->volume_facts);
-                $deposit = $this->sumDeposits($incrementalEvidence ? (int) $context->observed_deposit_minor : 0, $delta->deposit_facts);
-                $qualified = bccomp($volume, (string) $requirements['required_volume'], 8) >= 0 && $deposit >= (int) $requirements['required_deposit_minor'];
+                $strategy = $this->calculations->make('cpa_fixed_amount');
+                $calculation = $strategy->calculate(new CpaRewardCalculationInputData(
+                    required_volume: (string) $requirements['required_volume'],
+                    required_deposit_minor: (int) $requirements['required_deposit_minor'],
+                    evidence: $delta,
+                    initial_volume: $incrementalEvidence ? (string) $context->observed_volume : '0',
+                    initial_deposit_minor: $incrementalEvidence ? (int) $context->observed_deposit_minor : 0,
+                ));
+                $volume = $calculation->volume;
+                $deposit = $calculation->deposit_minor;
+                $qualified = $calculation->qualified;
 
                 if ($qualified && $incrementalEvidence) {
                     $full = $this->evidence->list(new ListCpaEvidenceQueryData(
@@ -64,9 +75,14 @@ final class VerifyCpaContextsUseCase
                         (int) $requirements['currency_precision'],
                         $symbols,
                     ));
-                    $volume = $this->sumVolume('0', $full->volume_facts);
-                    $deposit = $this->sumDeposits(0, $full->deposit_facts);
-                    $qualified = bccomp($volume, (string) $requirements['required_volume'], 8) >= 0 && $deposit >= (int) $requirements['required_deposit_minor'];
+                    $calculation = $strategy->calculate(new CpaRewardCalculationInputData(
+                        required_volume: (string) $requirements['required_volume'],
+                        required_deposit_minor: (int) $requirements['required_deposit_minor'],
+                        evidence: $full,
+                    ));
+                    $volume = $calculation->volume;
+                    $deposit = $calculation->deposit_minor;
+                    $qualified = $calculation->qualified;
                     $repository->persistQualifiedCpaContext($context, $requirements, $full, $volume, $deposit, $cutoff, $qualified);
                     $result[$qualified ? 'qualified' : 'evaluated']++;
                 } elseif ($qualified) {
@@ -83,23 +99,5 @@ final class VerifyCpaContextsUseCase
         }
 
         return $result;
-    }
-
-    private function sumVolume(string $initial, array $facts): string
-    {
-        foreach ($facts as $fact) {
-            $initial = bcadd($initial, $fact->quantity, 8);
-        }
-
-        return $initial;
-    }
-
-    private function sumDeposits(int $initial, array $facts): int
-    {
-        foreach ($facts as $fact) {
-            $initial += $fact['amount_minor'];
-        }
-
-        return $initial;
     }
 }

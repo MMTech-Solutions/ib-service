@@ -16,6 +16,10 @@ El baseline temporal contiene únicamente:
 
 ## Reglas controladas
 
+RWD-A2.1 registra explícitamente `UnsupportedCpaRewardCalculationStrategyException`
+como excepción técnica: rechaza un código interno desconocido de la factory CPA,
+sin representar un error HTTP ni ampliar exclusiones por directorio.
+
 - UseCases, Actions, Controllers y Resources no importan ni usan `ConnectionInterface`, `DB`, Query Builder, Eloquent o `->table(...)` fuera del baseline.
 - Todo `RepositoryFactory` expone únicamente `make()` además de su constructor.
 - Controllers y Resources no dependen de repositories, factories ni persistencia.

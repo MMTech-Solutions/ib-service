@@ -1,8 +1,18 @@
 # Estrategias configurables
 
+Estado: **regla obligatoria; alineación de implementación pendiente en RWD-A2**.
+
 ## Objetivo
 
-Permitir que CPA, volumen, PnL, puntos de progresión y futuras modalidades reutilicen una misma orquestación sin codificar un pipeline independiente por módulo.
+Última revisión: 2026-10-02.
+
+CPA, volumen, PnL y Progression conservan casos de uso propios. No se impone un
+pipeline común, una cadena de pasos, un engine genérico por modalidad ni un DTO
+universal con campos opcionales. Reutilizar garantías no exige la misma secuencia.
+
+Esta regla sustituye la prescripción anterior. Es arquitectura objetivo:
+[RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md) conserva pendiente la
+alineación de CPA/volumen; no incluye un refactor de Progression.
 
 ## Ubicación y separación obligatoria
 
@@ -12,12 +22,31 @@ Permitir que CPA, volumen, PnL, puntos de progresión y futuras modalidades reut
 - Una **strategy** interpreta inputs normalizados y una configuración validada.
 - Una **rule version** conserva el tipo de strategy y su configuración inmutable.
 - Una **assignment** determina plan, programa, módulo, vigencia y scope.
-- El **pipeline** resuelve contexto, elegibilidad, idempotencia, auditoría y salida.
-- La selección del repository y la selección de la strategy son decisiones independientes y utilizan factories separadas.
+- El **UseCase** conserva contexto, elegibilidad, red cuando corresponda,
+  transacciones locales, snapshots, idempotencia y reintentos. Settlement es
+  independiente de la generación de recompensas.
+- Rules define y valida configuraciones; Rewards ejecuta cálculos económicos.
+  El feature propietario del puerto obtiene evidencia mediante proveedores y
+  adapters: Modules conserva evidencia CPA/posiciones y Rewards su puerto PnL.
+- Proveedores, repositories y cálculos se seleccionan mediante factories
+  independientes en `Factories`, con `make(...)` y mapas cerrados. La factory
+  retorna una implementación tipada; no ejecuta el proceso ni contiene negocio.
+  Un código desconocido produce excepción tipada antes de efectos.
+- Una interfaz de proveedor solo se reutiliza entre implementaciones de la misma
+  capacidad. Evidencia CPA, posiciones y cortes PnL no se fuerzan bajo una firma.
+  Compartir objetos económicos exige igualdad de semántica; cada modalidad tiene
+  inputs/resultados específicos, internos salvo publicación inter-feature real.
 
 ## Registry
 
-Los tipos de strategy se resuelven mediante un registry explícito y cerrado. El JSON nunca puede contener nombres de clase, código ejecutable, consultas, credenciales ni endpoints arbitrarios.
+Rules conserva su registry explícito y cerrado de definiciones y schemas; no es
+una factory de ejecución económica. El JSON nunca contiene nombres de clase,
+código ejecutable, consultas, credenciales ni endpoints arbitrarios.
+
+Los códigos de modalidad `cpa`, `volume`, `pnl` no sustituyen los tipos publicados
+`cpa_fixed_amount`, `traded_volume_commission`, `negative_pnl_share` ni
+`points_per_quantity_unit`. Las factories resuelven dentro de la familia tipada
+del consumidor por código de proveedor/capacidad o tipo de regla correspondiente.
 
 Cada tipo registrado debe declarar:
 
@@ -33,11 +62,22 @@ El registry o factory recibe contexto tipado. No inspecciona silenciosamente el 
 
 ## Estrategias de ejecución de Rewards
 
-La strategy que valida la configuración publicada no tiene por qué ser la que ejecuta una recompensa. Rewards mantiene un registry de ejecución separado, resuelto por el par cerrado `module_code + strategy_type`. La strategy de ejecución recibe únicamente contexto CPA inmutable y evidencia normalizada de Modules; no conoce clientes HTTP, tokens, modelos de proveedores ni respuestas de SDK.
+La definición/validación de Rules es distinta del cálculo de Rewards. Las
+Strategies económicas se resuelven por factories específicas y reciben inputs
+normalizados y configuración congelada; no conocen HTTP, SDKs ni persistencia.
+No se exige un registry universal de ejecución por `module_code + strategy_type`.
+La selección de fuente permanece separada del tipo de regla.
 
 Para CPA, la strategy evalúa requisitos acumulativos y puede producir una decisión tipada de `pending`, `qualified` o error recuperable. La creación idempotente de la Reward y la actualización del progreso pertenecen al caso de uso de Rewards, no a la strategy ni al proveedor de evidencia.
 
-Para volumen y PnL, la strategy de ejecución recibe hechos normalizados y un snapshot de red ya resuelto. No llama a IAM, Broker ni Finance. El pipeline propietario resuelve la red limitada por el mayor nivel pagable, congela el resultado en el run y aplica la idempotencia persistente antes de crear el ledger. Las strategies no compensan la ausencia de moneda, precisión, comisión fuente, balance o flujo certificado mediante valores por defecto.
+Para volumen, evento y barrido convergen en procesamiento de posición: el UseCase
+resuelve red y contexto histórico; la Strategy calcula con configuración congelada.
+Para PnL, programas con período vencido originan selección de beneficiarios,
+referidos y cuentas; el UseCase obtiene cortes Broker, congela contexto/red y
+recupera cierres históricos pendientes. La Strategy interpreta el PnL firmado.
+Ninguna Strategy económica llama a IAM, Broker o Finance ni persiste Rewards.
+Los proveedores seleccionan y normalizan hechos, no deciden elegibilidad ni pagos.
+No se compensan datos económicos ausentes mediante defaults.
 
 ## Configuración
 
@@ -69,7 +109,7 @@ Las cantidades decimales se transportan como strings canónicos. Una configuraci
 - Una strategy no realiza efectos financieros directamente.
 - Una evaluación inválida produce un resultado tipado o una excepción de dominio, no un reward parcial.
 - Los conectores distinguen errores recuperables, datos no elegibles y contratos inválidos.
-- Los reintentos pertenecen al pipeline y no deben duplicar resultados.
+- Los reintentos pertenecen al UseCase y no deben duplicar resultados.
 
 ## Pruebas
 
@@ -77,3 +117,6 @@ Las cantidades decimales se transportan como strings canónicos. Una configuraci
 - Los repositories en memoria implementan los mismos contratos que los persistentes o remotos.
 - Los tests de una strategy usan DTOs normalizados y no dependen de respuestas de SDK.
 - Los contract tests verifican que cada implementación de repository respeta la misma semántica observable.
+- Las factories permiten sustitución controlada sin ramas por entorno; las
+  implementaciones de un proveedor cumplen el mismo contrato de capacidad.
+- Pruebas locales no sustituyen evidencia S2S ni prueban una arquitectura futura.

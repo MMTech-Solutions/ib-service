@@ -1,7 +1,7 @@
 # RWD2: modelo de dominio CPA
 
 Estado: **Listo**
-Última revisión: 2026-09-30
+Última revisión: 2026-10-02
 
 ## Agregados y responsabilidades
 
@@ -33,15 +33,21 @@ financiero de la Reward permanece separado y no cambia esta proyección.
 ## Evaluación
 
 1. El runner selecciona contextos sin Reward de módulos activos y `running`.
-2. Resuelve la strategy por el par cerrado `module_code + strategy_type`.
+2. Obtiene evidencia mediante el puerto especializado del módulo. La selección
+   de proveedor es independiente de la regla económica.
 3. Solicita evidencia desde `captured_at` hasta el corte semiabierto `[from,
    until)`.
-4. La strategy suma volumen cerrado únicamente de los símbolos/grupos CPA
+4. La evaluación suma volumen cerrado únicamente de los símbolos/grupos CPA
    congelados y depósitos certificados solo de la moneda exacta configurada.
 5. Actualiza el progreso; si ambos requisitos se cumplen, crea una única Reward
    `pending` y relaciona el contexto con ella en la misma transacción.
 
 ## Invariantes
+
+La prescripción anterior de Strategy por `module_code + strategy_type` queda
+sustituida por [RWD-A1](09-rwd-a1-documentation-alignment.md). El código actual
+delega evaluación a una Strategy económica con factory tipada desde RWD-A2.1;
+las factories de proveedores quedan pendientes de [RWD-A2](10-rwd-a2-cpa-volume-refactor.md).
 
 - La progresión del IB, cambios de placement, reglas nuevas o símbolos actuales
   no reescriben el contexto CPA ya capturado.

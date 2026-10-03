@@ -47,7 +47,8 @@ sustituir los BDS ni las reglas técnicas.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
   runs y placement operativos.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
-  RWD4.2 conserva pendiente el PnL negativo y sus contratos externos.
+  RWD4.2a local con S2S pendiente; RWD-A1 documental completada y RWD-A2 en curso (A2.1 completada).
+  El runner económico/cierre PnL está bloqueado por A2 y cortes históricos Broker–IB/IAM.
 
 ## Jerarquía de autoridad
 

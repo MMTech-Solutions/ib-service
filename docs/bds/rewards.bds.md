@@ -1,13 +1,16 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.4
-- **Estado:** RWD4.1 implementado; contrato proveedor de RWD4.2a implementado y pendiente de validación S2S; runner PnL pendiente
+- **Versión:** 1.5
+- **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
 
 ## Contexto
 
-CPA, volumen, PnL, puntos de progresión y futuras modalidades utilizan un pipeline común de evaluación y auditoría. Las diferencias se expresan mediante estrategias y configuraciones versionadas. Una regla puede compartirse entre varios programas del mismo plan sin duplicar su definición.
+CPA, volumen, PnL y puntos de progresión conservan sus causas y formas de
+evaluación propias. Comparten garantías de elegibilidad, identidad económica,
+trazabilidad y conservación de la configuración aplicada. Una regla puede
+compartirse entre varios programas del mismo plan sin duplicar su definición.
 
 El catálogo de reglas —identidad, versiones publicadas e inmutables y asignaciones históricas— es único para Progression y Rewards. Progression consume estrategias de contribución; Rewards consume estrategias económicas. Ambos conservan la versión aplicada en sus resultados.
 
@@ -67,8 +70,8 @@ erDiagram
 | BR-RULE-014 | Reemplazar la versión de una asignación cierra la vigente (`ends_at = ahora`) y crea otra activa con la nueva versión en la misma operación. Retirar solo cierra la vigente. |
 | BR-RULE-015 | En esta fase el scope de una asignación es siempre `all`. Un scope instrumental explícito requiere el catálogo de instrumentos del módulo. |
 | BR-RULE-016 | Para la estrategia `points_per_quantity_unit`, en un instante dado existe como máximo una asignación activa por combinación de programa, módulo y métrica o unidad. El mismo tipo puede repetirse en ese programa y módulo solo con métricas o unidades distintas. |
-| BR-REWARD-001 | CPA, volumen y PnL comparten la orquestación de contexto, elegibilidad, idempotencia, auditoría y solicitud de pago. |
-| BR-REWARD-002 | Cada estrategia declara los hechos o métricas que necesita; compartir pipeline no obliga a compartir el mismo input. |
+| BR-REWARD-001 | Toda Reward CPA, volumen o PnL exige contexto y elegibilidad verificables, una identidad económica que impida duplicados y evidencia auditable de su causa y resultado. |
+| BR-REWARD-002 | Cada modalidad utiliza los hechos y métricas necesarios para su evaluación y conserva la configuración aplicada; compartir garantías no exige la misma secuencia de evaluación ni los mismos inputs. |
 | BR-REWARD-003 | Una recompensa conserva plan, programa, módulo, asignación, versión de regla, inputs y resultado utilizados. |
 | BR-REWARD-004 | La creación de una recompensa es idempotente respecto a su fuente, beneficiario, regla y dimensión de distribución. |
 | BR-REWARD-005 | IB es fuente de verdad de por qué existe una recompensa; el dominio financiero es fuente de verdad de si el dinero fue asentado. |
@@ -83,7 +86,7 @@ erDiagram
 | BR-REWARD-014 | Una compensación crea una nueva Reward independiente, enlazada a la reversada, con importe explícito positivo y la misma moneda y precisión congeladas. No reutiliza el contexto CPA ni modifica la Reward origen. |
 | BR-REWARD-015 | La reconciliación recurrente consulta solo operaciones financieras inciertas o Rewards con hold; no reconsulta el historial confirmado por antigüedad. Una contradicción verificable activa un hold y solo una consulta posterior consistente puede retirarlo. |
 | BR-REWARD-016 | Las Rewards de volumen y PnL resuelven la red multinivel al inicio de su run y conservan los beneficiarios y niveles resueltos. Un cambio posterior de red no reescribe una distribución iniciada. |
-| BR-REWARD-017 | La strategy solicita a Identity como máximo la profundidad mayor que pueda remunerar la configuración congelada. Si el proveedor no admite límite, IB descarta localmente los niveles no remunerables sin alterar el snapshot. |
+| BR-REWARD-017 | El procesamiento de la recompensa obtiene de Identity como máximo la profundidad mayor que pueda remunerar la configuración congelada. Si el proveedor no admite límite, IB descarta localmente los niveles no remunerables sin alterar el snapshot. |
 | BR-REWARD-018 | La Reward de volumen es idempotente por posición fuente, beneficiario, nivel de distribución, asignación y versión de regla. Los modos `event`, `periodic` y `both` comparten esa misma identidad. |
 | BR-REWARD-019 | La configuración de volumen pertenece al programa y tiene vigencia. Sus modos admisibles son `event`, `periodic` y `both`; cambiarla no modifica Rewards ya creadas. |
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |

@@ -4,12 +4,15 @@ Estado: **RV1-RV3 implementados; contract tests pendientes**
 
 RV2 conserva evidencia inmutable por Reward y hecho fuente; no usa el progreso
 como historial de intentos ni como ledger de actividad.
-Última revisión: 2026-09-30
+Última revisión: 2026-10-02
 
 ## Contratos y capas
 
-- Rewards define el caso de captura, el runner, repositories de contexto,
-  progreso y ledger, y el registry de estrategias de ejecución.
+- Rewards define captura, runner y repositories de contexto, progreso y ledger.
+  La prescripción original de registry de ejecución queda sustituida por
+  [RWD-A1](09-rwd-a1-documentation-alignment.md): RWD-A2.1 extrajo evaluación CPA
+  a Strategy y factory económica; [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
+  conserva pendientes las factories de proveedores y el cálculo de volumen.
 - Modules publica un puerto Input/Data V1 especializado de evidencia CPA. Su
   query declara módulo, referido externo, intervalo UTC semiabierto, moneda y
   snapshot instrumental; su resultado entrega páginas de hechos normalizados y

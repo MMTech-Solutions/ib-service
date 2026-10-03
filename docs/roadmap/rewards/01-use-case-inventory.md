@@ -3,7 +3,7 @@
 Estado: **Completado y corregido por RWD2**
 Dependencias: Rules R2, Subscriptions S1, Programs, Modules M5,
 `auth.account.registered` V1 y Finance interno
-Última revisión: 2026-09-30
+Última revisión: 2026-10-02
 
 ## Propósito
 
@@ -40,8 +40,10 @@ RWD1 no define el transporte ni implementa pagos.
 
 1. IB es autoridad del contexto, la evaluación y el ledger; Finance es autoridad
    de depósitos certificados y settlement.
-2. La estrategia CPA se selecciona por `module_code + strategy_type`; sus
-   requisitos e importes proceden de la versión de regla congelada.
+2. Los requisitos e importes CPA proceden de la versión de regla congelada.
+   RWD-A1 sustituye la selección unificada `module_code + strategy_type` por
+   factories independientes de evidencia y cálculo; RWD-A2 implementará esa
+   arquitectura sin cambiar la causa económica.
 3. `reward_id` pertenece a `cpa_context`. El progreso no crea, copia ni decide
    una Reward.
 4. Las consultas de progreso incluyen una superficie cliente restringida al IB

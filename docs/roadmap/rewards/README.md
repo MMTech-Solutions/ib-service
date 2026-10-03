@@ -1,16 +1,17 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD1 inventariado; RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente, runner pendiente**
+Estado: **RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente; RWD-A1 completada, RWD-A2 en curso (A2.1 completada); runner económico/cierre PnL bloqueados**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
-Última revisión: 2026-10-03
+Última revisión: 2026-10-02
 
 ## Objetivo
 
 `Rewards` registra las obligaciones económicas de IB y conserva su causa,
 snapshot y estado. Finance es autoridad del settlement. RWD2 crea la obligación
 CPA `pending`; RWD3.1 la asienta de forma síncrona e idempotente en Finance.
-Reversas, compensaciones y cancelación permanecen fuera de esta entrega.
+RWD3.2 incorpora reversas, compensaciones y cancelación con validación contractual
+pendiente. La nueva alineación documental no cambia esos comportamientos.
 
 ## Posición en la secuencia
 
@@ -58,7 +59,21 @@ flowchart LR
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
-| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1 implementado; contrato RWD4.2a pendiente de evidencia S2S y runner RWD4.2 pendiente |
+| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1 implementado; RWD4.2a local con S2S pendiente; runner/cierre RWD4.2 bloqueados |
+
+## Alineación previa a PnL
+
+| Etapa | Documento / evidencia | Estado |
+| --- | --- | --- |
+| RWD-A1: alineación documental | [`09-rwd-a1-documentation-alignment.md`](09-rwd-a1-documentation-alignment.md) | Completada; no cambia código |
+| RWD-A2: refactor CPA/volumen | [`10-rwd-a2-cpa-volume-refactor.md`](10-rwd-a2-cpa-volume-refactor.md) | En curso; A2.1 completada |
+| Ampliación del corte histórico Broker–IB | [Dependencia y criterios en RWD4](08-rwd4-volume-and-negative-pnl.md) | Pendiente de implementación y evidencia S2S |
+| RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Bloqueada por A2, cortes históricos e IAM |
+
+Cada modalidad conserva su UseCase; factories de evidencia y cálculo son
+independientes. Rules mantiene definiciones versionadas. No hay pipeline común
+obligatorio ni engine universal. A2.1 implementa la factory económica CPA;
+el cálculo de volumen y las factories de proveedores siguen pendientes en A2.
 
 ## Decisiones confirmadas
 
@@ -78,4 +93,8 @@ flowchart LR
 
 ## Próximo paso
 
-Completar la evidencia S2S del contrato PnL Broker–IB y del límite de profundidad IAM; después implementar el runner económico RWD4.2. La validación contractual pendiente de CPA/RWD3 permanece independiente.
+Completar volumen y factories de proveedores de RWD-A2 sin cambios de negocio y completar la ampliación/evidencia S2S
+de cortes históricos Broker–IB y profundidad IAM. Solo al satisfacer ambos gates
+se habilita el runner económico RWD4.2. Validación CPA/RWD3 y correcciones
+funcionales del cierre E2E siguen independientes, registradas en A2; el plan E2E
+posterior queda subordinado a esta secuencia.

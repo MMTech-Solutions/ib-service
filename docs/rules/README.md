@@ -8,7 +8,7 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 | [`architecture-validation.md`](architecture-validation.md) | Guardrails PHPUnit, ratchet y retiro de deuda arquitectónica. |
 | [`api-conventions.md`](api-conventions.md) | Forma del envelope HTTP: `data` es el recurso o la colección. |
 | [`integrations.md`](integrations.md) | Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia. |
-| [`strategies.md`](strategies.md) | Contrato para estrategias y configuración JSON versionada. |
+| [`strategies.md`](strategies.md) | Orquestación propia por modalidad, factories separadas de evidencia/cálculo y configuración versionada. |
 | [`code-style.md`](code-style.md) | Convenciones de PHP y Laravel. |
 | [`technology-stack.md`](technology-stack.md) | Tecnologías confirmadas y pendientes. |
 | [`programming-best-practices.md`](programming-best-practices.md) | Calidad, pruebas y confiabilidad. |

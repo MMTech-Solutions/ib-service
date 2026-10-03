@@ -157,6 +157,13 @@ PnL usa una capacidad diferente y propiedad de Rewards. Broker aporta las cuenta
 
 El puerto V1 de Rewards envía a Broker las baselines persistidas por IB. Una cuenta sin baseline recibe un primer corte sin PnL; desde el segundo corte Broker devuelve el PnL firmado y referencias opacas de los movimientos utilizados. Timeout, `409` y 5xx son recuperables; un 2xx incompatible u otro error contractual es permanente. El runner futuro debe persistir la respuesta antes de resolver red o crear Rewards y reutilizar ese snapshot en sus reintentos.
 
+La ampliación histórica del corte solicitado pertenece a
+[RWD4](../roadmap/rewards/08-rwd4-volume-and-negative-pnl.md). El contrato actual
+resuelve el corte real de consulta; no acredita balance histórico. La ampliación
+debe obtener balance y cashflow del ledger local de Broker para el mismo corte,
+sin consultar Finance Service para PnL ni depender de snapshots del antiguo IB
+de Broker. El runner económico permanece bloqueado por esa evidencia y RWD-A2.
+
 ## Decisiones pendientes
 
 - Confirmar `ib-service.events.v1` como nombre del topic de salida.
