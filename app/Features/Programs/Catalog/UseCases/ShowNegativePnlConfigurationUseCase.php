@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Features\Programs\Catalog\UseCases;
+
+use App\Features\Programs\Catalog\Factories\NegativePnlConfigurationRepositoryFactory;
+use App\Features\Programs\Catalog\Http\V1\Commands\ShowNegativePnlConfigurationCommand;
+use App\Features\Programs\Contracts\Data\V1\AssertProgramBelongsToPlanQueryData;
+use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
+use App\Features\Programs\Contracts\Data\V1\ResolveNegativePnlProgramConfigurationQueryData;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
+
+final class ShowNegativePnlConfigurationUseCase
+{
+    public function __construct(private readonly NegativePnlConfigurationRepositoryFactory $repositories, private readonly ResolveProgramSubscriptionContextPort $programs) {}
+
+    public function execute(ShowNegativePnlConfigurationCommand $command): ?NegativePnlProgramConfigurationData
+    {
+        $this->programs->assertBelongsToPlan(new AssertProgramBelongsToPlanQueryData($command->planId, $command->programId));
+
+        return $this->repositories->make()->resolve(new ResolveNegativePnlProgramConfigurationQueryData($command->programId));
+    }
+}

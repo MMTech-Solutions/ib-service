@@ -8,16 +8,19 @@ use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
 use App\Features\Plans\Catalog\Jobs\DeactivatePlansWithoutOperationalModulesJob;
 use App\Features\Plans\Catalog\Listeners\DeactivatePlansAfterModuleDeactivated;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPlanRepository;
+use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPaymentTemplateBindingRepository;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPlanRepository;
 use App\Features\Plans\Catalog\UseCases\IsModuleReferencedUseCase;
 use App\Features\Plans\Catalog\UseCases\ListActivePlansForProgressionUseCase;
 use App\Features\Plans\Catalog\UseCases\LockPlanRowsUseCase;
+use App\Features\Plans\Catalog\UseCases\ResolvePaymentTemplateBindingUseCase;
 use App\Features\Plans\Catalog\UseCases\ResolvePlanContextUseCase;
 use App\Features\Plans\Catalog\UseCases\ResolvePlanProgressionContextUseCase;
 use App\Features\Plans\Catalog\UseCases\ResolvePlanSubscriptionContextUseCase;
 use App\Features\Plans\Contracts\Ports\Input\IsModuleReferencedPort;
 use App\Features\Plans\Contracts\Ports\Input\ListActivePlansForProgressionPort;
 use App\Features\Plans\Contracts\Ports\Input\LockPlanRowsPort;
+use App\Features\Plans\Contracts\Ports\Input\ResolvePaymentTemplateBindingPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
@@ -31,6 +34,8 @@ final class PlansServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ResolvePaymentTemplateBindingPort::class, ResolvePaymentTemplateBindingUseCase::class);
+        $this->app->singleton('plans.payment-template-bindings.repositories.postgresql', fn (): PostgreSqlPaymentTemplateBindingRepository => new PostgreSqlPaymentTemplateBindingRepository(DB::connection()));
         $this->app->singleton(IsModuleReferencedPort::class, IsModuleReferencedUseCase::class);
         $this->app->singleton(ResolvePlanContextPort::class, ResolvePlanContextUseCase::class);
         $this->app->singleton(ResolvePlanProgressionContextPort::class, ResolvePlanProgressionContextUseCase::class);

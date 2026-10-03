@@ -44,7 +44,7 @@ final class PositiveMoney
             'amount' => ['required', 'string', 'regex:/^\d+(?:\.\d+)?$/'],
         ]);
 
-        if (bccomp($amount, '0', 8) !== 1) {
+        if (bccomp($amount, '0', max(8, strlen(explode('.', $amount, 2)[1] ?? ''))) !== 1) {
             throw new InvalidArgumentException('Money amount must be a positive decimal string.');
         }
 

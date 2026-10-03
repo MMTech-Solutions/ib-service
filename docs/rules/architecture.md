@@ -510,7 +510,8 @@ son específicos de cada modalidad y solo comparten objetos con igual semántica
 Véase [strategies.md](strategies.md). La alineación de implementación CPA/volumen
 se completó en [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md), junto
 con factories específicas de evidencia y selección del adapter PnL. El cálculo
-PnL sigue pendiente; esa etapa no refactorizó Progression.
+PnL se incorporó en RWD4.2.1 con factory específica y configuración histórica;
+el runner y recuperación siguen pendientes. Esa etapa no refactorizó Progression.
 
 ## HTTP y Resources
 

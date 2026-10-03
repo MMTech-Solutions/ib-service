@@ -1,9 +1,9 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente; RWD-A1 completada, RWD-A2 completada (A2.1–A2.3); runner económico/cierre PnL bloqueados**
+Estado: **RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a y RWD4.2.1 implementados localmente; RWD-A1/A2 completadas; runner/recuperación pendientes**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
-Última revisión: 2026-10-02
+Última revisión: 2026-10-03
 
 ## Objetivo
 
@@ -59,7 +59,7 @@ flowchart LR
 
 | Etapa | Documento | Estado |
 | --- | --- | --- |
-| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1 implementado; RWD4.2a local con S2S pendiente; runner/cierre RWD4.2 bloqueados |
+| 8. Descubrimiento, contratos y entregas | [`08-rwd4-volume-and-negative-pnl.md`](08-rwd4-volume-and-negative-pnl.md) | RWD4.1, RWD4.2a y RWD4.2.1 locales; runner/recuperación pendientes; S2S requisito de activación |
 
 ## Alineación previa a PnL
 
@@ -68,7 +68,8 @@ flowchart LR
 | RWD-A1: alineación documental | [`09-rwd-a1-documentation-alignment.md`](09-rwd-a1-documentation-alignment.md) | Completada; no cambia código |
 | RWD-A2: refactor CPA/volumen | [`10-rwd-a2-cpa-volume-refactor.md`](10-rwd-a2-cpa-volume-refactor.md) | Completada; A2.1–A2.3 |
 | Ampliación del corte histórico Broker–IB | [Plan E2E](11-e2e-historical-pnl.md) | Implementada localmente; S2S pendiente; desfase temporal aceptado como bug conocido |
-| RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Bloqueada por cortes históricos e IAM |
+| RWD4.2.1: configuración y cálculo | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Completada localmente |
+| RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Siguiente incremento de código; activación/cierre pendientes de S2S Broker/IAM |
 
 Cada modalidad conserva su UseCase; factories de evidencia y cálculo son
 independientes. Rules mantiene definiciones versionadas. No hay pipeline común
@@ -97,8 +98,9 @@ El [plan E2E y su evidencia](11-e2e-historical-pnl.md) está en curso. Las lectu
 de margen son la fuente seleccionada bajo el supuesto de continuidad hasta el
 corte; el desfase temporal queda documentado sin detección ni gracia.
 
-Completar la ampliación/evidencia S2S
-de cortes históricos Broker–IB y profundidad IAM. Con A2 completada, solo al satisfacer esos gates
-se habilita el runner económico RWD4.2. Validación CPA/RWD3 y correcciones
+La configuración/cálculo RWD4.2.1 están completados localmente. Implementar a continuación
+el runner y recuperación, inicialmente deshabilitados. La evidencia S2S
+de cortes históricos Broker–IB y profundidad IAM se pospone como gate de activación
+y cierre, sin bloquear código. Validación CPA/RWD3 y correcciones
 funcionales del cierre E2E siguen independientes, registradas en A2; el plan E2E
 posterior queda subordinado a esta secuencia.

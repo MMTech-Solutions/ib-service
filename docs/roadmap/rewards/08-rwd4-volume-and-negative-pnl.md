@@ -1,8 +1,8 @@
 # RWD4 — volumen tradeado y PnL negativo
 
-Estado: **RWD4.1 implementado; RWD4.2a implementado localmente y pendiente de evidencia S2S; runner económico y cierre RWD4.2 bloqueados**
+Estado: **RWD4.1, RWD4.2a y RWD4.2.1 implementados localmente; runner/recuperación pendientes; S2S pendiente para activación y cierre**
 Dependencias: Modules M5, Rules R2, Programs, Subscriptions, IAM y Broker Service
-Última revisión: 2026-10-02
+Última revisión: 2026-10-03
 
 ## Decisiones confirmadas
 
@@ -39,11 +39,47 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 ## RWD4.2 — PnL negativo
 
 - RWD4.2a publica el puerto `ResolveNegativePnlPeriodsPort`, Data V1 y adapter HTTP. Broker resuelve balance, cashflow y PnL firmado; IB no replica su contabilidad.
-- El runner posterior creará la configuración histórica y los runs por cadencia, persistirá primero cada snapshot proveedor y después aplicará regla, red y tasas congeladas.
+- RWD4.2.1 incorpora la configuración histórica y el cálculo puro. El runner posterior creará runs por cadencia, reutilizará snapshots proveedor y aplicará regla, red y tasas congeladas.
 - Persistirá referencias de cuenta, balances, totales y referencias opacas de flujo sin copiar movimientos financieros completos.
 - El runner económico no forma parte de RWD4.2a. [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
-  está completada; el runner sigue **bloqueado** hasta demostrar S2S el corte
-  histórico Broker–IB y profundidad IAM. El refactor no sustituye esa evidencia.
+  está completada. Por decisión del usuario, las pruebas operativas y S2S de corte
+  histórico Broker–IB e IAM se posponen: no bloquean desarrollo de código, pero
+  siguen siendo requisitos de activación y cierre E2E.
+
+### RWD4.2.1 — configuración histórica y cálculo (completada localmente)
+
+GET/PUT administrativos del programa consultan/reemplazan una cadencia común y
+sus grupos. Se conservan actor, vigencias UTC con microsegundos, revisión anterior,
+asignación explícita, regla/versión y binding/versión de plantilla con niveles/tasas.
+La consulta pública interna permite programa, módulo, grupo e instante; no resuelve
+otra versión vigente al leer historia. Un reemplazo idéntico no crea revisión;
+grupos vacíos retiran la vigente. HTTP usa `data` directamente y `[]` sin configuración.
+
+La persistencia nueva usa `program_negative_pnl_configuration_revisions` y
+`program_negative_pnl_groups`, con bloqueo de programa antes de la primera revisión
+y unicidad persistente. Se conserva la tabla preliminar anterior, sin lectores
+económicos; no se elimina ni interpreta como configuración publicada.
+
+Rules verifica versión publicada PnL del plan y una única asignación efectiva.
+Plans resuelve pertenencia del binding; PaymentTemplates resuelve la versión exacta
+publicada y sus niveles. No se consulta el catálogo remoto del grupo.
+La Strategy y factory económica PnL son puras, separadas del proveedor existente;
+no crean Rewards. Mínimo explícito previo al redondeo; el futuro runner transmitirá
+el mínimo de configuración cuyo default sigue `0.01`.
+
+El siguiente incremento necesita RWD4.2.1 y los snapshots locales del contrato
+histórico: runner inicialmente deshabilitado, períodos vencidos en orden, baselines,
+recuperación, cierres durables al cambiar de plan, red/configuración congeladas y
+unicidad de Rewards. Salida: pruebas locales de idempotencia y recuperación.
+La activación y el cierre requieren además S2S Broker/IAM/Finance y evidencia operativa.
+
+Evidencia RWD4.2.1: regresiones CPA/volumen/cortes PnL, templates y arquitectura,
+112 pruebas y 638 assertions aprobadas. Tras ajustar la proyección HTTP y su
+Command, verificación focalizada final: 42 pruebas y 290 assertions aprobadas.
+Pint completado; Graphify actualizado (5758 nodos, 13760 relaciones).
+Postman v2.1 válido: 78 requests, cobertura de las 77 rutas de
+`route:list --except-vendor`, incluido `/up` del bootstrap. Solo pruebas locales;
+sin ejecución operativa, S2S ni datos reales.
 
 ## Diseño PnL acordado; implementación posterior
 
@@ -62,16 +98,16 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 - Fórmula acordada: `abs(pnl_neto) × tasa_nivel × personal_rate × master_rate`
   (último factor solo para Master IB). Decimales exactos, mínimo configurable antes
   de un único redondeo final half-up a precisión del grupo. Estas decisiones se
-  formalizarán en BDS antes del código económico; RWD-A2 no cambia cálculos.
+  formalizaron en BDS; RWD4.2.1 implementa el cálculo. RWD-A2 no cambió cálculos.
 - Un runner genera Rewards idempotentes; settlement las asienta posteriormente.
   CPA, volumen y PnL pueden acumularse, con configuración aplicable no ambigua por
-  modalidad/contexto. La formalización de esa unicidad pertenece al diseño económico
-  previo a RWD4.2, no al refactor A2.
+  modalidad/contexto. La configuración de RWD4.2.1 fija referencias explícitas;
+  la unicidad persistente de Rewards corresponde al runner posterior.
 
 ## Dependencia pendiente: corte histórico Broker–IB
 
-El contrato actual recibe usuario/baselines y obtiene balance actual y corte real
-de consulta. No solicita un corte final histórico. Ampliarlo para que Broker
+El contrato precedente recibía usuario/baselines y obtenía balance actual y corte real
+de consulta. La ampliación local admite un corte final histórico para que Broker
 resuelva balance y cashflow local en el mismo instante UTC solicitado; no sustituir
 balance histórico por `current_balance` ni por snapshots del antiguo IB de Broker,
 que será retirado. Finance Service no participa en evidencia PnL; solo settlement.
@@ -80,7 +116,7 @@ La fuente histórica seleccionada es la última lectura de margen anterior o igu
 al corte solicitado, asumiendo continuidad hasta ese corte. El desfase posible
 con cashflow es un bug conocido aceptado, sin detección ni gracia; véase el
 [plan E2E actualizado](11-e2e-historical-pnl.md). La ampliación está implementada
-localmente y el gate todavía exige evidencia S2S del contrato
+localmente y el gate de activación/cierre todavía exige evidencia S2S del contrato
 versionado/compatible, cobertura de cuentas históricamente elegibles, límites
 temporales exactos y error explícito sin Reward/avance de baseline cuando falta
 evidencia. La evidencia S2S reproducible debe cubrir cambio de plan y consulta
@@ -107,7 +143,7 @@ no acredita por sí sola todas las vigencias operativas de Trading.
 
 Los snapshots locales conservan la cuenta externa y el contexto de suscripción,
 grupo y cadencia sin FK distribuida. El primer corte persistido prevalece en
-reintentos. Esta capacidad aún no se conecta al runner económico bloqueado.
+reintentos. Esta capacidad aún no se conecta al runner económico pendiente.
 
 - Tests de contrato contra Broker e IAM; pruebas de rangos UTC, precisión, deduplicación y concurrencia.
 - Volumen `event`, `periodic` y `both` producen una sola Reward por identidad económica.

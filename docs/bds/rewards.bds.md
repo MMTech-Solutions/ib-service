@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.5
+- **Versión:** 1.6
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -92,7 +92,9 @@ erDiagram
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
 | BR-REWARD-021 | La base distribuible de volumen se obtiene de la posición: modalidad fija = `closed_volume × participation_rate`; modalidad porcentual = `broker_granted_commission × participation_rate`. La base se distribuye por nivel conforme a la plantilla congelada. Cada resultado aplica además `personal_rate` del beneficiario y, solo si es Master IB, su `master_rate`; los tres valores se congelan en la Reward. |
 | BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Los modos `event` y `both` usan el evento de Trading únicamente como disparador para consultar la posición autoritativa en Broker. Un `409 CLOSED_POSITION_NOT_READY`, timeout o 5xx no crea Reward y conserva una recepción reintentable con backoff. |
-| BR-REWARD-022 | Una configuración PnL pertenece al programa y grupo de cuentas, es histórica y declara una cadencia `daily`, `weekly`, `monthly` o `yearly`. Los períodos vencen en límites UTC: día, lunes semanal, primero de mes y primero de enero. La frecuencia del procesamiento no modifica esos límites ni fusiona períodos atrasados. |
+| BR-REWARD-022 | Una configuración PnL pertenece al programa y sus grupos de cuentas, es histórica y declara una única cadencia común `daily`, `weekly`, `monthly` o `yearly`. Los períodos vencen en límites UTC: día, lunes semanal, primero de mes y primero de enero. La frecuencia del procesamiento no modifica esos límites ni fusiona períodos atrasados. |
+| BR-REWARD-022A | Cada configuración PnL admite una sola selección por módulo Broker habilitado en el plan y grupo. La versión elegida debe estar publicada, ser de PnL, pertenecer al plan y tener una única asignación efectiva de esa versión al programa/módulo. La plantilla vinculada pertenece al mismo plan. No se crean asignaciones implícitas ni se sustituye la versión seleccionada por otra vigente. |
+| BR-REWARD-022B | Reemplazar la configuración completa conserva actor y revisiones con vigencias semiabiertas, fijadas al momento del cambio sin retroactividad. Un reemplazo idéntico conserva la revisión; retirar todos los grupos termina su vigencia. Las consultas históricas conservan asignación, regla, versión y plantilla con sus niveles y tasas originales. |
 | BR-REWARD-023 | Broker es autoridad del balance y flujo de caja de la cuenta. Para un período sucesivo, `pnl_neto = balance_final - balance_inicial - (depósitos_asentados - retiros_asentados)`. El primer corte de cada cuenta establece únicamente la baseline y no calcula ni remunera historia anterior. Solo `pnl_neto < 0` puede originar Rewards PnL; su base es el valor absoluto del resultado firmado. |
 | BR-REWARD-024 | Una Reward PnL es idempotente por cuenta, período cerrado, beneficiario, nivel, asignación y versión de regla. |
 | BR-REWARD-025 | Las evidencias conservan referencias de los proveedores que justifican una Reward. Para PnL, IB conserva el snapshot de balance, totales y referencias opacas entregados por Broker; no copia movimientos completos ni delega la elegibilidad, la red, el importe de Reward o settlement. |

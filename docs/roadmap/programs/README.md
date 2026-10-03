@@ -1,8 +1,12 @@
 # Roadmap del feature Programs
 
-Estado: **PR1 y P2 completados; BR-PROGRAM-015 cerrado**
+Estado: **PR1 y P2 completados; BR-PROGRAM-015 cerrado; configuración histórica PnL local disponible (RWD4.2.1)**
 Dependencia satisfecha: `Plans P1` completado
-Última revisión: 2026-09-29
+Última revisión: 2026-10-03
+
+La configuración PnL por programa/grupo conserva revisiones y contexto económico;
+GET/PUT administrativos y puertos de consulta histórica están disponibles.
+Evidencia y siguientes dependencias en [RWD4.2](../rewards/08-rwd4-volume-and-negative-pnl.md).
 
 ## Posición en la secuencia
 

@@ -153,16 +153,23 @@ El evento Avro `com.mmt.platform.PositionClosed` versión 1, emitido por Trading
 
 `mmtech/iam-rbac` 1.13 decodifica el Confluent Wire Format antes de entregar el mensaje al handler, pero no expone el subject/version resuelto ni una identidad autenticada del productor. IB exige `content_type = application/avro`, valida la forma V1 decodificada y conserva solo referencias técnicas. No aplica una allowlist de productores hasta que el transporte entregue una identidad verificable; esta limitación no se sustituye con headers inventados.
 
-PnL usa una capacidad diferente y propiedad de Rewards. Broker aporta las cuentas operativas, congela el corte UTC real, lee el balance actual de la cuenta y resuelve los depósitos y retiros asentados en el intervalo semiabierto desde la baseline anterior. Finance no participa directamente en esta consulta; su endpoint de depósitos CPA por usuario no se reutiliza para PnL.
+PnL usa una capacidad diferente y propiedad de Rewards. Sin corte explícito,
+Broker conserva su consulta de balance actual y corte real. Con `occurred_until`,
+usa la última lectura de `margin_level_reads` anterior o igual al corte, con desempate
+por ID descendente; el cashflow del ledger local usa `created_at` en
+`[baseline.occurred_until, occurred_until)`. Finance no participa en esta consulta;
+su endpoint de depósitos CPA por usuario no se reutiliza para PnL.
 
 El puerto V1 de Rewards envía a Broker las baselines persistidas por IB. Una cuenta sin baseline recibe un primer corte sin PnL; desde el segundo corte Broker devuelve el PnL firmado y referencias opacas de los movimientos utilizados. Timeout, `409` y 5xx son recuperables; un 2xx incompatible u otro error contractual es permanente. El runner futuro debe persistir la respuesta antes de resolver red o crear Rewards y reutilizar ese snapshot en sus reintentos.
 
 La ampliación histórica del corte solicitado pertenece a
-[RWD4](../roadmap/rewards/08-rwd4-volume-and-negative-pnl.md). El contrato actual
-resuelve el corte real de consulta; no acredita balance histórico. La ampliación
-debe obtener balance y cashflow del ledger local de Broker para el mismo corte,
-sin consultar Finance Service para PnL ni depender de snapshots del antiguo IB
-de Broker. El runner económico permanece bloqueado por esa evidencia y RWD-A2.
+[RWD4](../roadmap/rewards/08-rwd4-volume-and-negative-pnl.md) y está implementada
+localmente. IB conserva referencias e instante de lectura; una lectura ausente
+impide crear snapshot. El desfase lectura/cashflow permanece como bug conocido,
+sin detección ni gracia. No depende de snapshots del antiguo IB de Broker.
+RWD-A2 y configuración/cálculo RWD4.2.1 están completados localmente.
+La evidencia S2S Broker/IAM se pospone para activación/cierre E2E, sin bloquear
+desarrollo del runner. No se afirma cobertura ni validación con datos reales.
 
 ## Decisiones pendientes
 

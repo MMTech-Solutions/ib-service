@@ -34,6 +34,17 @@ final class PostgreSqlPaymentTemplateRepository implements PaymentTemplateReposi
         return $row === null ? null : $this->hydrate($row);
     }
 
+    public function findVersion(string $versionId): ?PaymentTemplateVersion
+    {
+        $row = $this->connection->table('payment_template_versions')->where('id', $versionId)->first();
+        if ($row === null) {
+            return null;
+        }
+        $levels = $this->connection->table('payment_template_levels')->where('template_version_id', $versionId)->orderBy('distribution_level')->get()->map(static fn ($level): PaymentTemplateLevel => new PaymentTemplateLevel((string) $level->id, (int) $level->distribution_level, (string) $level->rate))->all();
+
+        return new PaymentTemplateVersion((string) $row->id, (string) $row->template_id, (int) $row->version_number, (string) $row->status, $row->published_at === null ? null : (string) $row->published_at, (int) $row->lock_version, $levels, (string) $row->created_at, (string) $row->updated_at);
+    }
+
     public function save(PaymentTemplate $template, ?int $expectedLockVersion = null): void
     {
         try {

@@ -58,6 +58,7 @@ final class ArchitectureGuardrailsTest extends TestCase
         'Features/Rewards/Exceptions/RewardSettlementException.php' => 'Retryable Finance adapter failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedCpaRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedNegativePnlPeriodsProviderException.php' => 'Internal PnL provider configuration failure; not an HTTP error.',
+        'Features/Rewards/Exceptions/UnsupportedNegativePnlRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedVolumeRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
         'Features/Rules/Catalog/Exceptions/DuplicateRuleNameException.php' => 'Historical persistence conflict translation.',
         'Features/Rules/Catalog/Exceptions/DuplicateRuleSlugException.php' => 'Historical persistence conflict translation.',

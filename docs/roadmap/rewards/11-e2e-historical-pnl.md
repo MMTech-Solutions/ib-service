@@ -1,12 +1,12 @@
 # Próxima entrega: E2E Broker, Progression y Rewards con cortes PnL históricos
 
-Estado: **En curso; contrato histórico implementado localmente; runner PnL bloqueado por evidencia S2S Broker/IAM**
-Última revisión: 2026-10-02
+Estado: **En curso; contrato histórico y RWD4.2.1 implementados localmente; runner/recuperación pendientes; operatividad/S2S pospuestas para activación y cierre**
+Última revisión: 2026-10-03
 
 ## Dependencias y evidencia
 
 A1 y A2.1–A2.3 están completadas; no se repite su refactor.
-Broker `ResolveNegativePnlPeriodsUseCase` consulta cuentas actualmente operativas,
+El precedente Broker `ResolveNegativePnlPeriodsUseCase` consultaba cuentas operativas,
 usa `current_balance` y fija el corte a la hora de consulta. El cashflow se obtiene
 localmente mediante `GetAccountCashFlowPeriodService`.
 
@@ -31,11 +31,13 @@ contractual antes de afirmar cobertura histórica completa.
 1. **Broker–IB e IAM: S2S pendiente.** Fuente y contrato histórico implementados localmente; demostrar S2S
    cierre posterior a cambio de plan y profundidad IAM. Ampliar después contratos,
    documentación, Postman y pruebas de los servicios afectados.
-2. **PnL económico: bloqueado por 1.** Formalizar BDS antes de calcular; configuración
-   histórica por programa/grupo, cadencia del programa, baselines independientes,
+2. **PnL económico: en curso, sin bloqueo de desarrollo por 1.** RWD4.2.1 completa
+   configuración histórica por programa/grupo, cadencia común y Strategy pura;
+   BDS registra sus invariantes. Siguiente incremento: baselines independientes,
    cierres durables de suscripciones terminadas y períodos en orden. Salida: Strategy
    tipada, evidencia/red/configuración congeladas, unicidad y recuperación aprobadas;
-   runner inicialmente deshabilitado.
+   runner inicialmente deshabilitado. Requiere RWD4.2.1 y snapshots históricos locales;
+   S2S y datos reales continúan siendo requisitos de activación y cierre.
 3. **Rewards/Finance: en curso.** Completar validación contractual, condiciones y
    holds al claim, coordinación administrativa, reconciliación y snapshots completos
    de volumen. Incorporar consultas HTTP con autorización, propiedad y Postman.
@@ -66,10 +68,27 @@ FX, reversas de puntos, versionado de planes y nuevas notificaciones.
 - La URL Broker configurada por defecto usa `broker-app`; la comprobación HTTP
   desde esta sesión falla por host desconocido. Se verificaron después contenedores
   locales activos, la ruta PnL en Broker y las rutas upline en IAM. Esa inspección
-  no constituye el escenario S2S controlado exigido para habilitar el runner.
-- Profundidad IAM S2S sigue pendiente. No se habilita RWD4.2 ni se declara cierre
-  de E2E, validación de datos reales, configuración económica PnL o consultas HTTP
-  de runs que todavía no están implementadas.
+  no constituye el escenario S2S controlado exigido para activar el runner.
+- Profundidad IAM S2S sigue pendiente. La decisión del usuario pospone pruebas
+  operativas/S2S sin bloquear código. RWD4.2.1 añade configuración económica PnL;
+  runner, Rewards PnL, cierre E2E, datos reales y consultas de runs siguen pendientes.
+
+## RWD4.2.1 — configuración y cálculo
+
+Completada localmente en IB: GET/PUT administrativos, revisiones con actor y vigencia
+semiabierta, retirada e idempotencia del reemplazo, contratos de resolución histórica
+y contexto económico congelado. La factory económica selecciona
+`negative_pnl_share`; su Strategy aplica mínimo antes de un único redondeo half-up.
+No se cambia el schema publicado de Rules ni las convenciones de niveles Finance.
+No hay runner, generación de Rewards, cierres de suscripción ni pagos PnL en esta entrega.
+
+Los incrementos 3 y 4 conservan alcance y criterios; las pruebas locales continúan.
+La etapa 1 permanece pendiente operativa, y la etapa 5 exige su evidencia para activación.
+
+Evidencia RWD4.2.1: 112 pruebas/638 assertions en regresiones ampliadas;
+42 pruebas/290 assertions en el cierre focalizado posterior a la proyección HTTP.
+Pint y Graphify completados (5758 nodos, 13760 relaciones). Postman v2.1
+validado y contrastado con las 77 rutas propias (78 requests, sin rutas faltantes).
 
 ## Bug conocido: desfase entre lectura y cashflow
 

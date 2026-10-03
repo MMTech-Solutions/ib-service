@@ -1,7 +1,7 @@
 # RWD-A1 — alineación documental de Rewards
 
 Estado: **Completada (entrega exclusivamente documental)**
-Última revisión: 2026-10-02.
+Última revisión: 2026-10-03.
 Dependencias: decisiones de arquitectura confirmadas; BDS y reglas vigentes.
 
 ## Decisión y alcance
@@ -32,6 +32,10 @@ La alineación de código pertenece a [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
 La siguiente secuencia registra el estado al cerrar A1. Posteriormente,
 [RWD-A2](10-rwd-a2-cpa-volume-refactor.md) se completó en A2.1–A2.3; RWD4.2
 conserva los gates pendientes de corte histórico e IAM.
+
+Actualización RWD4.2.1 (2026-10-03): por decisión del usuario, los gates S2S
+que siguen en la secuencia histórica se aplican a activación/cierre E2E,
+no al desarrollo de código. Configuración/cálculo PnL están implementados localmente.
 
 1. RWD-A1 completada: fuentes coherentes y enlaces verificables.
 2. RWD-A2 lista: refactor sin cambios funcionales, con equivalencia y arquitectura

@@ -858,6 +858,8 @@
                             },
                             "response": []
                         },
+                        {"name":"Show program negative PnL configuration","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"},{"key":"X-Internal-Gateway","value":"{{GATEWAY_INTERNAL_SECRET}}"},{"key":"X-Userinfo","value":"{{ADMIN_USERINFO}}"}],"url":{"raw":"{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}/negative-pnl-configuration","host":["{{BASE_URL}}"],"path":["api","ib","v1","admin","plans","{{PLAN_ID}}","programs","{{PROGRAM_ID}}","negative-pnl-configuration"]},"description":"Requires ib.programs.manage on admin_panel. data is the configuration or [] when absent/retired. PUT fully replaces cadence/groups; groups=[] retires. Effective time and actor are set by IB. Requires explicitly assigned published negative_pnl_share version; opaque group validated remotely later."},"response":[]},
+                        {"name":"Replace program negative PnL configuration","request":{"method":"PUT","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"},{"key":"X-Internal-Gateway","value":"{{GATEWAY_INTERNAL_SECRET}}"},{"key":"X-Userinfo","value":"{{ADMIN_USERINFO}}"}],"body":{"mode":"raw","raw":"{\n  \"cadence\": \"monthly\",\n  \"groups\": [\n    {\n      \"module_id\": \"{{MODULE_ID}}\",\n      \"server_group_id\": \"{{SERVER_GROUP_ID}}\",\n      \"rule_version_id\": \"{{RULE_VERSION_ID}}\"\n    }\n  ]\n}"},"url":{"raw":"{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}/negative-pnl-configuration","host":["{{BASE_URL}}"],"path":["api","ib","v1","admin","plans","{{PLAN_ID}}","programs","{{PROGRAM_ID}}","negative-pnl-configuration"]},"description":"Requires ib.programs.manage on admin_panel. data is the configuration or [] when absent/retired. PUT fully replaces cadence/groups; groups=[] retires. Effective time and actor are set by IB. Requires explicitly assigned published negative_pnl_share version; opaque group validated remotely later."},"response":[]},
                         {
                             "name": "Replace program volume reward configuration",
                             "request": {
@@ -1716,6 +1718,7 @@
             "value": "",
             "type": "string"
         },
+        {"key": "SERVER_GROUP_ID", "value": "", "type": "string"},
         {
             "key": "MODULE_ID",
             "value": "",

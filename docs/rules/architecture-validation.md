@@ -31,6 +31,11 @@ exacta se controla en la suite; no se amplían exclusiones por directorio.
 
 ## Retiro de deuda
 
+RWD4.2.1 registra la excepción técnica
+`app/Features/Rewards/Exceptions/UnsupportedNegativePnlRewardCalculationStrategyException.php`.
+La factory económica PnL rechaza códigos internos desconocidos; no representa
+un error HTTP. Su ruta exacta se controla en el guardrail sin excluir directorios.
+
 RWD-A2.3 registra las excepciones técnicas
 `Modules/Catalog/Exceptions/UnsupportedRewardEvidenceProviderException` y
 `Rewards/Exceptions/UnsupportedNegativePnlPeriodsProviderException`: rechazan

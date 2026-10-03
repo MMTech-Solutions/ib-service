@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepository;
+use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlNegativePnlConfigurationRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramVolumeRewardConfigurationRepository;
+use App\Features\Programs\Catalog\UseCases\ResolveNegativePnlProgramConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramCpaSymbolsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramProgressionConfigurationUseCase;
@@ -14,6 +16,8 @@ use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseC
 use App\Features\Programs\Catalog\UseCases\ResolveProgressionTargetProgramUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardDistributionLimitUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardProgramConfigurationUseCase;
+use App\Features\Programs\Contracts\Ports\Input\ResolveNegativePnlProgramConfigurationPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateRatesPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramCpaSymbolsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
@@ -23,6 +27,7 @@ use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionL
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
 use App\Features\Programs\PaymentTemplates\Repositories\InMemory\InMemoryPaymentTemplateRepository;
 use App\Features\Programs\PaymentTemplates\Repositories\PostgreSql\PostgreSqlPaymentTemplateRepository;
+use App\Features\Programs\PaymentTemplates\UseCases\ResolvePaymentTemplateRatesUseCase;
 use App\Features\Programs\ProgressionTemplates\Repositories\InMemory\InMemoryProgressionTemplateRepository;
 use App\Features\Programs\ProgressionTemplates\Repositories\PostgreSql\PostgreSqlProgressionTemplateRepository;
 use Illuminate\Contracts\Foundation\Application;
@@ -33,6 +38,9 @@ final class ProgramsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ResolveNegativePnlProgramConfigurationPort::class, ResolveNegativePnlProgramConfigurationUseCase::class);
+        $this->app->singleton(ResolvePaymentTemplateRatesPort::class, ResolvePaymentTemplateRatesUseCase::class);
+        $this->app->singleton('programs.negative-pnl-configurations.repositories.postgresql', fn (): PostgreSqlNegativePnlConfigurationRepository => new PostgreSqlNegativePnlConfigurationRepository(DB::connection()));
         $this->app->singleton(ResolveProgramContextPort::class, ResolveProgramContextUseCase::class);
         $this->app->singleton(ResolveProgramCpaSymbolsPort::class, ResolveProgramCpaSymbolsUseCase::class);
         $this->app->singleton(ResolveProgramProgressionConfigurationPort::class, ResolveProgramProgressionConfigurationUseCase::class);

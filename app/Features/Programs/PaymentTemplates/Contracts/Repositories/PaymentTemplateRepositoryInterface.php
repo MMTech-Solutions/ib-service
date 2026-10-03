@@ -17,6 +17,8 @@ interface PaymentTemplateRepositoryInterface
 
     public function find(string $id): ?PaymentTemplate;
 
+    public function findVersion(string $versionId): ?PaymentTemplateVersion;
+
     public function save(PaymentTemplate $template, ?int $expectedLockVersion = null): void;
 
     public function delete(PaymentTemplate $template, int $expectedLockVersion): void;

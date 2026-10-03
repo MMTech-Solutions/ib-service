@@ -7,11 +7,13 @@ namespace App\Providers;
 use App\Features\Rules\Assignments\Repositories\InMemory\InMemoryRuleAssignmentRepository;
 use App\Features\Rules\Assignments\Repositories\PostgreSql\PostgreSqlRuleAssignmentRepository;
 use App\Features\Rules\Assignments\UseCases\ResolveCpaRuleContextUseCase;
+use App\Features\Rules\Assignments\UseCases\ResolveNegativePnlRuleContextUseCase;
 use App\Features\Rules\Assignments\UseCases\ResolvePointsContributionContextUseCase;
 use App\Features\Rules\Assignments\UseCases\ResolveVolumeRewardRuleContextUseCase;
 use App\Features\Rules\Catalog\Repositories\InMemory\InMemoryRuleRepository;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\PostgreSqlRuleRepository;
 use App\Features\Rules\Contracts\Ports\Input\ResolveCpaRuleContextPort;
+use App\Features\Rules\Contracts\Ports\Input\ResolveNegativePnlRuleContextPort;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
 use App\Features\Rules\Contracts\Strategies\RuleStrategyRegistryInterface;
@@ -24,6 +26,7 @@ final class RulesServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ResolveNegativePnlRuleContextPort::class, ResolveNegativePnlRuleContextUseCase::class);
         $this->app->singleton(RuleStrategyRegistryInterface::class, ClosedRuleStrategyRegistry::class);
         $this->app->singleton(
             ResolvePointsContributionContextPort::class,

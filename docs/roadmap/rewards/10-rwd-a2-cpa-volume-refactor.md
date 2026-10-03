@@ -1,7 +1,7 @@
 # RWD-A2 — refactor de CPA y volumen
 
 Estado: **Completada; RWD-A2.1, RWD-A2.2 y RWD-A2.3 completadas**
-Última revisión: 2026-10-02.
+Última revisión: 2026-10-03.
 Dependencia satisfecha: [RWD-A1](09-rwd-a1-documentation-alignment.md).
 Gate arquitectónico satisfecho para RWD4.2; siguen pendientes cortes históricos Broker–IB e IAM.
 
@@ -80,6 +80,11 @@ Postman, migraciones, schemas, scheduler, settlement ni Progression.
 RWD-A2 queda completada. RWD4.2 permanece bloqueada por cortes históricos
 Broker–IB e IAM; los pendientes funcionales E2E siguen fuera de este refactor.
 Esta evidencia no demuestra datos reales ni S2S.
+
+Actualización RWD4.2.1 (2026-10-03): el bloqueo de desarrollo registrado al cerrar
+A2 queda sustituido por la decisión de posponer operatividad/S2S. Configuración y
+cálculo PnL se implementan localmente; la evidencia Broker/IAM sigue siendo
+requisito de activación/cierre E2E, sin reabrir el refactor A2.
 
 ## Trabajo completado
 
