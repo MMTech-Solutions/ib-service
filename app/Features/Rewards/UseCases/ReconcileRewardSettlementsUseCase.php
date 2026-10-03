@@ -8,49 +8,56 @@ use App\Features\Rewards\Actions\ValidateRewardFinancialEventAction;
 use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Rewards\Services\RewardFinancialOperationService;
 use Carbon\CarbonImmutable;
 
 final class ReconcileRewardSettlementsUseCase
 {
-    public function __construct(private readonly RewardRepositoryFactory $repositoryFactory, private readonly RewardFinancialGatewayInterface $gateway, private readonly ValidateRewardFinancialEventAction $validateEvent) {}
+    public function __construct(private readonly RewardRepositoryFactory $repositoryFactory, private readonly RewardFinancialGatewayInterface $gateway, private readonly ValidateRewardFinancialEventAction $validateEvent, private readonly RewardFinancialOperationService $operations) {}
 
     /** @return array{confirmed: int, held: int, unavailable: int} */
     public function execute(int $limit): array
     {
         $result = ['confirmed' => 0, 'held' => 0, 'unavailable' => 0];
         $repository = $this->repositoryFactory->make();
-        $rewards = $repository->listReconciliationCandidates($limit);
-        foreach ($rewards as $reward) {
+        $excluded = [];
+        for ($index = 0; $index < $limit; $index++) {
+            $now = CarbonImmutable::now('UTC');
+            $reward = $repository->claimNextReconciliation($now, $now->addSeconds(max((int) config('rewards.settlement.claim_lease_seconds', 60), 1)), $excluded);
+            if ($reward === null) {
+                break;
+            }
+            $excluded[] = (string) $reward->id;
             try {
-                $key = $reward->status === 'reversal_pending' || $reward->status === 'reversal_failed'
-                    ? $repository->reversalIdempotencyKey((string) $reward->id)
-                    : $reward->settlement_idempotency_key;
-                if (! is_string($key) || $key === '') {
-                    $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_RECONCILIATION_MISSING_KEY', CarbonImmutable::now('UTC'));
-                    $result['held']++;
+                if ($reward->reconciliation_operation_id !== null) {
+                    $operation = $repository->findFinancialOperation($reward->reconciliation_operation_id);
+                    $this->operations->recover($reward, $operation);
+                    $operation = $repository->findFinancialOperation((string) $operation->id);
+                    $operation->status === 'completed' ? $result['confirmed']++ : $result['unavailable']++;
 
                     continue;
                 }
-                $event = $this->gateway->findByIdempotencyKey($key);
-                if ($event === null) {
-                    if ($reward->status === 'reversal_pending' || $reward->status === 'reversal_failed') {
-                        continue;
+                $event = $this->gateway->findByIdempotencyKey((string) $reward->settlement_idempotency_key);
+                if ($event !== null && $this->validateEvent->matches($reward, $event)) {
+                    $repository->confirmReconciliation($reward, (string) $reward->commission_type, (string) $event->id, CarbonImmutable::now('UTC'));
+                    $result['confirmed']++;
+                } elseif ($event === null && $reward->reconciliation_hold_at === null) {
+                    $reference = $this->operations->recoverSettlement($reward);
+                    $repository->confirmReconciliation($reward, (string) $reward->commission_type, $reference, CarbonImmutable::now('UTC'));
+                    $result['confirmed']++;
+                } else {
+                    $repository->placeReconciliationHold((string) $reward->id, $event === null ? 'FINANCE_RECONCILIATION_EVENT_MISSING' : 'FINANCE_RECONCILIATION_MISMATCH', CarbonImmutable::now('UTC'), (string) $reward->settlement_lock_token);
+                    $repository->releaseSettlementClaim((string) $reward->id, (string) $reward->settlement_lock_token);
+                    $result['held']++;
+                }
+            } catch (RewardSettlementException $exception) {
+                try {
+                    if ($exception->error_code === 'finance_contract_invalid') {
+                        $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_CONTRACT_INVALID', CarbonImmutable::now('UTC'), (string) $reward->settlement_lock_token);
                     }
-                    $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_RECONCILIATION_EVENT_MISSING', CarbonImmutable::now('UTC'));
-                    $result['held']++;
-
-                    continue;
+                } catch (RewardSettlementException) {
                 }
-                $type = $reward->status === 'reversal_pending' || $reward->status === 'reversal_failed' ? 'reversal' : (string) $reward->commission_type;
-                if (! $this->validateEvent->matches($reward, $event, $type, $key)) {
-                    $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_RECONCILIATION_MISMATCH', CarbonImmutable::now('UTC'));
-                    $result['held']++;
-
-                    continue;
-                }
-                $repository->confirmReconciliation($reward, $type, (string) $event->id, CarbonImmutable::now('UTC'));
-                $result['confirmed']++;
-            } catch (RewardSettlementException) {
+                $repository->releaseSettlementClaim((string) $reward->id, (string) $reward->settlement_lock_token);
                 $result['unavailable']++;
             }
         }

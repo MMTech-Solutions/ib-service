@@ -50,11 +50,11 @@ final class SettlePendingRewardsUseCase
 
             try {
                 $settlement = $this->gateway->settle(new RewardSettlementRequestData(...json_decode($claim->settlement_request_snapshot, true, 512, JSON_THROW_ON_ERROR)));
-                $repository->markRewardSettled((string) $claim->id, (string) $claim->settlement_lock_token, $settlement->provider, $settlement->reference_id, CarbonImmutable::now('UTC'));
-                $result['settled']++;
+                $confirmed = $repository->markRewardSettled((string) $claim->id, (string) $claim->settlement_lock_token, $settlement->provider, $settlement->reference_id, CarbonImmutable::now('UTC'));
+                $confirmed ? $result['settled']++ : $result['skipped']++;
             } catch (RewardSettlementException $exception) {
-                $repository->markRewardSettlementFailed((string) $claim->id, (string) $claim->settlement_lock_token, $exception->error_code, CarbonImmutable::now('UTC'));
-                $result['failed']++;
+                $confirmed = $repository->markRewardSettlementFailed((string) $claim->id, (string) $claim->settlement_lock_token, $exception->error_code, CarbonImmutable::now('UTC'));
+                $confirmed ? $result['failed']++ : $result['skipped']++;
             }
         }
 

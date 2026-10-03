@@ -15,8 +15,8 @@ que se conservan abajo como evidencia de entregas anteriores.
 
 | Incremento | Estado | Salida |
 | --- | --- | --- |
-| Contrato financiero y settlement PnL | En curso | Solicitud congelada, niveles traducidos y controles independientes |
-| Coordinación financiera | Pendiente | Leases compartidas, recuperación y cancelación incierta |
+| Contrato financiero y settlement PnL | Completado localmente | Solicitud congelada, niveles traducidos y controles independientes |
+| Coordinación financiera | En curso | Leases compartidas, recuperación y cancelación incierta |
 | Snapshots de volumen | Pendiente | Entradas completas antes de efectos parciales |
 | Consultas HTTP | Pendiente | Rewards por propietario y jobs/períodos administrativos |
 | Progression y regresión integrada | Pendiente | Flujo local de actividad a placement y settlement |
@@ -25,6 +25,16 @@ Primer incremento: se incorpora solicitud financiera congelada y selección PnL
 condicionada por `rewards.negative_pnl.settlement_enabled` (default `true`).
 Generación `rewards.negative_pnl.enabled` también tiene default `true`.
 Pruebas focalizadas de settlement: 12 pruebas / 42 assertions aprobadas.
+Verificación del primer incremento: 45 pruebas / 220 assertions, incluida
+arquitectura; Pint y Graphify completados. Commit `bf262d6`.
+
+Las operaciones financieras comparten token y vencimiento de la Reward. Sus
+intenciones y solicitudes quedan conservadas antes del envío; cancelación incierta,
+reversa y compensación se recuperan mediante el reconciliador existente, sin
+invocar un UseCase desde otro. Una compensación se crea y enlaza atómicamente;
+sus reintentos rechazan cambios de importe o clave. La cancelación expone outcome
+`cancelled` o `rejected_already_settled`. Primeras regresiones: 19 pruebas /
+64 assertions aprobadas para settlement, operaciones y recuperación.
 
 ## Dependencias y evidencia
 

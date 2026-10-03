@@ -11,6 +11,7 @@ use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\Exceptions\RewardNotFoundException;
 use App\Features\Rewards\Exceptions\RewardReconciliationBlockedException;
+use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
@@ -234,9 +235,9 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
         });
     }
 
-    public function markRewardSettled(string $rewardId, string $token, string $provider, string $referenceId, CarbonImmutable $at): void
+    public function markRewardSettled(string $rewardId, string $token, string $provider, string $referenceId, CarbonImmutable $at): bool
     {
-        $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->update(['status' => 'settled', 'settlement_provider' => $provider, 'settlement_reference_id' => $referenceId, 'last_settlement_error_code' => null, 'settled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]);
+        return $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->where('settlement_lock_expires_at', '>', $at)->whereIn('status', ['pending', 'failed'])->update(['status' => 'settled', 'settlement_provider' => $provider, 'settlement_reference_id' => $referenceId, 'last_settlement_error_code' => null, 'settled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]) === 1;
     }
 
     public function releaseSettlementClaim(string $rewardId, string $token): void
@@ -245,9 +246,9 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             ->update(['settlement_lock_token' => null, 'settlement_lock_expires_at' => null]);
     }
 
-    public function markRewardSettlementFailed(string $rewardId, string $token, string $errorCode, CarbonImmutable $at): void
+    public function markRewardSettlementFailed(string $rewardId, string $token, string $errorCode, CarbonImmutable $at): bool
     {
-        $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]);
+        return $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->where('settlement_lock_expires_at', '>', $at)->whereIn('status', ['pending', 'failed'])->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]) === 1;
     }
 
     public function beginFinancialOperation(string $rewardId, string $actorId, string $type, string $reasonCode, ?string $reasonLabel, ?int $amountMinor, ?string $customKey): array
@@ -257,84 +258,131 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             if ($reward === null) {
                 throw RewardNotFoundException::forId($rewardId);
             }
-            if ($reward->reconciliation_hold_at !== null) {
-                throw RewardReconciliationBlockedException::create();
+            $operation = $this->connection->table('reward_financial_operations')->where('reward_id', $rewardId)->where('operation_type', $type)->first();
+            if ($operation !== null && ($operation->reason_code !== $reasonCode || $operation->reason_label !== $reasonLabel || ($type === 'compensation' && ((int) $operation->amount_minor !== $amountMinor || $operation->idempotency_key !== $customKey)))) {
+                throw RewardFinancialOperationNotAllowedException::create();
             }
-            $operation = $this->connection->table('reward_financial_operations')->where('reward_id', $rewardId)->where('operation_type', $type)->lockForUpdate()->first();
             if ($operation !== null && $operation->status === 'completed') {
                 return [$reward, $operation];
             }
-            if ($reward->settlement_lock_expires_at !== null
-                && CarbonImmutable::parse($reward->settlement_lock_expires_at)->greaterThan(CarbonImmutable::now('UTC'))) {
+            $now = CarbonImmutable::now('UTC');
+            if ($reward->reconciliation_hold_at !== null) {
+                throw RewardReconciliationBlockedException::create();
+            }
+            if ($reward->settlement_lock_expires_at !== null && CarbonImmutable::parse($reward->settlement_lock_expires_at)->greaterThan($now)) {
+                throw RewardFinancialOperationNotAllowedException::create();
+            }
+            if ($this->connection->table('reward_financial_operations')->where('reward_id', $rewardId)->where('operation_type', '!=', $type)->where('status', '!=', 'completed')->exists()) {
                 throw RewardFinancialOperationNotAllowedException::create();
             }
             $allowed = match ($type) {
-                'cancellation' => in_array($reward->status, ['pending', 'failed'], true), 'reversal' => $reward->status === 'settled' || $reward->status === 'reversal_failed', 'compensation' => $reward->status === 'reversed', default => false
+                'cancellation' => in_array($reward->status, ['pending', 'failed'], true),
+                'reversal' => in_array($reward->status, ['settled', 'reversal_failed', 'reversal_pending'], true),
+                'compensation' => $reward->status === 'reversed', default => false,
             };
-            if (! $allowed || ($type === 'compensation' && ($amountMinor === null || $amountMinor < 1))) {
+            if (! $allowed || ($type === 'compensation' && ($amountMinor === null || $amountMinor < 1)) || ($type === 'compensation' && $reward->commission_type === 'pnl' && ! config('rewards.negative_pnl.settlement_enabled', true))) {
                 throw RewardFinancialOperationNotAllowedException::create();
             }
-            $now = CarbonImmutable::now('UTC');
+            $request = $this->financialRequests->settlement($reward);
+            $reward->settlement_request_snapshot = json_encode(get_object_vars($request), JSON_THROW_ON_ERROR);
+            $token = (string) Str::uuid7();
+            $expiresAt = $now->addSeconds(max((int) config('rewards.settlement.claim_lease_seconds', 60), 1));
+            $this->connection->table('rewards')->where('id', $rewardId)->update(['settlement_request_snapshot' => $reward->settlement_request_snapshot, 'settlement_idempotency_key' => $request->idempotency_key, 'settlement_lock_token' => $token, 'settlement_lock_expires_at' => $expiresAt]);
+            $reward->settlement_lock_token = $token;
+            $reward->settlement_lock_expires_at = $expiresAt;
+            $reward->settlement_idempotency_key = $request->idempotency_key;
             if ($operation === null) {
-                $operationId = (string) Str::uuid7();
-                $key = $customKey ?? 'ib-service:reward:'.$rewardId.':'.$type;
-                $this->connection->table('reward_financial_operations')->insert(['id' => $operationId, 'reward_id' => $rewardId, 'operation_type' => $type, 'status' => 'processing', 'idempotency_key' => $key, 'requested_by_user_id' => $actorId, 'reason_code' => $reasonCode, 'reason_label' => $reasonLabel, 'amount_minor' => $amountMinor, 'currency_code' => $type === 'compensation' ? $reward->currency_code : null, 'currency_precision' => $type === 'compensation' ? $reward->currency_precision : null, 'attempt_count' => 1, 'last_attempt_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
-                $operation = $this->connection->table('reward_financial_operations')->where('id', $operationId)->first();
+                $id = (string) Str::uuid7();
+                $this->connection->table('reward_financial_operations')->insert(['id' => $id, 'reward_id' => $rewardId, 'operation_type' => $type, 'status' => 'processing', 'idempotency_key' => $customKey ?? 'ib-service:reward:'.$rewardId.':'.$type, 'requested_by_user_id' => $actorId, 'reason_code' => $reasonCode, 'reason_label' => $reasonLabel, 'amount_minor' => $amountMinor, 'currency_code' => $type === 'compensation' ? $reward->currency_code : null, 'currency_precision' => $type === 'compensation' ? $reward->currency_precision : null, 'attempt_count' => 0, 'created_at' => $now, 'updated_at' => $now]);
             } else {
-                $this->connection->table('reward_financial_operations')->where('id', $operation->id)->update(['status' => 'processing', 'attempt_count' => (int) $operation->attempt_count + 1, 'last_attempt_at' => $now, 'last_error_code' => null, 'updated_at' => $now]);
-                $operation->status = 'processing';
+                $id = (string) $operation->id;
             }
+            $this->connection->table('reward_financial_operations')->where('id', $id)->update(['status' => 'processing', 'attempt_count' => ($operation->attempt_count ?? 0) + 1, 'last_attempt_at' => $now, 'last_error_code' => null, 'lock_token' => $token, 'lock_expires_at' => $expiresAt, 'updated_at' => $now]);
             if ($type === 'reversal') {
-                $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => 'reversal_pending', 'updated_at' => $now]);
+                $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => 'reversal_pending']);
                 $reward->status = 'reversal_pending';
             }
 
-            return [$reward, $operation];
+            return [$reward, $this->findFinancialOperation($id)];
+        });
+    }
+
+    public function freezeFinancialOperationRequest(string $rewardId, string $operationId, string $token, array $request): array
+    {
+        return $this->financialTransaction($rewardId, $token, function () use ($operationId, $request): array {
+            $operation = $this->findFinancialOperation($operationId);
+            if ($operation->request_snapshot === null) {
+                $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['request_snapshot' => json_encode($request, JSON_THROW_ON_ERROR)]);
+
+                return $request;
+            }
+
+            return json_decode($operation->request_snapshot, true, 512, JSON_THROW_ON_ERROR);
         });
     }
 
     public function createCompensationReward(object $reward, object $operation, int $amountMinor, string $reasonCode, CarbonImmutable $at): string
     {
-        if ($operation->compensation_reward_id !== null) {
-            return (string) $operation->compensation_reward_id;
-        }
-        $id = (string) Str::uuid7();
-        $this->connection->transaction(function () use ($id, $reward, $operation, $amountMinor, $reasonCode, $at): void {
-            $this->connection->table('rewards')->insert(['id' => $id, 'compensates_reward_id' => $reward->id, 'beneficiary_user_id' => $reward->beneficiary_user_id, 'plan_id' => $reward->plan_id, 'program_id' => $reward->program_id, 'module_id' => $reward->module_id, 'rule_assignment_id' => $reward->rule_assignment_id, 'rule_id' => $reward->rule_id, 'rule_version_id' => $reward->rule_version_id, 'amount_minor' => $amountMinor, 'currency_code' => $reward->currency_code, 'currency_precision' => $reward->currency_precision, 'status' => 'pending', 'commission_type' => $reward->commission_type, 'network_level' => $reward->network_level, 'summary_snapshot' => json_encode(['compensates_reward_id' => $reward->id, 'reason_code' => $reasonCode], JSON_THROW_ON_ERROR), 'settlement_idempotency_key' => 'ib-service:reward:'.$id.':settlement', 'created_at' => $at, 'updated_at' => $at]);
-            $this->connection->table('reward_financial_operations')->where('id', $operation->id)->update(['compensation_reward_id' => $id, 'updated_at' => $at]);
+        return $this->financialTransaction((string) $reward->id, (string) $operation->lock_token, function () use ($reward, $operation, $amountMinor, $reasonCode, $at): string {
+            $locked = $this->findFinancialOperation((string) $operation->id);
+            if ($locked->compensation_reward_id !== null) {
+                return (string) $locked->compensation_reward_id;
+            }
+            $id = (string) Str::uuid7();
+            $request = $this->financialRequests->settlement($reward);
+            $snapshot = get_object_vars($request);
+            $snapshot['reward_id'] = $id;
+            $snapshot['idempotency_key'] = 'ib-service:reward:'.$id.':settlement';
+            $snapshot['amount_minor'] = $amountMinor;
+            $this->connection->table('rewards')->insert(['id' => $id, 'compensates_reward_id' => $reward->id, 'beneficiary_user_id' => $reward->beneficiary_user_id, 'plan_id' => $reward->plan_id, 'program_id' => $reward->program_id, 'module_id' => $reward->module_id, 'rule_assignment_id' => $reward->rule_assignment_id, 'rule_id' => $reward->rule_id, 'rule_version_id' => $reward->rule_version_id, 'amount_minor' => $amountMinor, 'currency_code' => $reward->currency_code, 'currency_precision' => $reward->currency_precision, 'status' => 'pending', 'commission_type' => $reward->commission_type, 'network_level' => $reward->network_level, 'summary_snapshot' => json_encode(['compensates_reward_id' => $reward->id, 'reason_code' => $reasonCode], JSON_THROW_ON_ERROR), 'settlement_idempotency_key' => $snapshot['idempotency_key'], 'settlement_request_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR), 'created_at' => $at, 'updated_at' => $at]);
+            $this->connection->table('reward_financial_operations')->where('id', $operation->id)->update(['compensation_reward_id' => $id, 'request_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR), 'updated_at' => $at]);
+
+            return $id;
         });
-
-        return $id;
     }
 
-    public function markCompensationSettled(string $rewardId, string $provider, string $referenceId, CarbonImmutable $at): void
+    public function completeFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, ?string $compensationRewardId, ?string $providerReferenceId, CarbonImmutable $at, string $token, ?string $outcome = null): void
     {
-        $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => 'settled', 'settlement_provider' => $provider, 'settlement_reference_id' => $referenceId, 'settled_at' => $at, 'updated_at' => $at]);
-    }
-
-    public function markCompensationFailed(string $rewardId, string $errorCode, CarbonImmutable $at): void
-    {
-        $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'updated_at' => $at]);
-    }
-
-    public function completeFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, ?string $compensationRewardId, ?string $providerReferenceId, CarbonImmutable $at): void
-    {
-        $this->connection->transaction(function () use ($rewardId, $operationId, $rewardStatus, $compensationRewardId, $providerReferenceId, $at): void {
+        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $compensationRewardId, $providerReferenceId, $at, $outcome): void {
+            $operation = $this->findFinancialOperation($operationId);
+            $updates = ['reconciliation_hold_code' => null, 'reconciliation_hold_at' => null, 'last_reconciled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at];
             if ($rewardStatus !== null) {
-                $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => $rewardStatus, 'reconciliation_hold_code' => null, 'reconciliation_hold_at' => null, 'last_reconciled_at' => $at, 'updated_at' => $at]);
-            } $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['status' => 'completed', 'compensation_reward_id' => $compensationRewardId, 'provider' => $providerReferenceId === null ? null : 'finance', 'provider_reference_id' => $providerReferenceId, 'last_error_code' => null, 'completed_at' => $at, 'updated_at' => $at]);
+                $updates['status'] = $rewardStatus;
+            }
+            if ($rewardStatus === 'settled') {
+                $updates += ['settlement_provider' => 'finance', 'settlement_reference_id' => $providerReferenceId, 'settled_at' => $at, 'last_settlement_error_code' => null];
+            }
+            $this->connection->table('rewards')->where('id', $rewardId)->update($updates);
+            if ($operation->operation_type === 'compensation' && $compensationRewardId !== null) {
+                $this->connection->table('rewards')->where('id', $compensationRewardId)->update(['status' => 'settled', 'settlement_provider' => 'finance', 'settlement_reference_id' => $providerReferenceId, 'settled_at' => $at, 'last_settlement_error_code' => null, 'updated_at' => $at]);
+            }
+            $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['status' => 'completed', 'outcome' => $outcome ?? $rewardStatus ?? 'compensated', 'compensation_reward_id' => $compensationRewardId, 'provider' => $providerReferenceId === null ? null : 'finance', 'provider_reference_id' => $providerReferenceId, 'last_error_code' => null, 'lock_token' => null, 'lock_expires_at' => null, 'completed_at' => $at, 'updated_at' => $at]);
         });
     }
 
-    public function failFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, string $errorCode, CarbonImmutable $at): void
+    public function failFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, string $errorCode, CarbonImmutable $at, string $token): void
     {
-        if ($rewardStatus !== null) {
-            $this->connection->table('rewards')->where('id', $rewardId)->update(['status' => $rewardStatus, 'updated_at' => $at]);
-        } $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['status' => 'failed', 'last_error_code' => $errorCode, 'updated_at' => $at]);
+        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $errorCode, $at): void {
+            $updates = ['settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at];
+            if ($rewardStatus !== null) {
+                $updates['status'] = $rewardStatus;
+            }
+            $this->connection->table('rewards')->where('id', $rewardId)->update($updates);
+            $operation = $this->findFinancialOperation($operationId);
+            if ($operation->compensation_reward_id !== null) {
+                $this->connection->table('rewards')->where('id', $operation->compensation_reward_id)->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'updated_at' => $at]);
+            }
+            $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['status' => 'failed', 'last_error_code' => $errorCode, 'lock_token' => null, 'lock_expires_at' => null, 'updated_at' => $at]);
+        });
     }
 
-    public function placeReconciliationHold(string $rewardId, string $code, CarbonImmutable $at): void
+    public function placeReconciliationHold(string $rewardId, string $code, CarbonImmutable $at, ?string $token = null): void
     {
+        if ($token !== null) {
+            $this->financialTransaction($rewardId, $token, fn () => $this->placeReconciliationHold($rewardId, $code, $at));
+
+            return;
+        }
         $this->connection->table('rewards')->where('id', $rewardId)->update(['reconciliation_hold_code' => $code, 'reconciliation_hold_at' => $at, 'last_reconciled_at' => $at, 'updated_at' => $at]);
     }
 
@@ -343,27 +391,58 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
         return $this->connection->table('reward_financial_operations')->where('id', $operationId)->firstOrFail();
     }
 
-    public function listReconciliationCandidates(int $limit): array
+    public function claimNextReconciliation(CarbonImmutable $now, CarbonImmutable $expiresAt, array $excludedIds): ?object
     {
-        return $this->connection->table('rewards')->whereNotNull('reconciliation_hold_at')->orWhereIn('status', ['reversal_pending', 'reversal_failed'])->orderBy('reconciliation_hold_at')->limit($limit)->get()->all();
-    }
+        return $this->connection->transaction(function () use ($now, $expiresAt, $excludedIds): ?object {
+            $reward = $this->connection->table('rewards')->whereNotIn('id', $excludedIds)
+                ->where(fn ($query) => $query->whereNull('settlement_lock_expires_at')->orWhere('settlement_lock_expires_at', '<=', $now))
+                ->where(function ($query): void {
+                    $query->whereNotNull('reconciliation_hold_at')->orWhere(fn ($failed) => $failed->where('status', 'failed')->where('settlement_attempt_count', '>', 0))
+                        ->orWhereExists(fn ($operations) => $operations->selectRaw('1')->from('reward_financial_operations')->whereColumn('reward_id', 'rewards.id')->where('status', '!=', 'completed'));
+                })->orderByRaw('last_reconciled_at ASC NULLS FIRST')->orderBy('id')->lock('FOR UPDATE SKIP LOCKED')->first();
+            if ($reward === null) {
+                return null;
+            }
+            $token = (string) Str::uuid7();
+            $request = $this->financialRequests->settlement($reward);
+            $reward->settlement_request_snapshot = json_encode(get_object_vars($request), JSON_THROW_ON_ERROR);
+            $reward->settlement_lock_token = $token;
+            $this->connection->table('rewards')->where('id', $reward->id)->update(['settlement_lock_token' => $token, 'settlement_lock_expires_at' => $expiresAt, 'settlement_request_snapshot' => $reward->settlement_request_snapshot, 'settlement_idempotency_key' => $request->idempotency_key, 'last_reconciled_at' => $now]);
+            $operation = $this->connection->table('reward_financial_operations')->where('reward_id', $reward->id)->where('status', '!=', 'completed')->orderBy('created_at')->first();
+            $reward->reconciliation_operation_id = $operation?->id;
+            if ($operation !== null) {
+                $this->connection->table('reward_financial_operations')->where('id', $operation->id)->update(['lock_token' => $token, 'lock_expires_at' => $expiresAt]);
+            }
 
-    public function reversalIdempotencyKey(string $rewardId): ?string
-    {
-        $key = $this->connection->table('reward_financial_operations')->where('reward_id', $rewardId)->where('operation_type', 'reversal')->value('idempotency_key');
-
-        return $key === null ? null : (string) $key;
+            return $reward;
+        });
     }
 
     public function confirmReconciliation(object $reward, string $type, string $providerReferenceId, CarbonImmutable $at): void
     {
-        $this->connection->transaction(function () use ($reward, $type, $providerReferenceId, $at): void {
-            if ($type === 'reversal') {
-                $this->connection->table('reward_financial_operations')->where('reward_id', $reward->id)->where('operation_type', 'reversal')->update(['status' => 'completed', 'provider' => 'finance', 'provider_reference_id' => $providerReferenceId, 'completed_at' => $at, 'last_error_code' => null, 'updated_at' => $at]);
-            } $updates = ['reconciliation_hold_code' => null, 'reconciliation_hold_at' => null, 'last_reconciled_at' => $at, 'updated_at' => $at];
-            if ($type === 'reversal') {
-                $updates['status'] = 'reversed';
-            } $this->connection->table('rewards')->where('id', $reward->id)->update($updates);
+        $this->financialTransaction((string) $reward->id, (string) $reward->settlement_lock_token, function () use ($reward, $type, $providerReferenceId, $at): void {
+            $updates = ['reconciliation_hold_code' => null, 'reconciliation_hold_at' => null, 'last_reconciled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at];
+            if ($type !== 'reversal' && $reward->status !== 'reversed') {
+                $updates += ['status' => 'settled', 'settlement_provider' => 'finance', 'settlement_reference_id' => $providerReferenceId, 'settled_at' => $at, 'last_settlement_error_code' => null];
+            }
+            $this->connection->table('rewards')->where('id', $reward->id)->update($updates);
+        });
+    }
+
+    private function financialTransaction(string $rewardId, string $token, \Closure $callback): mixed
+    {
+        return $this->connection->transaction(function () use ($rewardId, $token, $callback): mixed {
+            $reward = $this->connection->table('rewards')->where('id', $rewardId)->lockForUpdate()->first();
+            $expiry = $reward?->settlement_lock_expires_at;
+            if ($token === '' || $reward?->settlement_lock_token !== $token || $expiry === null || ! CarbonImmutable::parse($expiry)->greaterThan(CarbonImmutable::now('UTC'))) {
+                throw new RewardSettlementException('financial_lease_lost');
+            }
+            $result = $callback();
+            if (! CarbonImmutable::parse($expiry)->greaterThan(CarbonImmutable::now('UTC'))) {
+                throw new RewardSettlementException('financial_lease_lost');
+            }
+
+            return $result;
         });
     }
 }

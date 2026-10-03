@@ -37,31 +37,28 @@ interface RewardRepositoryInterface
 
     public function releaseSettlementClaim(string $rewardId, string $token): void;
 
-    public function markRewardSettled(string $rewardId, string $token, string $provider, string $referenceId, CarbonImmutable $at): void;
+    public function markRewardSettled(string $rewardId, string $token, string $provider, string $referenceId, CarbonImmutable $at): bool;
 
-    public function markRewardSettlementFailed(string $rewardId, string $token, string $errorCode, CarbonImmutable $at): void;
+    public function markRewardSettlementFailed(string $rewardId, string $token, string $errorCode, CarbonImmutable $at): bool;
 
     /** @return array{0: object, 1: object} */
     public function beginFinancialOperation(string $rewardId, string $actorId, string $type, string $reasonCode, ?string $reasonLabel, ?int $amountMinor, ?string $customKey): array;
 
     public function createCompensationReward(object $reward, object $operation, int $amountMinor, string $reasonCode, CarbonImmutable $at): string;
 
-    public function markCompensationSettled(string $rewardId, string $provider, string $referenceId, CarbonImmutable $at): void;
+    public function completeFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, ?string $compensationRewardId, ?string $providerReferenceId, CarbonImmutable $at, string $token, ?string $outcome = null): void;
 
-    public function markCompensationFailed(string $rewardId, string $errorCode, CarbonImmutable $at): void;
+    public function failFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, string $errorCode, CarbonImmutable $at, string $token): void;
 
-    public function completeFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, ?string $compensationRewardId, ?string $providerReferenceId, CarbonImmutable $at): void;
-
-    public function failFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, string $errorCode, CarbonImmutable $at): void;
-
-    public function placeReconciliationHold(string $rewardId, string $code, CarbonImmutable $at): void;
+    public function placeReconciliationHold(string $rewardId, string $code, CarbonImmutable $at, ?string $token = null): void;
 
     public function findFinancialOperation(string $operationId): object;
 
-    /** @return array<int, object> */
-    public function listReconciliationCandidates(int $limit): array;
+    /** @param list<string> $excludedIds */
+    public function claimNextReconciliation(CarbonImmutable $now, CarbonImmutable $expiresAt, array $excludedIds): ?object;
 
-    public function reversalIdempotencyKey(string $rewardId): ?string;
+    /** @param array<string, mixed> $request @return array<string, mixed> */
+    public function freezeFinancialOperationRequest(string $rewardId, string $operationId, string $token, array $request): array;
 
     public function confirmReconciliation(object $reward, string $type, string $providerReferenceId, CarbonImmutable $at): void;
 }
