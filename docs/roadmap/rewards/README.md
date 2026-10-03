@@ -1,6 +1,6 @@
 # Roadmap del feature Rewards
 
-Estado: **RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente; RWD-A1 completada, RWD-A2 en curso (A2.1/A2.2 completadas); runner económico/cierre PnL bloqueados**
+Estado: **RWD2/RV1-RV3, RWD3.1/RWD3.2 y RWD4.1 implementados; RWD4.2a implementado localmente; RWD-A1 completada, RWD-A2 completada (A2.1–A2.3); runner económico/cierre PnL bloqueados**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-10-02
@@ -66,14 +66,14 @@ flowchart LR
 | Etapa | Documento / evidencia | Estado |
 | --- | --- | --- |
 | RWD-A1: alineación documental | [`09-rwd-a1-documentation-alignment.md`](09-rwd-a1-documentation-alignment.md) | Completada; no cambia código |
-| RWD-A2: refactor CPA/volumen | [`10-rwd-a2-cpa-volume-refactor.md`](10-rwd-a2-cpa-volume-refactor.md) | En curso; A2.1/A2.2 completadas |
+| RWD-A2: refactor CPA/volumen | [`10-rwd-a2-cpa-volume-refactor.md`](10-rwd-a2-cpa-volume-refactor.md) | Completada; A2.1–A2.3 |
 | Ampliación del corte histórico Broker–IB | [Dependencia y criterios en RWD4](08-rwd4-volume-and-negative-pnl.md) | Pendiente de implementación y evidencia S2S |
-| RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Bloqueada por A2, cortes históricos e IAM |
+| RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Bloqueada por cortes históricos e IAM |
 
 Cada modalidad conserva su UseCase; factories de evidencia y cálculo son
 independientes. Rules mantiene definiciones versionadas. No hay pipeline común
 obligatorio ni engine universal. A2.1/A2.2 implementan las factories económicas CPA y volumen;
-las factories de proveedores siguen pendientes en A2.
+A2.3 completa las factories específicas de proveedores de evidencia.
 
 ## Decisiones confirmadas
 
@@ -93,8 +93,8 @@ las factories de proveedores siguen pendientes en A2.
 
 ## Próximo paso
 
-Completar factories de proveedores de RWD-A2 sin cambios de negocio y completar la ampliación/evidencia S2S
-de cortes históricos Broker–IB y profundidad IAM. Solo al satisfacer ambos gates
+Completar la ampliación/evidencia S2S
+de cortes históricos Broker–IB y profundidad IAM. Con A2 completada, solo al satisfacer esos gates
 se habilita el runner económico RWD4.2. Validación CPA/RWD3 y correcciones
 funcionales del cierre E2E siguen independientes, registradas en A2; el plan E2E
 posterior queda subordinado a esta secuencia.

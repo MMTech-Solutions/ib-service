@@ -27,7 +27,7 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 ## RWD4.1 — volumen
 
 - El alcance original incluía cálculo, run durable, snapshot de red e identidad
-  por posición/beneficiario/nivel/regla. RWD-A2 alineará su cálculo mediante factory
+  por posición/beneficiario/nivel/regla. RWD-A2 alineó su cálculo mediante factory
   sin cambiar el recorrido por actividad ni afirmar garantías nuevas implementadas.
 - Reutilizar el feed M5 para el barrido periódico y el evento Avro V1 como disparador de resolución en Broker. Ambos caminos comparten la misma idempotencia económica.
 - Persistir evidencia de la posición y congelar configuración instrumental, template, participación, rates de nivel/personal/master, moneda y precisión en el ledger.
@@ -41,9 +41,9 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 - RWD4.2a publica el puerto `ResolveNegativePnlPeriodsPort`, Data V1 y adapter HTTP. Broker resuelve balance, cashflow y PnL firmado; IB no replica su contabilidad.
 - El runner posterior creará la configuración histórica y los runs por cadencia, persistirá primero cada snapshot proveedor y después aplicará regla, red y tasas congeladas.
 - Persistirá referencias de cuenta, balances, totales y referencias opacas de flujo sin copiar movimientos financieros completos.
-- El runner económico no forma parte de RWD4.2a. Está **bloqueado** hasta completar
-  [RWD-A2](10-rwd-a2-cpa-volume-refactor.md) y demostrar S2S el corte histórico
-  Broker–IB y profundidad IAM. Alinear documentación no levanta esos gates.
+- El runner económico no forma parte de RWD4.2a. [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
+  está completada; el runner sigue **bloqueado** hasta demostrar S2S el corte
+  histórico Broker–IB y profundidad IAM. El refactor no sustituye esa evidencia.
 
 ## Diseño PnL acordado; implementación posterior
 

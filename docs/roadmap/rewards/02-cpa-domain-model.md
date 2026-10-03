@@ -47,7 +47,7 @@ financiero de la Reward permanece separado y no cambia esta proyección.
 La prescripción anterior de Strategy por `module_code + strategy_type` queda
 sustituida por [RWD-A1](09-rwd-a1-documentation-alignment.md). El código actual
 delega evaluación a una Strategy económica con factory tipada desde RWD-A2.1;
-las factories de proveedores quedan pendientes de [RWD-A2](10-rwd-a2-cpa-volume-refactor.md).
+las factories de proveedores se completaron en [RWD-A2.3](10-rwd-a2-cpa-volume-refactor.md).
 
 - La progresión del IB, cambios de placement, reglas nuevas o símbolos actuales
   no reescriben el contexto CPA ya capturado.

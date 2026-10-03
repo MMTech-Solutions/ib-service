@@ -5,21 +5,20 @@ declare(strict_types=1);
 namespace App\Features\Modules\Catalog\UseCases;
 
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
+use App\Features\Modules\Catalog\Factories\VolumeRewardActivitiesProviderFactory;
 use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesQueryData;
 use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesResultData;
-use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
 use App\Features\Modules\Contracts\Exceptions\ModuleNotFoundException;
 use App\Features\Modules\Contracts\Exceptions\UnsupportedProgressionActivityCapabilityException;
 use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
-use App\Features\Modules\Sources\Broker\Services\BrokerInstrumentCatalogApiClient;
 use Carbon\CarbonImmutable;
 
 final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivitiesPort
 {
     public function __construct(
         private readonly ModuleRepositoryFactory $repositoryFactory,
-        private readonly BrokerInstrumentCatalogApiClient $broker,
+        private readonly VolumeRewardActivitiesProviderFactory $providers,
     ) {}
 
     public function execute(ListVolumeRewardActivitiesQueryData $query): ListVolumeRewardActivitiesResultData
@@ -47,20 +46,17 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
             throw UnsupportedProgressionActivityCapabilityException::forModule($module->id);
         }
 
-        $page = $this->broker->progressionActivities([
-            'from' => $from->toIso8601String(),
-            'until' => $until->toIso8601String(),
-            'instrument_references' => $query->instrument_references,
-            'limit' => $limit,
-            'cursor' => $query->cursor,
-        ]);
+        $page = $this->providers->make($module->code)->fetch(new ListVolumeRewardActivitiesQueryData(
+            $query->module_id, $from->toIso8601String(), $until->toIso8601String(),
+            $query->instrument_references, $query->cursor, $limit,
+        ));
 
         return new ListVolumeRewardActivitiesResultData(
             module_id: $module->id,
             module_condition: 'running',
             provider_invoked: true,
-            activities: array_map(fn (array $item): VolumeRewardActivityData => $this->activity($module->id, $item), $page['data']),
-            next_cursor: is_string($page['meta']['next_cursor'] ?? null) ? $page['meta']['next_cursor'] : null,
+            activities: $page->activities,
+            next_cursor: $page->next_cursor,
             rejection_code: null,
         );
     }
@@ -84,37 +80,6 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
         }
 
         return [$from, $until, $limit];
-    }
-
-    /** @param array<string, mixed> $item */
-    private function activity(string $moduleId, array $item): VolumeRewardActivityData
-    {
-        foreach (['source_activity_id', 'subject_external_user_id', 'metric_code', 'unit_code', 'quantity', 'occurred_at', 'symbol_id', 'server_group_id', 'currency_code', 'broker_granted_commission'] as $field) {
-            if (! isset($item[$field]) || ! is_string($item[$field])) {
-                throw InvalidProgressionActivityQueryException::withMessage('Broker returned an invalid volume reward activity.');
-            }
-        }
-        if ($item['metric_code'] !== 'closed_trading_volume') {
-            throw InvalidProgressionActivityQueryException::withMessage('Broker returned an unsupported volume reward metric.');
-        }
-
-        $precision = $item['currency_precision'] ?? null;
-        if (! is_int($precision) || $precision < 0) {
-            throw InvalidProgressionActivityQueryException::withMessage('Broker returned an invalid server group currency precision.');
-        }
-
-        return new VolumeRewardActivityData(
-            module_id: $moduleId,
-            source_activity_id: $item['source_activity_id'],
-            subject_external_user_id: $item['subject_external_user_id'],
-            unit_code: $item['unit_code'],
-            quantity: $item['quantity'],
-            occurred_at: CarbonImmutable::parse($item['occurred_at'])->utc()->toIso8601String(),
-            instrument_reference: 'broker:server_group:'.$item['server_group_id'].':symbol:'.$item['symbol_id'],
-            currency_code: strtoupper($item['currency_code']),
-            currency_precision: $precision,
-            broker_granted_commission: $item['broker_granted_commission'],
-        );
     }
 
     /** @param list<object> $capabilities */

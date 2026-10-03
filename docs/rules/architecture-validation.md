@@ -31,6 +31,12 @@ exacta se controla en la suite; no se amplían exclusiones por directorio.
 
 ## Retiro de deuda
 
+RWD-A2.3 registra las excepciones técnicas
+`Modules/Catalog/Exceptions/UnsupportedRewardEvidenceProviderException` y
+`Rewards/Exceptions/UnsupportedNegativePnlPeriodsProviderException`: rechazan
+códigos internos desconocidos en factories sin representar errores HTTP.
+La suite controla ambas rutas exactas, sin exclusiones por directorio.
+
 Al refactorizar una entrada histórica, se elimina primero del baseline y se mantiene la prueba verde sin sustituirla por una exclusión más amplia. Cambiar un contrato público de puerto requiere su propia entrega y actualización de consumidores; QG1 no autoriza hacerlo implícitamente.
 
 ## Ejecución

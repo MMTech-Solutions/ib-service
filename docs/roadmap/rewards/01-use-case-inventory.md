@@ -42,7 +42,7 @@ RWD1 no define el transporte ni implementa pagos.
    de depósitos certificados y settlement.
 2. Los requisitos e importes CPA proceden de la versión de regla congelada.
    RWD-A1 sustituye la selección unificada `module_code + strategy_type` por
-   factories independientes de evidencia y cálculo; RWD-A2 implementará esa
+   factories independientes de evidencia y cálculo; RWD-A2 implementó esa
    arquitectura sin cambiar la causa económica.
 3. `reward_id` pertenece a `cpa_context`. El progreso no crea, copia ni decide
    una Reward.

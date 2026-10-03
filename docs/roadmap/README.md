@@ -18,7 +18,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
 | [`Progression`](progression/README.md) | PG1 y PG2 completadas; operación implementada | Evidencia de despliegue y alertas operativas | 2026-09-29 |
-| [`Rewards`](rewards/README.md) | RWD2/RWD3/RWD4.1 y RWD4.2a local implementados; A1 documental completada, A2 en curso (A2.1/A2.2 completadas); runner/cierre PnL bloqueados | A2 + evidencia S2S de cortes históricos Broker–IB e IAM antes de RWD4.2 | 2026-10-02 |
+| [`Rewards`](rewards/README.md) | RWD2/RWD3/RWD4.1 y RWD4.2a local implementados; A1 documental completada, A2 completada (A2.1–A2.3); runner/cierre PnL bloqueados | Evidencia S2S de cortes históricos Broker–IB e IAM antes de RWD4.2 | 2026-10-02 |
 
 ## Secuencia entre features
 

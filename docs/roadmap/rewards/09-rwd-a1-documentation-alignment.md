@@ -29,6 +29,10 @@ La alineación de código pertenece a [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
 
 ## Secuencia y criterios de avance
 
+La siguiente secuencia registra el estado al cerrar A1. Posteriormente,
+[RWD-A2](10-rwd-a2-cpa-volume-refactor.md) se completó en A2.1–A2.3; RWD4.2
+conserva los gates pendientes de corte histórico e IAM.
+
 1. RWD-A1 completada: fuentes coherentes y enlaces verificables.
 2. RWD-A2 lista: refactor sin cambios funcionales, con equivalencia y arquitectura
    aprobadas antes de declararlo completado.

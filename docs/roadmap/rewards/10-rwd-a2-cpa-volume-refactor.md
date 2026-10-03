@@ -1,9 +1,9 @@
 # RWD-A2 — refactor de CPA y volumen
 
-Estado: **En curso; RWD-A2.1 y RWD-A2.2 completadas**
+Estado: **Completada; RWD-A2.1, RWD-A2.2 y RWD-A2.3 completadas**
 Última revisión: 2026-10-02.
 Dependencia satisfecha: [RWD-A1](09-rwd-a1-documentation-alignment.md).
-Bloquea: runner económico y cierre RWD4.2.
+Gate arquitectónico satisfecho para RWD4.2; siguen pendientes cortes históricos Broker–IB e IAM.
 
 ## Objetivo y estado observado
 
@@ -11,7 +11,9 @@ Alinear CPA/volumen con [Strategies](../../rules/strategies.md) sin cambiar nego
 `VerifyCpaContextsUseCase` delega acumulación y calificación a
 `CpaFixedAmountCalculationStrategy`, resuelta mediante factory específica.
 `ProcessVolumeRewardsUseCase` delega a `TradedVolumeCommissionCalculationStrategy`
-mediante su factory específica. Las factories de proveedores quedan pendientes.
+mediante su factory específica. Los proveedores de evidencia CPA, página de
+volumen y posición cerrada se seleccionan por factories específicas en Modules;
+Rewards selecciona su adapter PnL existente mediante otra factory.
 
 La evidencia local acredita las factories económicas CPA y volumen, pero no
 contratos S2S ni validación con datos reales.
@@ -54,10 +56,32 @@ histórico de suscripciones. Las pruebas cubren bordes, sustitución vía factor
 transmisión del mínimo y persistencia del importe retornado. Pint aprobado y
 `graphify update .` completado (5494 nodos, 13062 relaciones).
 
-Pendientes para completar A2: resolución de proveedores por factories
-específicas. RWD4.2 permanece bloqueada; esta entrega no demuestra S2S.
+## RWD-A2.3 completada: proveedores por capacidad
 
-## Trabajo de implementación posterior
+Modules conserva tres contratos internos y factories independientes para CPA,
+página de volumen y posición cerrada. Sus mapas admiten únicamente `broker`;
+las implementaciones en Sources/Broker reutilizan clientes existentes, consultas,
+paginación y mapeos. El DTO interno de página usa Laravel Data y propiedades
+readonly. Los UseCases conservan orden de validación, estado operativo y
+capacidad requerida, incluyendo diferencias actuales entre evento y barrido.
+
+Rewards conserva el puerto y adapter PnL existente: su binding selecciona
+`broker` mediante `NegativePnlPeriodsProviderFactory`, sin runner, cálculo ni
+corte histórico nuevo. Códigos desconocidos generan excepciones técnicas
+documentadas y controladas por ruta exacta en arquitectura.
+
+Evidencia local del 2026-10-02: 107 tests y 504 assertions aprobadas, incluyendo
+factories, sustitución, binding PnL, paginación/filtros CPA, depósitos, cursor y
+normalización de volumen, controles operativos, fallos remotos, regresiones
+CPA/volumen, contexto histórico y arquitectura. Pint aprobado y
+`graphify update .` completado (5556 nodos, 13241 relaciones). No cambia HTTP,
+Postman, migraciones, schemas, scheduler, settlement ni Progression.
+
+RWD-A2 queda completada. RWD4.2 permanece bloqueada por cortes históricos
+Broker–IB e IAM; los pendientes funcionales E2E siguen fuera de este refactor.
+Esta evidencia no demuestra datos reales ni S2S.
+
+## Trabajo completado
 
 - Completado en A2.1: extraer evaluación CPA a Strategy económica con input de contexto/requisitos
   congelados y evidencia normalizada; devolver cantidades y calificación tipadas.
@@ -66,7 +90,7 @@ específicas. RWD4.2 permanece bloqueada; esta entrega no demuestra S2S.
 - Completado en A2.2: resolver cálculo de volumen por factory tipada, reutilizando
   la aritmética de la Action retirada. Conservar comisión fija/porcentual, participación, plantilla,
   rates, mínimo y redondeo existentes; retornar dinero o ausencia de Reward.
-- Seleccionar proveedores mediante factories específicas de capacidad en el
+- Completado en A2.3: seleccionar proveedores mediante factories específicas de capacidad en el
   feature dueño: evidencia CPA/posiciones en Modules; conservar puerto y adapter
   PnL de Rewards sin implementar cálculo. Usar composición Laravel y mapas cerrados,
   sin selección por entorno ni nombres de clase aportados por JSON.

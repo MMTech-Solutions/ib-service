@@ -508,8 +508,9 @@ puerto obtiene evidencia. Una interfaz de proveedor se comparte solo para la mis
 capacidad, no para unir CPA, posiciones y cortes PnL. Los contratos de cálculo
 son específicos de cada modalidad y solo comparten objetos con igual semántica.
 Véase [strategies.md](strategies.md). La alineación de implementación CPA/volumen
-pertenece a [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md); no se
-declara implementada ni exige refactorizar Progression en esa etapa.
+se completó en [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md), junto
+con factories específicas de evidencia y selección del adapter PnL. El cálculo
+PnL sigue pendiente; esa etapa no refactorizó Progression.
 
 ## HTTP y Resources
 

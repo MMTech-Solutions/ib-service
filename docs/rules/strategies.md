@@ -1,6 +1,6 @@
 # Estrategias configurables
 
-Estado: **regla obligatoria; alineación de implementación pendiente en RWD-A2**.
+Estado: **regla obligatoria; alineación CPA/volumen completada en RWD-A2**.
 
 ## Objetivo
 
@@ -10,9 +10,10 @@ CPA, volumen, PnL y Progression conservan casos de uso propios. No se impone un
 pipeline común, una cadena de pasos, un engine genérico por modalidad ni un DTO
 universal con campos opcionales. Reutilizar garantías no exige la misma secuencia.
 
-Esta regla sustituye la prescripción anterior. Es arquitectura objetivo:
-[RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md) conserva pendiente la
-alineación de CPA/volumen; no incluye un refactor de Progression.
+Esta regla sustituye la prescripción anterior.
+[RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md) completó la
+alineación de CPA/volumen y selección de proveedores. El cálculo PnL permanece
+pendiente de RWD4.2; no incluye un refactor de Progression.
 
 ## Ubicación y separación obligatoria
 

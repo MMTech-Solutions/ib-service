@@ -51,11 +51,13 @@ final class ArchitectureGuardrailsTest extends TestCase
     /** @var array<string, string> */
     private const TECHNICAL_EXCEPTION_BASELINE = [
         'Features/Modules/Catalog/Exceptions/DuplicateModuleCodeException.php' => 'Historical persistence conflict translation.',
+        'Features/Modules/Catalog/Exceptions/UnsupportedRewardEvidenceProviderException.php' => 'Internal evidence provider configuration failure; not an HTTP error.',
         'Features/Plans/Catalog/Exceptions/DuplicatePlanCodeException.php' => 'Historical persistence conflict translation.',
         'Features/Programs/Catalog/Exceptions/DuplicateProgramCodeException.php' => 'Historical persistence conflict translation.',
         'Features/Rewards/Exceptions/CpaCaptureNotApplicableException.php' => 'Kafka control-flow outcome; not an HTTP error.',
         'Features/Rewards/Exceptions/RewardSettlementException.php' => 'Retryable Finance adapter failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedCpaRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
+        'Features/Rewards/Exceptions/UnsupportedNegativePnlPeriodsProviderException.php' => 'Internal PnL provider configuration failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedVolumeRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
         'Features/Rules/Catalog/Exceptions/DuplicateRuleNameException.php' => 'Historical persistence conflict translation.',
         'Features/Rules/Catalog/Exceptions/DuplicateRuleSlugException.php' => 'Historical persistence conflict translation.',
