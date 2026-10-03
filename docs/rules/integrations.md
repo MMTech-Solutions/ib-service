@@ -160,7 +160,13 @@ por ID descendente; el cashflow del ledger local usa `created_at` en
 `[baseline.occurred_until, occurred_until)`. Finance no participa en esta consulta;
 su endpoint de depósitos CPA por usuario no se reutiliza para PnL.
 
-El puerto V1 de Rewards envía a Broker las baselines persistidas por IB. Una cuenta sin baseline recibe un primer corte sin PnL; desde el segundo corte Broker devuelve el PnL firmado y referencias opacas de los movimientos utilizados. Timeout, `409` y 5xx son recuperables; un 2xx incompatible u otro error contractual es permanente. El runner futuro debe persistir la respuesta antes de resolver red o crear Rewards y reutilizar ese snapshot en sus reintentos.
+El puerto V1 de Rewards envía a Broker las baselines persistidas por IB. Una cuenta sin baseline recibe un primer corte sin PnL; desde el segundo corte Broker devuelve el PnL firmado y referencias opacas de los movimientos utilizados. Timeout, `409` y 5xx son recuperables; un 2xx incompatible u otro error contractual impide avanzar baseline. La ausencia de cobertura histórica conserva su código específico. El runner congela red y contexto al iniciar el período, conserva las respuestas de cada referido antes de crear Rewards y reutiliza esos snapshots en los reintentos. La evidencia parcial no avanza baseline.
+
+El puerto específico de referidos PnL usa `getDownline(user, max_distribution_level + 1)`;
+su adapter normaliza IAM 1 a nivel económico 0, conserva solo niveles remunerables
+y rechaza identidades UUID incompatibles, autorreferencias, duplicados o niveles
+inválidos. No propaga perfiles ni objetos SDK. El snapshot no acredita una red
+histórica. El cálculo posterior consume exclusivamente Data propios congelados.
 
 La ampliación histórica del corte solicitado pertenece a
 [RWD4](../roadmap/rewards/08-rwd4-volume-and-negative-pnl.md) y está implementada

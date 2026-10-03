@@ -8,6 +8,7 @@ use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepositor
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlNegativePnlConfigurationRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramVolumeRewardConfigurationRepository;
+use App\Features\Programs\Catalog\UseCases\ListNegativePnlConfigurationsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveNegativePnlProgramConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramCpaSymbolsUseCase;
@@ -16,6 +17,7 @@ use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseC
 use App\Features\Programs\Catalog\UseCases\ResolveProgressionTargetProgramUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardDistributionLimitUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardProgramConfigurationUseCase;
+use App\Features\Programs\Contracts\Ports\Input\ListNegativePnlConfigurationsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveNegativePnlProgramConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateRatesPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
@@ -38,6 +40,7 @@ final class ProgramsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ListNegativePnlConfigurationsPort::class, ListNegativePnlConfigurationsUseCase::class);
         $this->app->singleton(ResolveNegativePnlProgramConfigurationPort::class, ResolveNegativePnlProgramConfigurationUseCase::class);
         $this->app->singleton(ResolvePaymentTemplateRatesPort::class, ResolvePaymentTemplateRatesUseCase::class);
         $this->app->singleton('programs.negative-pnl-configurations.repositories.postgresql', fn (): PostgreSqlNegativePnlConfigurationRepository => new PostgreSqlNegativePnlConfigurationRepository(DB::connection()));

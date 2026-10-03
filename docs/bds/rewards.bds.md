@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.6
+- **Versión:** 1.7
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -33,6 +33,8 @@ El catálogo de reglas —identidad, versiones publicadas e inmutables y asignac
 | Run de Reward | Ejecución durable que congela el corte, configuración y red aplicables antes de calcular Rewards. No es un historial de intentos financieros. |
 | Reward de volumen | Obligación originada por una posición cerrada elegible y distribuida a la red configurada. |
 | PnL neto del período | Variación de balance de una cuenta de trading, menos sus depósitos netos de retiros asentados durante el mismo período. |
+| Baseline PnL | Balance y corte aceptados desde los que comienza el siguiente intervalo de una cuenta en el contexto de una suscripción beneficiaria. |
+| Cierre PnL pendiente | Obligación de evaluar el tramo final de la suscripción anterior al cambiar de plan, aun después de su terminación. |
 
 ## Relaciones
 
@@ -102,6 +104,11 @@ erDiagram
 | BR-REWARD-027 | Cambiar de programa o tasas dentro del mismo plan aplica a PnL el contexto del corte final al período completo. Cambiar de plan cierra el tramo de la suscripción anterior en su terminación, usando el contexto inmediatamente anterior; la nueva suscripción inicia una baseline en ese límite. Las obligaciones ya generadas no se cancelan por terminar la suscripción. |
 | BR-REWARD-028 | Un corte histórico usa la última observación de balance anterior o igual al instante solicitado y considera ese balance válido hasta dicho instante. El cashflow abarca el intervalo semiabierto entre cortes solicitados. Se conservan por separado fecha solicitada y fecha observada. Se acepta el riesgo conocido de PnL artificial cuando un movimiento todavía no está reflejado en la observación; ese desfase no introduce detección, gracia ni bloqueo automático. La ausencia de una observación sí impide avanzar baseline o generar Reward. |
 | BR-REWARD-029 | Incorporación, cambio de cadencia, moneda o grupo y reanudación establecen baseline nueva sin remunerar actividad previa. El importe PnL es `abs(pnl_neto) × tasa_nivel × personal_rate × master_rate`, con el último factor solo para Master IB; aplica mínimo antes de un único redondeo half-up a precisión del grupo. |
+| BR-REWARD-030 | Los contextos PnL mantienen baselines independientes por suscripción beneficiaria, módulo, referido, cuenta, grupo y cadencia, con moneda y precisión explícitas. Los períodos vencidos se evalúan en orden; un fallo en un contexto no impide evaluar los demás. |
+| BR-REWARD-031 | Un período PnL conserva red, contexto económico, tasas y mínimo antes de crear obligaciones. Solo una evidencia completa y válida permite avanzar la baseline junto con el período recuperable. Un fallo posterior continúa las mismas entradas, incluidas las obligaciones creadas parcialmente, sin duplicarlas ni sustituirlas por valores actuales. |
+| BR-REWARD-032 | Cambiar de plan conserva el cierre pendiente de la suscripción anterior junto con su terminación y la nueva suscripción; si el cambio no se confirma, tampoco existe ese cierre. Se evalúan primero los períodos anteriores y luego el tramo final; si termina en un límite de cadencia, existe un único período y ningún tramo vacío. |
+| BR-REWARD-033 | La baseline inicial, el PnL cero o positivo y los importes descartados por mínimo o redondeo conservan un resultado auditable sin Reward. La evidencia ausente o inválida conserva el período pendiente y no avanza baseline. |
+| BR-REWARD-034 | La red PnL se conserva tal como fue obtenida al iniciar el período; no representa una reconstrucción histórica de la red. Una pausa conserva las entradas ya congeladas y difiere su evaluación; la reanudación no convierte actividad previa no congelada en remunerable. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
@@ -154,6 +161,15 @@ Las tres asignaciones comparten configuración económica y scope `all`. Si camb
 - Run de Reward iniciado o cerrado.
 - Reward de volumen calculada.
 - Período PnL evaluado.
+- Cierre PnL pendiente registrado o completado.
+
+## Estados de evaluación PnL
+
+Un período pasa de pendiente de evidencia a listo para cálculo cuando todos sus
+cortes válidos quedan conservados. Al terminar la evaluación pasa a evaluado,
+con Rewards `pending` o resultados auditables sin Reward. Un fallo conserva el
+estado alcanzado y sus entradas; recuperar un período tiene prioridad sobre
+abrir el siguiente en el mismo contexto. Evaluar el período no confirma un pago.
 
 ## Decisiones pendientes
 

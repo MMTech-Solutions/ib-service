@@ -10,6 +10,8 @@ use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Data\V1\AssertProgramBelongsToPlanQueryData;
 use App\Features\Programs\Contracts\Data\V1\ResolveFirstProgramByPositionQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
+use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
+use App\Features\Rewards\Contracts\Ports\Input\RecordNegativePnlClosurePort;
 use App\Features\Subscriptions\Catalog\Actions\AssertPlanEligibleForSubscriptionAction;
 use App\Features\Subscriptions\Catalog\Actions\PresentSubscriptionAction;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionDetailData;
@@ -33,6 +35,7 @@ final class ChangeSubscriptionPlanUseCase
         private readonly LockPlanRowsPort $lockPlanRows,
         private readonly AssertPlanEligibleForSubscriptionAction $assertPlanEligible,
         private readonly PresentSubscriptionAction $presentSubscription,
+        private readonly RecordNegativePnlClosurePort $negativePnlClosure,
     ) {}
 
     public function execute(ChangeSubscriptionPlanCommand $command): SubscriptionDetailData
@@ -119,6 +122,8 @@ final class ChangeSubscriptionPlanUseCase
             );
 
             $repository->replace($subscription, $command->lockVersion, $incoming);
+            $closedAt = $repository->findById($subscription->id)?->closedAt ?? $now;
+            $this->negativePnlClosure->execute(new RecordNegativePnlClosureData($subscription->id, $incoming->id, $operationId, $closedAt));
 
             return $this->presentSubscription->toDetail($incoming);
         });

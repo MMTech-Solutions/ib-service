@@ -37,7 +37,7 @@ final class CpaRewardCalculationPersistenceTest extends TestCase
         $otherProgram = ProgramRecord::factory()->create(['plan_id' => $plan->id, 'position' => 2, 'entry_threshold' => 100]);
         $destination = PlanRecord::factory()->create();
         $destinationProgram = ProgramRecord::factory()->create(['plan_id' => $destination->id, 'position' => 1, 'entry_threshold' => 0]);
-        $module = ModuleRecord::factory()->create(['code' => 'broker']);
+        $module = ModuleRecord::query()->where('code', 'broker')->first() ?? ModuleRecord::factory()->create(['code' => 'broker']);
         $rule = RuleRecord::query()->create(['id' => (string) Str::uuid7(), 'plan_id' => $plan->id, 'name' => 'CPA', 'slug' => 'cpa', 'strategy_type' => 'cpa_fixed_amount', 'lock_version' => 1, 'created_at' => $captured, 'updated_at' => $captured]);
         $version = RuleVersionRecord::query()->create(['id' => (string) Str::uuid7(), 'rule_id' => $rule->id, 'version_number' => 1, 'status' => 'published', 'schema_version' => 1, 'configuration' => ['currency_precision' => 2], 'published_at' => $captured, 'lock_version' => 1, 'created_at' => $captured, 'updated_at' => $captured]);
         $assignmentId = (string) Str::uuid7();

@@ -17,4 +17,7 @@ interface NegativePnlConfigurationRepositoryInterface
     public function replace(string $programId, string $cadence, string $actorId, string $at, array $groups): ?NegativePnlProgramConfigurationData;
 
     public function resolve(ResolveNegativePnlProgramConfigurationQueryData $query): ?NegativePnlProgramConfigurationData;
+
+    /** @return list<NegativePnlProgramConfigurationData> */
+    public function list(?string $afterId, int $limit, ?string $programId = null, ?string $from = null, ?string $until = null): array;
 }

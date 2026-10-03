@@ -189,6 +189,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
     {
         return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt, $excludedIds): ?object {
             $reward = $this->connection->table('rewards')
+                ->where('rewards.commission_type', '!=', 'pnl')
                 ->whereNotIn('rewards.id', $excludedIds)
                 ->whereNull('rewards.reconciliation_hold_at')
                 ->whereNotExists(function ($query): void {

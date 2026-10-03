@@ -4,7 +4,7 @@ Estado: **regla obligatoria; alineación CPA/volumen completada en RWD-A2**.
 
 ## Objetivo
 
-Última revisión: 2026-10-02.
+Última revisión: 2026-10-03.
 
 CPA, volumen, PnL y Progression conservan casos de uso propios. No se impone un
 pipeline común, una cadena de pasos, un engine genérico por modalidad ni un DTO
@@ -12,8 +12,9 @@ universal con campos opcionales. Reutilizar garantías no exige la misma secuenc
 
 Esta regla sustituye la prescripción anterior.
 [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md) completó la
-alineación de CPA/volumen y selección de proveedores. El cálculo PnL permanece
-pendiente de RWD4.2; no incluye un refactor de Progression.
+alineación de CPA/volumen y selección de proveedores. RWD4.2.1 implementa el
+cálculo puro PnL y RWD4.2.2 su runner independiente con snapshots recuperables;
+no incluyen un refactor de Progression ni settlement PnL.
 
 ## Ubicación y separación obligatoria
 

@@ -511,7 +511,11 @@ Véase [strategies.md](strategies.md). La alineación de implementación CPA/vol
 se completó en [RWD-A2](../roadmap/rewards/10-rwd-a2-cpa-volume-refactor.md), junto
 con factories específicas de evidencia y selección del adapter PnL. El cálculo
 PnL se incorporó en RWD4.2.1 con factory específica y configuración histórica;
-el runner y recuperación siguen pendientes. Esa etapa no refactorizó Progression.
+RWD4.2.2 incorpora su runner independiente, recuperación y creación de Rewards
+`pending`, reutilizando los snapshots mediante un servicio interno y los puertos
+propietarios de Programs/Subscriptions. La selección de referidos usa un adapter
+IAM específico. Ninguna de estas etapas refactoriza Progression; settlement PnL
+y activación E2E permanecen pendientes.
 
 ## HTTP y Resources
 

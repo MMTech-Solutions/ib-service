@@ -48,7 +48,8 @@ sustituir los BDS ni las reglas técnicas.
   runs y placement operativos.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
   RWD4.2a local con S2S pendiente; RWD-A1 documental completada y RWD-A2 completada (A2.1–A2.3).
-  RWD4.2.1 incorpora configuración histórica y cálculo PnL; el runner y recuperación siguen pendientes.
+  RWD4.2.1 incorpora configuración histórica y cálculo PnL; RWD4.2.2 completa localmente
+  runner, recuperación y Rewards PnL `pending`, con ejecución deshabilitada por defecto.
   S2S Broker–IB/IAM se pospone como requisito de activación y cierre E2E, sin bloquear desarrollo.
   [Plan E2E y evidencia](roadmap/rewards/11-e2e-historical-pnl.md): en curso.
 

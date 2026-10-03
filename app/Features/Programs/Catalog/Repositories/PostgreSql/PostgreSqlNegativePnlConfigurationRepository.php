@@ -81,6 +81,25 @@ final class PostgreSqlNegativePnlConfigurationRepository implements NegativePnlC
         return new NegativePnlProgramConfigurationData((string) $row->id, (string) $row->program_id, (string) $row->cadence, (string) $row->actor_id, CarbonImmutable::parse($row->starts_at)->utc()->toISOString(), $row->ends_at === null ? null : CarbonImmutable::parse($row->ends_at)->utc()->toISOString(), $row->closed_by_actor_id, $items);
     }
 
+    public function list(?string $afterId, int $limit, ?string $programId = null, ?string $from = null, ?string $until = null): array
+    {
+        $query = $this->connection->table('program_negative_pnl_configuration_revisions')->where(fn ($q) => $q->whereNull('ends_at')->orWhereColumn('ends_at', '>', 'starts_at'))->orderBy('id')->limit($limit);
+        if ($programId !== null) {
+            $query->where('program_id', $programId);
+        }
+        if ($from !== null) {
+            $query->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $from));
+        }
+        if ($until !== null) {
+            $query->where('starts_at', '<=', $until);
+        }
+        if ($afterId !== null) {
+            $query->where('id', '>', $afterId);
+        }
+
+        return $query->get()->map(fn ($row): ?NegativePnlProgramConfigurationData => $this->resolve(new ResolveNegativePnlProgramConfigurationQueryData($row->program_id, occurred_at: CarbonImmutable::parse($row->starts_at)->utc()->toISOString())))->filter()->values()->all();
+    }
+
     /** @param list<NegativePnlGroupConfigurationData> $groups @return list<string> */
     private function identity(array $groups): array
     {

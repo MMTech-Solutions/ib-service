@@ -13,6 +13,11 @@ return [
         'claim_lease_seconds' => (int) env('REWARDS_VOLUME_CLAIM_LEASE_SECONDS', 60),
     ],
     'negative_pnl' => [
+        'enabled' => filter_var(env('REWARDS_PNL_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'batch_size' => (int) env('REWARDS_PNL_BATCH_SIZE', 100),
+        'discovery_batch_size' => (int) env('REWARDS_PNL_DISCOVERY_BATCH_SIZE', 100),
+        'claim_lease_seconds' => (int) env('REWARDS_PNL_CLAIM_LEASE_SECONDS', 120),
+        'retry_delay_seconds' => (int) env('REWARDS_PNL_RETRY_DELAY_SECONDS', 60),
         'broker_timeout_seconds' => (int) env('REWARDS_PNL_BROKER_TIMEOUT_SECONDS', 15),
     ],
     'cpa' => [

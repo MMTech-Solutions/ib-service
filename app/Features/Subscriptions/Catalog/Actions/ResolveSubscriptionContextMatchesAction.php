@@ -36,7 +36,7 @@ final class ResolveSubscriptionContextMatchesAction
         );
     }
 
-    private static function toContextData(
+    public static function toContextData(
         Subscription $subscription,
         SubscriptionPlacement $placement,
         string $occurredAt,

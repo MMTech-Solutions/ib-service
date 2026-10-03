@@ -1,6 +1,6 @@
 # RWD4 — volumen tradeado y PnL negativo
 
-Estado: **RWD4.1, RWD4.2a y RWD4.2.1 implementados localmente; runner/recuperación pendientes; S2S pendiente para activación y cierre**
+Estado: **RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 implementados localmente; S2S pendiente para activación y cierre**
 Dependencias: Modules M5, Rules R2, Programs, Subscriptions, IAM y Broker Service
 Última revisión: 2026-10-03
 
@@ -39,8 +39,8 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 ## RWD4.2 — PnL negativo
 
 - RWD4.2a publica el puerto `ResolveNegativePnlPeriodsPort`, Data V1 y adapter HTTP. Broker resuelve balance, cashflow y PnL firmado; IB no replica su contabilidad.
-- RWD4.2.1 incorpora la configuración histórica y el cálculo puro. El runner posterior creará runs por cadencia, reutilizará snapshots proveedor y aplicará regla, red y tasas congeladas.
-- Persistirá referencias de cuenta, balances, totales y referencias opacas de flujo sin copiar movimientos financieros completos.
+- RWD4.2.1 incorpora la configuración histórica y el cálculo puro. RWD4.2.2 procesa períodos por cadencia, reutiliza snapshots proveedor y aplica regla, red y tasas congeladas.
+- Conserva referencias de cuenta, balances, totales y referencias opacas de flujo sin copiar movimientos financieros completos.
 - El runner económico no forma parte de RWD4.2a. [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
   está completada. Por decisión del usuario, las pruebas operativas y S2S de corte
   histórico Broker–IB e IAM se posponen: no bloquean desarrollo de código, pero
@@ -64,10 +64,10 @@ Rules verifica versión publicada PnL del plan y una única asignación efectiva
 Plans resuelve pertenencia del binding; PaymentTemplates resuelve la versión exacta
 publicada y sus niveles. No se consulta el catálogo remoto del grupo.
 La Strategy y factory económica PnL son puras, separadas del proveedor existente;
-no crean Rewards. Mínimo explícito previo al redondeo; el futuro runner transmitirá
+no crean Rewards. Mínimo explícito previo al redondeo; el runner RWD4.2.2 transmite
 el mínimo de configuración cuyo default sigue `0.01`.
 
-El siguiente incremento necesita RWD4.2.1 y los snapshots locales del contrato
+RWD4.2.2 reutiliza RWD4.2.1 y los snapshots locales del contrato
 histórico: runner inicialmente deshabilitado, períodos vencidos en orden, baselines,
 recuperación, cierres durables al cambiar de plan, red/configuración congeladas y
 unicidad de Rewards. Salida: pruebas locales de idempotencia y recuperación.
@@ -81,7 +81,22 @@ Postman v2.1 válido: 78 requests, cobertura de las 77 rutas de
 `route:list --except-vendor`, incluido `/up` del bootstrap. Solo pruebas locales;
 sin ejecución operativa, S2S ni datos reales.
 
-## Diseño PnL acordado; implementación posterior
+### RWD4.2.2 — runner, recuperación y generación (completada localmente)
+
+La implementación y evidencia quedan registradas en el
+[plan E2E existente](11-e2e-historical-pnl.md#rwd422-runner-pnl-recuperacion-y-generacion-de-rewards).
+Reutiliza RWD4.2.1 y snapshots históricos locales: selección de períodos vencidos,
+referidos IAM, baselines, cierres durables al cambiar de plan, snapshots congelados,
+leases y creación idempotente de Rewards `pending`.
+El comando se programa cada minuto y permanece deshabilitado por defecto;
+Rewards PnL quedan excluidas del settlement automático hasta habilitación financiera.
+Aceptación local aprobada: 47 pruebas/652 assertions focalizadas y de arquitectura;
+169 pruebas/1098 assertions en regresiones CPA/volumen/cortes PnL y suscripciones.
+Pint y Graphify completados (5971 nodos, 14383 relaciones).
+Settlement, traducción de niveles Finance y consultas HTTP quedan para entregas
+posteriores; S2S/operatividad siguen siendo requisitos de activación/cierre.
+
+## Diseño PnL acordado y límites vigentes
 
 - La cadencia pertenece al programa beneficiario, no al referido ni al cron.
   Planes/suscripciones/programas con período vencido originan la selección de IBs,
