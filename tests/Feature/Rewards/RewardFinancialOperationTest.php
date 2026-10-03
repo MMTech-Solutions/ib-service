@@ -8,6 +8,7 @@ use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanRecord;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\Models\ProgramRecord;
 use App\Features\Rewards\DTOs\ManageRewardFinancialOperationData;
+use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\UseCases\ManageRewardFinancialOperationUseCase;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\Features\Rules\Catalog\Enums\RuleVersionStatus;
@@ -23,6 +24,15 @@ final class RewardFinancialOperationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_it_rejects_cancellation_during_an_active_settlement_lease(): void
+    {
+        $rewardId = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $rewardId)->update(['settlement_lock_expires_at' => now('UTC')->addMinute()]);
+        Http::fake();
+        $this->expectException(RewardFinancialOperationNotAllowedException::class);
+        app(ManageRewardFinancialOperationUseCase::class)->execute(new ManageRewardFinancialOperationData($rewardId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'cancellation', 'admin.cancelled'));
+    }
+
     public function test_it_cancels_only_when_finance_has_no_settlement_event(): void
     {
         $rewardId = $this->seedReward('pending');
@@ -37,13 +47,15 @@ final class RewardFinancialOperationTest extends TestCase
     public function test_it_reverses_a_settled_reward_with_a_finance_event(): void
     {
         $rewardId = $this->seedReward('settled');
-        Http::fake(['http://finance.test/*' => Http::response(['data' => ['status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main', 'event' => ['id' => 782, 'status' => 'posted', 'idempotency_key' => 'ib-service:reward:'.$rewardId.':reversal', 'commission_type' => 'reversal', 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'amount_minor' => 2500, 'reference_type' => 'reward', 'reference_id' => $rewardId, 'reverses_commission_event_id' => 781]]])]);
+        DB::table('rewards')->where('id', $rewardId)->update(['commission_type' => 'volume', 'network_level' => 3]);
+        Http::fake(['http://finance.test/*' => Http::response(['data' => ['status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main', 'event' => ['id' => 782, 'status' => 'posted', 'idempotency_key' => 'ib-service:reward:'.$rewardId.':reversal', 'commission_type' => 'reversal', 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'amount_minor' => 2500, 'reference_type' => 'reward', 'reference_id' => $rewardId, 'reverses_commission_event_id' => 781, 'network_level' => 3]]])]);
 
         $result = app(ManageRewardFinancialOperationUseCase::class)->execute(new ManageRewardFinancialOperationData($rewardId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'reversal', 'admin.reversal'));
 
         self::assertSame('completed', $result->status);
         self::assertSame('reversed', DB::table('rewards')->where('id', $rewardId)->value('status'));
         self::assertSame('782', DB::table('reward_financial_operations')->where('reward_id', $rewardId)->value('provider_reference_id'));
+        Http::assertSent(fn ($request): bool => $request['network_level'] === 3);
     }
 
     private function seedReward(string $status): string

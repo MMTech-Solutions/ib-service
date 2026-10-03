@@ -76,16 +76,38 @@ resuelva balance y cashflow local en el mismo instante UTC solicitado; no sustit
 balance histórico por `current_balance` ni por snapshots del antiguo IB de Broker,
 que será retirado. Finance Service no participa en evidencia PnL; solo settlement.
 
-La fuente histórica de balance no quedó demostrada. El gate exige contrato
+La fuente histórica seleccionada es la última lectura de margen anterior o igual
+al corte solicitado, asumiendo continuidad hasta ese corte. El desfase posible
+con cashflow es un bug conocido aceptado, sin detección ni gracia; véase el
+[plan E2E actualizado](11-e2e-historical-pnl.md). La ampliación está implementada
+localmente y el gate todavía exige evidencia S2S del contrato
 versionado/compatible, cobertura de cuentas históricamente elegibles, límites
 temporales exactos y error explícito sin Reward/avance de baseline cuando falta
 evidencia. La evidencia S2S reproducible debe cubrir cambio de plan y consulta
-posterior al cierre. Esta entrega documental no modifica Broker ni su endpoint.
+posterior al cierre. La evidencia local no acredita S2S ni datos reales.
 
 RWD4.0 conserva la evidencia del contrato actual; demostrarlo no basta para cerrar
 la ampliación histórica. RWD4.2a mantiene su estado, sin declarar soporte nuevo.
 
 ## Criterios de salida
+
+### Ampliación histórica local del contrato
+
+`occurred_until` opcional selecciona el corte solicitado; omitirlo conserva el
+contrato previo. Las respuestas históricas incorporan `balance_read_id` y
+`balance_read_at`, independientes del corte económico. Se conservan fracciones
+temporales en el contrato histórico. El ledger usa `[baseline, corte)` y la lectura
+se elige con tiempo menor o igual al corte, sin antigüedad máxima.
+
+`422 HISTORICAL_PNL_COVERAGE_UNAVAILABLE` indica ausencia de lectura; se distingue
+de un `409`, error 5xx o fallo de transporte recuperable. Baselines ajenas o no
+anteriores al corte son inválidas. IB valida pertenencia, corte, continuidad y
+aritmética; rechaza lecturas futuras y cuentas duplicadas. La selección histórica
+no acredita por sí sola todas las vigencias operativas de Trading.
+
+Los snapshots locales conservan la cuenta externa y el contexto de suscripción,
+grupo y cadencia sin FK distribuida. El primer corte persistido prevalece en
+reintentos. Esta capacidad aún no se conecta al runner económico bloqueado.
 
 - Tests de contrato contra Broker e IAM; pruebas de rangos UTC, precisión, deduplicación y concurrencia.
 - Volumen `event`, `periodic` y `both` producen una sola Reward por identidad económica.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Services\Adapters;
 
+use App\Features\Rewards\Exceptions\HistoricalPnlCoverageUnavailableException;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
 use App\Features\Rewards\Exceptions\NegativePnlPeriodsUnavailableException;
 use Illuminate\Support\Facades\Http;
@@ -37,6 +38,10 @@ final class BrokerNegativePnlApiClient
         }
 
         $body = $response->json();
+        if ($response->status() === 422 && is_array($body)
+            && ($body['error_code'] ?? $body['error']['code'] ?? null) === 'HISTORICAL_PNL_COVERAGE_UNAVAILABLE') {
+            throw HistoricalPnlCoverageUnavailableException::create();
+        }
         if (! $response->successful() || ! is_array($body) || ! is_array($body['data'] ?? null)) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }

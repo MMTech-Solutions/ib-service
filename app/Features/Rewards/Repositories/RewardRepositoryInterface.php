@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Repositories;
 
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use Carbon\CarbonImmutable;
 
 interface RewardRepositoryInterface
 {
+    public function findNegativePnlCut(string $identityKey): ?NegativePnlCutSnapshotData;
+
+    public function freezeNegativePnlCut(NegativePnlCutSnapshotData $snapshot): NegativePnlCutSnapshotData;
+
     public function persistVolumeReward(PersistVolumeRewardData $data): bool;
 
     public function findCpaContextId(CaptureCpaContextData $data): ?string;
@@ -27,7 +32,10 @@ interface RewardRepositoryInterface
     /** @param array<string, mixed> $requirements */
     public function persistQualifiedCpaContext(object $context, array $requirements, object $evidence, string $volume, int $depositMinor, CarbonImmutable $cutoff, bool $qualified): void;
 
-    public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt): ?object;
+    /** @param list<string> $excludedIds */
+    public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt, array $excludedIds = []): ?object;
+
+    public function releaseSettlementClaim(string $rewardId, string $token): void;
 
     public function markRewardSettled(string $rewardId, string $token, string $provider, string $referenceId, CarbonImmutable $at): void;
 

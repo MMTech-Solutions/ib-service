@@ -12,5 +12,6 @@ final class ResolveNegativePnlPeriodsQueryData extends Data
     public function __construct(
         public readonly string $external_user_id,
         public readonly array $baselines = [],
+        public readonly ?string $occurred_until = null,
     ) {}
 }

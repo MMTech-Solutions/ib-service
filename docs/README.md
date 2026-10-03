@@ -49,6 +49,7 @@ sustituir los BDS ni las reglas técnicas.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
   RWD4.2a local con S2S pendiente; RWD-A1 documental completada y RWD-A2 completada (A2.1–A2.3).
   El runner económico/cierre PnL está bloqueado por cortes históricos Broker–IB/IAM.
+  [Plan E2E y evidencia](roadmap/rewards/11-e2e-historical-pnl.md): en curso.
 
 ## Jerarquía de autoridad
 

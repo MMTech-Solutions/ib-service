@@ -26,19 +26,49 @@ final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnl
 
     public function resolve(ResolveNegativePnlPeriodsQueryData $query): ResolveNegativePnlPeriodsResultData
     {
-        $rows = $this->client->resolve([
+        $payload = [
             'external_user_id' => $query->external_user_id,
             'baselines' => array_map(static fn ($baseline): array => [
                 'account_id' => $baseline->account_id,
                 'balance_after' => $baseline->balance_after,
                 'occurred_until' => $baseline->occurred_until,
             ], $query->baselines),
-        ]);
+        ];
+        if ($query->occurred_until !== null) {
+            $payload['occurred_until'] = $query->occurred_until;
+        }
+        $rows = $this->client->resolve($payload);
 
-        return new ResolveNegativePnlPeriodsResultData(array_map(
+        $periods = array_map(
             fn (array $row): NegativePnlPeriodData => $this->mapPeriod($row),
             $rows,
-        ));
+        );
+        if ($query->occurred_until !== null) {
+            $seen = [];
+            foreach ($periods as $period) {
+                if ($period->external_user_id !== $query->external_user_id
+                    || isset($seen[$period->account_id])
+                    || $period->balance_read_id === null || $period->balance_read_at === null
+                    || ! CarbonImmutable::parse($period->occurred_until)->equalTo(CarbonImmutable::parse($query->occurred_until))) {
+                    throw InvalidNegativePnlPeriodsResponseException::create();
+                }
+                $seen[$period->account_id] = true;
+                $baseline = collect($query->baselines)->firstWhere('account_id', $period->account_id);
+                if (($baseline === null && ! $period->establishesBaseline())
+                    || ($baseline !== null && ($period->establishesBaseline()
+                        || ! CarbonImmutable::parse($period->occurred_from)->equalTo(CarbonImmutable::parse($baseline->occurred_until))
+                        || bccomp($period->balance_before, $baseline->balance_after, $period->currency_precision) !== 0))) {
+                    throw InvalidNegativePnlPeriodsResponseException::create();
+                }
+            }
+            foreach ($query->baselines as $baseline) {
+                if (! isset($seen[$baseline->account_id])) {
+                    throw InvalidNegativePnlPeriodsResponseException::create();
+                }
+            }
+        }
+
+        return new ResolveNegativePnlPeriodsResultData($periods);
     }
 
     /** @param array<string, mixed> $row */
@@ -68,7 +98,15 @@ final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnl
 
         try {
             $occurredUntil = CarbonImmutable::parse((string) $row['occurred_until'])->utc();
+            $readAt = isset($row['balance_read_at']) ? CarbonImmutable::parse($row['balance_read_at'])->utc() : null;
         } catch (Throwable) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
+        }
+        if (($row['balance_read_id'] ?? null) !== null
+            && (! is_string($row['balance_read_id']) || $row['balance_read_id'] === '' || $readAt === null)) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
+        }
+        if ($readAt !== null && ($readAt->greaterThan($occurredUntil) || ! is_string($row['balance_read_id'] ?? null))) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }
 
@@ -117,13 +155,15 @@ final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnl
             currency_precision: $row['currency_precision'],
             balance_before: $balanceBefore,
             balance_after: $row['balance_after'],
-            occurred_from: $occurredFrom?->toIso8601String(),
-            occurred_until: $occurredUntil->toIso8601String(),
+            occurred_from: $readAt === null ? $occurredFrom?->toIso8601String() : $occurredFrom?->toISOString(),
+            occurred_until: $readAt === null ? $occurredUntil->toIso8601String() : $occurredUntil->toISOString(),
             deposits: $row['deposits'],
             withdrawals: $row['withdrawals'],
             cash_flow_net: $row['cash_flow_net'],
             net_pnl: $netPnl,
             evidence: $evidence,
+            balance_read_id: $row['balance_read_id'] ?? null,
+            balance_read_at: $readAt?->toISOString(),
         );
     }
 

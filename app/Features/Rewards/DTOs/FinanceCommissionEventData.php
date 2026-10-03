@@ -19,5 +19,6 @@ final readonly class FinanceCommissionEventData
         public ?int $reverses_commission_event_id,
         public string $currency_code,
         public string $system_wallet_slug,
+        public int $network_level,
     ) {}
 }

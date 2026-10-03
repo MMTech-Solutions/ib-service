@@ -75,12 +75,12 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             'reference_type' => 'reward',
             'reference_id' => $request->reward_id,
             'source_client_id' => $request->reward_id,
-            'network_level' => 1,
+            'network_level' => $request->network_level,
             'reverses_commission_event_id' => (int) $request->original_finance_event_id,
             'metadata' => ['reward_id' => $request->reward_id],
         ]);
 
-        if (! $this->isValidEventResponse($data, $request->idempotency_key, 'reversal', $request->beneficiary_user_id, $request->amount_minor, $request->currency_code, $request->currency_precision, $request->reward_id)
+        if (! $this->isValidEventResponse($data, $request->idempotency_key, 'reversal', $request->beneficiary_user_id, $request->amount_minor, $request->currency_code, $request->currency_precision, $request->reward_id, $request->network_level)
             || (int) ($data['event']['reverses_commission_event_id'] ?? 0) !== (int) $request->original_finance_event_id) {
             throw new RewardSettlementException('finance_contract_invalid');
         }
@@ -115,6 +115,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             reference_id: (string) ($event['reference_id'] ?? ''), status: (string) ($event['status'] ?? ''),
             reverses_commission_event_id: isset($event['reverses_commission_event_id']) ? (int) $event['reverses_commission_event_id'] : null,
             currency_code: (string) ($event['currency_code'] ?? ''), system_wallet_slug: (string) ($event['system_wallet_slug'] ?? ''),
+            network_level: is_int($event['network_level'] ?? null) ? $event['network_level'] : -1,
         );
     }
 
@@ -147,13 +148,14 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
     }
 
     /** @param array<string, mixed> $data */
-    private function isValidEventResponse(array $data, string $key, string $type, string $beneficiary, int $amount, string $currency, int $precision, string $rewardId): bool
+    private function isValidEventResponse(array $data, string $key, string $type, string $beneficiary, int $amount, string $currency, int $precision, string $rewardId, int $networkLevel): bool
     {
         $event = $data['event'] ?? null;
 
         return in_array($data['status'] ?? null, ['created', 'duplicate'], true) && is_array($event) && is_int($event['id'] ?? null)
             && ($event['status'] ?? null) === 'posted' && ($event['idempotency_key'] ?? null) === $key && ($event['commission_type'] ?? null) === $type
-            && ($event['ib_user_id'] ?? null) === $beneficiary && (int) ($event['amount_minor'] ?? -1) === $amount
+            && ($event['ib_user_id'] ?? null) === $beneficiary && ($event['amount_minor'] ?? null) === $amount
+            && ($event['network_level'] ?? null) === $networkLevel
             && ($event['reference_type'] ?? null) === 'reward' && ($event['reference_id'] ?? null) === $rewardId
             && ($data['currency_code'] ?? null) === $currency && (int) ($data['minor_units'] ?? -1) === $precision
             && ($data['system_wallet_slug'] ?? null) === strtolower($currency).'-main';
@@ -171,7 +173,8 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             && ($event['idempotency_key'] ?? null) === $request->idempotency_key
             && ($event['commission_type'] ?? null) === $request->commission_type
             && ($event['ib_user_id'] ?? null) === $request->beneficiary_user_id
-            && (int) ($event['amount_minor'] ?? -1) === $request->amount_minor
+            && ($event['amount_minor'] ?? null) === $request->amount_minor
+            && ($event['network_level'] ?? null) === $request->network_level
             && ($event['reference_type'] ?? null) === 'reward'
             && ($event['reference_id'] ?? null) === $request->reward_id
             && ($data['currency_code'] ?? null) === $request->currency_code

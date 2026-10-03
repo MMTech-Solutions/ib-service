@@ -74,6 +74,7 @@ final class ManageRewardFinancialOperationUseCase
                 amount_minor: (int) $reward->amount_minor, currency_code: (string) $reward->currency_code,
                 currency_precision: (int) $reward->currency_precision, idempotency_key: (string) $operation->idempotency_key,
                 original_finance_event_id: (string) $reward->settlement_reference_id, reason_code: $data->reason_code, reason_label: $data->reason_label,
+                network_level: (int) $reward->network_level,
             ));
             $this->complete($data->reward_id, (string) $operation->id, 'reversed', null, $result->reference_id);
         } catch (RewardSettlementException $exception) {

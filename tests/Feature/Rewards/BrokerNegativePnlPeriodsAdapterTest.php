@@ -7,6 +7,7 @@ namespace Tests\Feature\Rewards;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
 use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
+use App\Features\Rewards\Exceptions\HistoricalPnlCoverageUnavailableException;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
 use App\Features\Rewards\Exceptions\NegativePnlPeriodsUnavailableException;
 use Illuminate\Http\Client\Request;
@@ -40,8 +41,7 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
             $result->periods[1]->evidence->external_deposit_references,
         );
 
-        Http::assertSent(static fn (Request $request): bool =>
-            $request->method() === 'POST'
+        Http::assertSent(static fn (Request $request): bool => $request->method() === 'POST'
             && str_ends_with($request->url(), '/api/broker/v1/internal/accounts/negative-pnl-periods/resolve')
             && $request->hasHeader('X-Internal-Source', 'mmt-ib-service')
             && $request->data()['external_user_id'] === '11111111-1111-4111-8111-111111111111'
@@ -93,6 +93,44 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
             ResolveNegativePnlPeriodsPort::class,
             $this->app->make(ResolveNegativePnlPeriodsPort::class),
         );
+    }
+
+    public function test_it_maps_historical_read_evidence_and_sends_the_requested_cut(): void
+    {
+        $fixture = $this->fixture();
+        foreach ($fixture['data'] as &$row) {
+            $row['balance_read_id'] = '123';
+            $row['balance_read_at'] = '2026-10-02T09:58:00Z';
+        }
+        unset($row);
+        Http::fake(['*' => Http::response($fixture)]);
+
+        $result = $this->app->make(ResolveNegativePnlPeriodsPort::class)->resolve(new ResolveNegativePnlPeriodsQueryData(
+            '11111111-1111-4111-8111-111111111111',
+            [new NegativePnlBaselineData('00000000-0000-7000-8000-000000000002', '100.00', '2026-10-01T10:00:00Z')],
+            '2026-10-02T10:00:00Z',
+        ));
+
+        self::assertSame('123', $result->periods[1]->balance_read_id);
+        Http::assertSent(fn (Request $request): bool => $request['occurred_until'] === '2026-10-02T10:00:00Z');
+    }
+
+    public function test_it_rejects_a_read_after_the_cut(): void
+    {
+        $fixture = $this->fixture();
+        $fixture['data'][0]['balance_read_id'] = '123';
+        $fixture['data'][0]['balance_read_at'] = '2026-10-02T10:00:01Z';
+        Http::fake(['*' => Http::response($fixture)]);
+
+        $this->expectException(InvalidNegativePnlPeriodsResponseException::class);
+        $this->resolveEmpty();
+    }
+
+    public function test_it_distinguishes_missing_historical_coverage(): void
+    {
+        Http::fake(['*' => Http::response(['error' => ['code' => 'HISTORICAL_PNL_COVERAGE_UNAVAILABLE']], 422)]);
+        $this->expectException(HistoricalPnlCoverageUnavailableException::class);
+        $this->resolveEmpty();
     }
 
     private function resolveEmpty(): void

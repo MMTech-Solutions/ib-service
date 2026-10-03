@@ -67,7 +67,7 @@ flowchart LR
 | --- | --- | --- |
 | RWD-A1: alineación documental | [`09-rwd-a1-documentation-alignment.md`](09-rwd-a1-documentation-alignment.md) | Completada; no cambia código |
 | RWD-A2: refactor CPA/volumen | [`10-rwd-a2-cpa-volume-refactor.md`](10-rwd-a2-cpa-volume-refactor.md) | Completada; A2.1–A2.3 |
-| Ampliación del corte histórico Broker–IB | [Dependencia y criterios en RWD4](08-rwd4-volume-and-negative-pnl.md) | Pendiente de implementación y evidencia S2S |
+| Ampliación del corte histórico Broker–IB | [Plan E2E](11-e2e-historical-pnl.md) | Implementada localmente; S2S pendiente; desfase temporal aceptado como bug conocido |
 | RWD4.2: runner económico/cierre | [RWD4.2](08-rwd4-volume-and-negative-pnl.md) | Bloqueada por cortes históricos e IAM |
 
 Cada modalidad conserva su UseCase; factories de evidencia y cálculo son
@@ -92,6 +92,10 @@ A2.3 completa las factories específicas de proveedores de evidencia.
 - Cancelación, reversa y compensación son administrativas, idempotentes y auditables. La reconciliación recurrente solo trata incertidumbre u holds, nunca el histórico financiero confirmado.
 
 ## Próximo paso
+
+El [plan E2E y su evidencia](11-e2e-historical-pnl.md) está en curso. Las lecturas
+de margen son la fuente seleccionada bajo el supuesto de continuidad hasta el
+corte; el desfase temporal queda documentado sin detección ni gracia.
 
 Completar la ampliación/evidencia S2S
 de cortes históricos Broker–IB y profundidad IAM. Con A2 completada, solo al satisfacer esos gates

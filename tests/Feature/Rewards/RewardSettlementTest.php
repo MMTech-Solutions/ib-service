@@ -23,6 +23,51 @@ final class RewardSettlementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_held_reward_does_not_block_other_settlements(): void
+    {
+        config()->set('finance.base_url', 'http://finance.test');
+        $held = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $held)->update(['reconciliation_hold_at' => now('UTC'), 'reconciliation_hold_code' => 'contract_mismatch']);
+        $payable = $this->seedReward('pending');
+        Http::fake(fn () => Http::response($this->financeResponse($payable, 'created'), 201));
+
+        $result = app(SettlePendingRewardsUseCase::class)->execute(10);
+
+        self::assertSame(1, $result['settled']);
+        self::assertSame('pending', DB::table('rewards')->where('id', $held)->value('status'));
+        Http::assertSentCount(1);
+    }
+
+    public function test_a_paused_plan_is_skipped_without_blocking_another_plan(): void
+    {
+        config()->set('finance.base_url', 'http://finance.test');
+        $paused = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $paused)->update(['created_at' => now('UTC')->subMinute()]);
+        PlanRecord::query()->where('id', DB::table('rewards')->where('id', $paused)->value('plan_id'))->update(['is_active' => false]);
+        $payable = $this->seedReward('pending');
+        Http::fake(fn () => Http::response($this->financeResponse($payable, 'created'), 201));
+
+        $result = app(SettlePendingRewardsUseCase::class)->execute(1);
+
+        self::assertSame(['settled' => 1, 'failed' => 0, 'skipped' => 1], $result);
+        self::assertNull(DB::table('rewards')->where('id', $paused)->value('settlement_lock_token'));
+        Http::assertSentCount(1);
+    }
+
+    public function test_finance_level_mismatch_does_not_confirm_settlement(): void
+    {
+        config()->set('finance.base_url', 'http://finance.test');
+        $rewardId = $this->seedReward('pending');
+        $response = $this->financeResponse($rewardId, 'created');
+        $response['data']['event']['network_level'] = 2;
+        Http::fake(fn () => Http::response($response, 201));
+
+        $result = app(SettlePendingRewardsUseCase::class)->execute(10);
+
+        self::assertSame(1, $result['failed']);
+        self::assertSame('failed', DB::table('rewards')->where('id', $rewardId)->value('status'));
+    }
+
     public function test_it_settles_a_pending_cpa_reward_with_the_finance_commission_contract(): void
     {
         config()->set('finance.base_url', 'http://finance.test');
@@ -120,9 +165,9 @@ final class RewardSettlementTest extends TestCase
     private function seedReward(string $status, mixed $lastAttempt = null): string
     {
         $now = now('UTC');
-        $plan = PlanRecord::factory()->create();
+        $plan = PlanRecord::factory()->create(['is_active' => true]);
         $program = ProgramRecord::factory()->create(['plan_id' => $plan->id, 'position' => 1, 'entry_threshold' => 0]);
-        $module = ModuleRecord::factory()->create(['code' => 'broker']);
+        $module = ModuleRecord::query()->where('code', 'broker')->first() ?? ModuleRecord::factory()->create(['code' => 'broker']);
         $rule = RuleRecord::query()->create([
             'id' => (string) Str::uuid7(), 'plan_id' => $plan->id, 'name' => 'CPA Settlement Rule '.Str::random(8),
             'slug' => 'cpa-settlement-'.Str::lower(Str::random(8)), 'description' => null,
@@ -151,7 +196,7 @@ final class RewardSettlementTest extends TestCase
             'created_at' => $now, 'updated_at' => $now,
         ]);
         DB::table('cpa_contexts')->insert([
-            'id' => (string) Str::uuid7(), 'referred_user_id' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            'id' => (string) Str::uuid7(), 'referred_user_id' => (string) Str::uuid7(),
             'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'plan_id' => $plan->id,
             'program_id' => $program->id, 'module_id' => $module->id, 'rule_assignment_id' => $assignmentId,
             'rule_id' => $rule->id, 'rule_version_id' => $version->id, 'symbols_snapshot' => '[]',
@@ -174,6 +219,7 @@ final class RewardSettlementTest extends TestCase
                     'id' => 781, 'status' => 'posted', 'idempotency_key' => 'ib-service:reward:'.$rewardId.':settlement',
                     'commission_type' => 'cpa', 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                     'amount_minor' => 2500, 'reference_type' => 'reward', 'reference_id' => $rewardId,
+                    'network_level' => 1,
                 ],
             ],
         ];

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\UseCases;
 
+use App\Features\Rewards\Actions\ValidateRewardFinancialEventAction;
 use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
-use App\Features\Rewards\DTOs\FinanceCommissionEventData;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use Carbon\CarbonImmutable;
 
 final class ReconcileRewardSettlementsUseCase
 {
-    public function __construct(private readonly RewardRepositoryFactory $repositoryFactory, private readonly RewardFinancialGatewayInterface $gateway) {}
+    public function __construct(private readonly RewardRepositoryFactory $repositoryFactory, private readonly RewardFinancialGatewayInterface $gateway, private readonly ValidateRewardFinancialEventAction $validateEvent) {}
 
     /** @return array{confirmed: int, held: int, unavailable: int} */
     public function execute(int $limit): array
@@ -42,7 +42,7 @@ final class ReconcileRewardSettlementsUseCase
                     continue;
                 }
                 $type = $reward->status === 'reversal_pending' || $reward->status === 'reversal_failed' ? 'reversal' : (string) $reward->commission_type;
-                if (! $this->matches($reward, $event, $type)) {
+                if (! $this->validateEvent->matches($reward, $event, $type, $key)) {
                     $repository->placeReconciliationHold((string) $reward->id, 'FINANCE_RECONCILIATION_MISMATCH', CarbonImmutable::now('UTC'));
                     $result['held']++;
 
@@ -56,12 +56,5 @@ final class ReconcileRewardSettlementsUseCase
         }
 
         return $result;
-    }
-
-    private function matches(object $reward, FinanceCommissionEventData $event, string $type): bool
-    {
-        return $event->status === 'posted' && $event->commission_type === $type && $event->ib_user_id === $reward->beneficiary_user_id
-            && $event->amount_minor === (int) $reward->amount_minor && $event->minor_units === (int) $reward->currency_precision
-            && $event->reference_type === 'reward' && $event->reference_id === $reward->id;
     }
 }

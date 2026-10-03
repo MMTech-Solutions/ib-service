@@ -16,5 +16,6 @@ final readonly class RewardReversalRequestData
         public string $original_finance_event_id,
         public string $reason_code,
         public ?string $reason_label,
+        public int $network_level,
     ) {}
 }

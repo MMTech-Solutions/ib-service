@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\Exceptions\RewardNotFoundException;
@@ -20,6 +21,29 @@ use Illuminate\Support\Str;
 final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 {
     public function __construct(private readonly ConnectionInterface $connection) {}
+
+    public function findNegativePnlCut(string $identityKey): ?NegativePnlCutSnapshotData
+    {
+        $row = $this->connection->table('negative_pnl_cut_snapshots')->where('identity_key', $identityKey)->first();
+
+        return $row === null ? null : NegativePnlCutSnapshotData::from(json_decode($row->snapshot, true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function freezeNegativePnlCut(NegativePnlCutSnapshotData $snapshot): NegativePnlCutSnapshotData
+    {
+        $now = CarbonImmutable::now('UTC');
+        $this->connection->table('negative_pnl_cut_snapshots')->insertOrIgnore([
+            'id' => (string) Str::uuid7(), 'identity_key' => $snapshot->identity_key,
+            'module_id' => $snapshot->module_id, 'subscription_id' => $snapshot->subscription_id,
+            'account_id' => $snapshot->account_id, 'server_group_id' => $snapshot->server_group_id,
+            'cadence' => $snapshot->cadence, 'occurred_from' => $snapshot->period->occurred_from,
+            'occurred_until' => $snapshot->period->occurred_until,
+            'snapshot' => json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR),
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+
+        return $this->findNegativePnlCut($snapshot->identity_key);
+    }
 
     public function persistVolumeReward(PersistVolumeRewardData $data): bool
     {
@@ -161,10 +185,23 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
         });
     }
 
-    public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt): ?object
+    public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt, array $excludedIds = []): ?object
     {
-        return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt): ?object {
+        return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt, $excludedIds): ?object {
             $reward = $this->connection->table('rewards')
+                ->whereNotIn('rewards.id', $excludedIds)
+                ->whereNull('rewards.reconciliation_hold_at')
+                ->whereNotExists(function ($query): void {
+                    $query->selectRaw('1')->from('reward_financial_operations')
+                        ->whereColumn('reward_financial_operations.reward_id', 'rewards.id')
+                        ->where('reward_financial_operations.operation_type', 'cancellation')
+                        ->where('reward_financial_operations.status', '!=', 'completed');
+                })
+                ->whereNotExists(function ($query): void {
+                    $query->selectRaw('1')->from('reward_financial_operations')
+                        ->whereColumn('reward_financial_operations.compensation_reward_id', 'rewards.id')
+                        ->where('reward_financial_operations.status', '!=', 'completed');
+                })
                 ->where(function ($query) use ($retryAt): void {
                     $query->where('rewards.status', 'pending')->orWhere(function ($retryable) use ($retryAt): void {
                         $retryable->where('rewards.status', 'failed')->where(function ($lastAttempt) use ($retryAt): void {
@@ -193,6 +230,12 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
         $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->update(['status' => 'settled', 'settlement_provider' => $provider, 'settlement_reference_id' => $referenceId, 'last_settlement_error_code' => null, 'settled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]);
     }
 
+    public function releaseSettlementClaim(string $rewardId, string $token): void
+    {
+        $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)
+            ->update(['settlement_lock_token' => null, 'settlement_lock_expires_at' => null]);
+    }
+
     public function markRewardSettlementFailed(string $rewardId, string $token, string $errorCode, CarbonImmutable $at): void
     {
         $this->connection->table('rewards')->where('id', $rewardId)->where('settlement_lock_token', $token)->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at]);
@@ -211,6 +254,10 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             $operation = $this->connection->table('reward_financial_operations')->where('reward_id', $rewardId)->where('operation_type', $type)->lockForUpdate()->first();
             if ($operation !== null && $operation->status === 'completed') {
                 return [$reward, $operation];
+            }
+            if ($reward->settlement_lock_expires_at !== null
+                && CarbonImmutable::parse($reward->settlement_lock_expires_at)->greaterThan(CarbonImmutable::now('UTC'))) {
+                throw RewardFinancialOperationNotAllowedException::create();
             }
             $allowed = match ($type) {
                 'cancellation' => in_array($reward->status, ['pending', 'failed'], true), 'reversal' => $reward->status === 'settled' || $reward->status === 'reversal_failed', 'compensation' => $reward->status === 'reversed', default => false

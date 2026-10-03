@@ -24,6 +24,8 @@ final class NegativePnlPeriodData extends Data
         public readonly string $cash_flow_net,
         public readonly ?string $net_pnl,
         public readonly NegativePnlCashFlowEvidenceData $evidence,
+        public readonly ?string $balance_read_id = null,
+        public readonly ?string $balance_read_at = null,
     ) {}
 
     public function establishesBaseline(): bool
