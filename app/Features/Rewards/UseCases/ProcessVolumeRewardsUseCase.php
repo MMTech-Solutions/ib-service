@@ -19,10 +19,12 @@ use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardProgramConfigurat
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
 use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineQueryData;
+use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineResultData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\DTOs\VolumeRewardActivityProcessingResultData;
 use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
+use App\Features\Rewards\DTOs\VolumeRewardPreparedInputsData;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rewards\Factories\VolumeRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
@@ -170,6 +172,66 @@ final class ProcessVolumeRewardsUseCase
         if ($activity->currency_code === null || $activity->currency_precision === null) {
             return VolumeRewardActivityProcessingResultData::retryable('activity_economic_contract_incomplete');
         }
+        $repository = $this->processingRepositoryFactory->make();
+        $now = CarbonImmutable::now('UTC');
+        $evaluation = $repository->claimEvaluation($activity, $now, $now->addSeconds(max((int) config('rewards.volume.claim_lease_seconds', 60), 1)));
+        if ($evaluation === null) {
+            return VolumeRewardActivityProcessingResultData::retryable('volume_evaluation_busy');
+        }
+        try {
+            $activity = $evaluation->activity;
+            $prepared = $evaluation->preparations[$channel] ?? null;
+            if ($prepared === null) {
+                $upline = $evaluation->distribution;
+                if ($upline === null) {
+                    $at = CarbonImmutable::parse($activity->occurred_at)->utc();
+                    $maxLevel = -1;
+                    foreach (['event', 'periodic'] as $candidate) {
+                        $limit = $this->distributionLimit->execute(new ResolveVolumeRewardDistributionLimitQueryData($activity->module_id, $at->toISOString(), $at->addMicrosecond()->toISOString(), $candidate));
+                        if ($limit !== null) {
+                            $maxLevel = max($maxLevel, $limit->max_distribution_level);
+                        }
+                    }
+                    if ($maxLevel < 0) {
+                        $upline = ResolveRewardUplineResultData::resolved([], $now->toISOString());
+                    } else {
+                        $upline = $this->upline->resolve(new ResolveRewardUplineQueryData($activity->subject_external_user_id, $maxLevel));
+                    }
+                    if (! $upline->isResolved() || $upline->resolved_at === null) {
+                        return VolumeRewardActivityProcessingResultData::retryable($upline->failure_code ?? 'upline_unavailable');
+                    }
+                    $repository->freezeDistribution($evaluation, $upline);
+                }
+                $prepared = $this->prepareActivity($activity, $channel, $upline);
+                if ($prepared instanceof VolumeRewardActivityProcessingResultData) {
+                    return $prepared;
+                }
+                $repository->freezePreparation($evaluation, $channel, $prepared);
+            }
+            $created = 0;
+            $skipped = $prepared->skipped;
+            foreach ($prepared->rewards as $reward) {
+                $wasCreated = $repository->evaluationTransaction($evaluation, function () use ($repository, $evaluation, $reward): bool {
+                    $created = $this->rewardRepositoryFactory->make()->persistVolumeReward($reward);
+                    $repository->recordEvaluationOutcome($evaluation, $reward->origin_idempotency_key, 'reward');
+
+                    return $created;
+                });
+                $wasCreated ? $created++ : $skipped++;
+            }
+            $repository->recordEvaluationOutcome($evaluation, $channel, 'completed');
+
+            return VolumeRewardActivityProcessingResultData::completed($created, $skipped);
+        } finally {
+            $repository->releaseEvaluation($evaluation);
+        }
+    }
+
+    private function prepareActivity(VolumeRewardActivityData $activity, string $channel, ResolveRewardUplineResultData $upline): VolumeRewardPreparedInputsData|VolumeRewardActivityProcessingResultData
+    {
+        if ($activity->currency_code === null || $activity->currency_precision === null) {
+            return VolumeRewardActivityProcessingResultData::retryable('activity_economic_contract_incomplete');
+        }
 
         $occurredAt = CarbonImmutable::parse($activity->occurred_at)->utc();
         $limit = $this->distributionLimit->execute(new ResolveVolumeRewardDistributionLimitQueryData(
@@ -179,31 +241,27 @@ final class ProcessVolumeRewardsUseCase
             channel: $channel,
         ));
         if ($limit === null) {
-            return VolumeRewardActivityProcessingResultData::completed(0, 1);
+            return new VolumeRewardPreparedInputsData([], 1);
         }
 
-        $upline = $this->upline->resolve(new ResolveRewardUplineQueryData(
-            $activity->subject_external_user_id,
-            $limit->max_distribution_level,
-        ));
-        if (! $upline->isResolved() || $upline->resolved_at === null) {
-            return VolumeRewardActivityProcessingResultData::retryable($upline->failure_code ?? 'upline_unavailable');
-        }
-
-        $created = 0;
+        $prepared = [];
         $skipped = 0;
+        $outcomes = [];
+        $minimum = (string) config('rewards.minimum_amount_major', '0.01');
         foreach ($upline->beneficiaries as $beneficiary) {
             $subscription = $this->subscriptions->resolve(new ResolveSubscriptionContextQueryData(
                 $beneficiary->beneficiary_external_user_id,
                 $activity->occurred_at,
             ));
             if (! $subscription->found() || $subscription->context === null) {
+                $outcomes[$beneficiary->beneficiary_external_user_id] = 'no_active_subscription';
                 $skipped++;
 
                 continue;
             }
             $context = $subscription->context;
             if ($context->activated_at === '' || $occurredAt->lt(CarbonImmutable::parse($context->activated_at)->utc())) {
+                $outcomes[$beneficiary->beneficiary_external_user_id] = 'before_activation';
                 $skipped++;
 
                 continue;
@@ -218,6 +276,7 @@ final class ProcessVolumeRewardsUseCase
                 channel: $channel,
             ));
             if ($configuration === null) {
+                $outcomes[$beneficiary->beneficiary_external_user_id] = 'no_configuration_for_channel';
                 $skipped++;
 
                 continue;
@@ -233,6 +292,7 @@ final class ProcessVolumeRewardsUseCase
                 $activity->occurred_at,
             ));
             if (! $rule->found()) {
+                $outcomes[$beneficiary->beneficiary_external_user_id] = 'no_applicable_rule';
                 $skipped++;
 
                 continue;
@@ -249,9 +309,10 @@ final class ProcessVolumeRewardsUseCase
                 master_rate: $context->master_rate,
                 currency_code: $activity->currency_code,
                 currency_precision: $activity->currency_precision,
-                minimum_amount_major: (string) config('rewards.minimum_amount_major', '0.01'),
+                minimum_amount_major: $minimum,
             ));
             if ($money === null) {
+                $outcomes[$beneficiary->beneficiary_external_user_id] = 'below_minimum_or_rounded_zero';
                 $skipped++;
 
                 continue;
@@ -265,7 +326,7 @@ final class ProcessVolumeRewardsUseCase
                 (string) $rule->rule_assignment_id,
                 (string) $rule->rule_version_id,
             ]));
-            $wasCreated = $this->rewardRepositoryFactory->make()->persistVolumeReward(new PersistVolumeRewardData(
+            $prepared[] = new PersistVolumeRewardData(
                 beneficiary_user_id: $beneficiary->beneficiary_external_user_id,
                 plan_id: $context->plan_id,
                 program_id: $context->program_id,
@@ -279,6 +340,7 @@ final class ProcessVolumeRewardsUseCase
                 network_level: $beneficiary->distribution_level,
                 origin_idempotency_key: $originKey,
                 summary_snapshot: [
+                    'minimum_amount_major' => $minimum,
                     'channel' => $channel,
                     'module_id' => $activity->module_id,
                     'source_activity_id' => $activity->source_activity_id,
@@ -313,11 +375,10 @@ final class ProcessVolumeRewardsUseCase
                 unit_code: $activity->unit_code,
                 occurred_at: $activity->occurred_at,
                 instrument_reference: $activity->instrument_reference,
-            ));
-            $wasCreated ? $created++ : $skipped++;
+            );
         }
 
-        return VolumeRewardActivityProcessingResultData::completed($created, $skipped);
+        return new VolumeRewardPreparedInputsData($prepared, $skipped, $outcomes);
     }
 
     private function retryReceipt(object $receipt, string $errorCode): void

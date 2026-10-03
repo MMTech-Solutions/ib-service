@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
+use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
+use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineResultData;
 use App\Features\Rewards\DTOs\RecordVolumeRewardEventData;
+use App\Features\Rewards\DTOs\VolumeRewardPreparedInputsData;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlVolumeRewardProcessingRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,6 +18,51 @@ use Tests\TestCase;
 final class VolumeRewardProcessingRepositoryTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_evaluation_reuses_frozen_activity_distribution_and_preparation_after_failure(): void
+    {
+        $module = ModuleRecord::factory()->create();
+        $repo = new PostgreSqlVolumeRewardProcessingRepository(DB::connection());
+        $now = now('UTC')->toImmutable();
+        $activity = new VolumeRewardActivityData($module->id, 'position', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'lot', '2', $now->toISOString(), 'symbol', 'USD', 2, null);
+        $first = $repo->claimEvaluation($activity, $now, $now->addMinute());
+        self::assertNull($repo->claimEvaluation($activity, $now, $now->addMinute()));
+        $repo->freezeDistribution($first, ResolveRewardUplineResultData::resolved([], $now->toISOString()));
+        $repo->freezePreparation($first, 'event', new VolumeRewardPreparedInputsData([], 1, ['beneficiary' => 'no_applicable_rule']));
+        try {
+            $repo->evaluationTransaction($first, function () use ($repo, $module): void {
+                $repo->recordEvent(new RecordVolumeRewardEventData($module->id, 'effect', 'login', []));
+                throw new \RuntimeException('injected_failure');
+            });
+            self::fail('Expected local rollback');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('injected_failure', $exception->getMessage());
+        }
+        self::assertSame(0, DB::table('volume_reward_event_receipts')->count());
+        $repo->releaseEvaluation($first);
+        $changed = new VolumeRewardActivityData($module->id, 'position', $activity->subject_external_user_id, 'lot', '99', $now->toISOString(), 'symbol', 'USD', 2, null);
+        $recovered = $repo->claimEvaluation($changed, $now, $now->addMinute());
+        self::assertSame('2', $recovered->activity->quantity);
+        self::assertSame([], $recovered->distribution->beneficiaries);
+        self::assertSame(['beneficiary' => 'no_applicable_rule'], $recovered->preparations['event']->outcomes);
+        $repo->freezePreparation($recovered, 'event', new VolumeRewardPreparedInputsData([], 9));
+        $repo->releaseEvaluation($recovered);
+        self::assertSame(1, $repo->claimEvaluation($changed, $now, $now->addMinute())->preparations['event']->skipped);
+    }
+
+    public function test_expired_evaluation_worker_cannot_confirm_effects(): void
+    {
+        $module = ModuleRecord::factory()->create();
+        $repo = new PostgreSqlVolumeRewardProcessingRepository(DB::connection());
+        $now = now('UTC')->toImmutable();
+        $activity = new VolumeRewardActivityData($module->id, 'position', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'lot', '2', $now->toISOString(), 'symbol', 'USD', 2, null);
+        $first = $repo->claimEvaluation($activity, $now, $now->addSecond());
+        $this->travel(2)->seconds();
+        $replacement = $repo->claimEvaluation($activity, now('UTC')->toImmutable(), now('UTC')->addMinute()->toImmutable());
+        self::assertNotSame($first->lease_token, $replacement->lease_token);
+        $this->expectException(\RuntimeException::class);
+        $repo->recordEvaluationOutcome($first, 'event', 'completed');
+    }
 
     public function test_receipts_are_idempotent_and_expired_leases_can_be_reclaimed_with_backoff(): void
     {

@@ -16,8 +16,8 @@ que se conservan abajo como evidencia de entregas anteriores.
 | Incremento | Estado | Salida |
 | --- | --- | --- |
 | Contrato financiero y settlement PnL | Completado localmente | Solicitud congelada, niveles traducidos y controles independientes |
-| Coordinación financiera | En curso | Leases compartidas, recuperación y cancelación incierta |
-| Snapshots de volumen | Pendiente | Entradas completas antes de efectos parciales |
+| Coordinación financiera | Completado localmente | Leases compartidas, recuperación y cancelación incierta |
+| Snapshots de volumen | Completado localmente | Entradas completas antes de efectos parciales |
 | Consultas HTTP | Pendiente | Rewards por propietario y jobs/períodos administrativos |
 | Progression y regresión integrada | Pendiente | Flujo local de actividad a placement y settlement |
 
@@ -35,6 +35,19 @@ invocar un UseCase desde otro. Una compensación se crea y enlaza atómicamente;
 sus reintentos rechazan cambios de importe o clave. La cancelación expone outcome
 `cancelled` o `rejected_already_settled`. Primeras regresiones: 19 pruebas /
 64 assertions aprobadas para settlement, operaciones y recuperación.
+Coordinación financiera: 49 pruebas / 235 assertions con arquitectura, Pint
+completado; commit `6a838f6`.
+
+Volumen conserva actividad y distribución por posición en una evaluación durable,
+con preparaciones separadas para evento y barrido que mantienen sus diferencias
+de elegibilidad. La consulta IAM cubre la profundidad máxima remunerable de ambos
+canales, sin volver a resolverla al reintentar. Todas las entradas económicas y
+el mínimo quedan congelados antes de crear obligaciones. Las Rewards y outcomes
+se confirman bajo lease; recuperación reutiliza la preparación y la unicidad
+económica original. Regresiones de volumen y arquitectura: 37 pruebas /
+228 assertions aprobadas; Pint completado. Campos económicos aún ausentes no
+constituyen una obligación; una comisión fuente inicialmente ausente puede
+completarse antes de conservar una preparación, sin reescribir cantidades válidas.
 
 ## Dependencias y evidencia
 

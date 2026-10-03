@@ -20,6 +20,7 @@ use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
 use App\Features\Rewards\Contracts\Strategies\VolumeRewardCalculationStrategyInterface;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\DTOs\VolumeRewardCalculationData;
+use App\Features\Rewards\DTOs\VolumeRewardEvaluationData;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rewards\Factories\VolumeRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
@@ -106,6 +107,20 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
         $processing->shouldReceive('markEventProcessed')->once();
         $processing->shouldReceive('claimPeriodicRun')->once()->andReturn($run);
         $processing->shouldReceive('completePeriodicPage')->once()->with('run-1', 'run-token', null, Mockery::type('object'));
+        $distribution = null;
+        $preparations = [];
+        $processing->shouldReceive('claimEvaluation')->twice()->andReturnUsing(function () use ($activity, &$distribution, &$preparations) {
+            return new VolumeRewardEvaluationData('evaluation', 'token', $activity, $distribution, $preparations);
+        });
+        $processing->shouldReceive('freezeDistribution')->once()->andReturnUsing(function ($evaluation, $value) use (&$distribution): void {
+            $distribution = $value;
+        });
+        $processing->shouldReceive('freezePreparation')->twice()->andReturnUsing(function ($evaluation, $channel, $value) use (&$preparations): void {
+            $preparations[$channel] = $value;
+        });
+        $processing->shouldReceive('evaluationTransaction')->twice()->andReturnUsing(fn ($evaluation, $callback) => $callback());
+        $processing->shouldReceive('recordEvaluationOutcome')->times(4);
+        $processing->shouldReceive('releaseEvaluation')->twice();
         app()->instance('rewards.volume-processing.repositories.postgresql', $processing);
 
         $persistedKeys = [];
@@ -126,11 +141,11 @@ final class ProcessVolumeRewardsUseCaseTest extends TestCase
         $activities = Mockery::mock(ListVolumeRewardActivitiesPort::class);
         $activities->shouldReceive('execute')->once()->andReturn(new ListVolumeRewardActivitiesResultData($moduleId, 'running', true, [$activity], null, null));
         $limit = Mockery::mock(ResolveVolumeRewardDistributionLimitPort::class);
-        $limit->shouldReceive('execute')->times(3)->andReturn(new VolumeRewardDistributionLimitData([$activity->instrument_reference], 0));
+        $limit->shouldReceive('execute')->times(5)->andReturn(new VolumeRewardDistributionLimitData([$activity->instrument_reference], 0));
         $program = Mockery::mock(ResolveVolumeRewardProgramConfigurationPort::class);
         $program->shouldReceive('execute')->twice()->andReturn(new VolumeRewardProgramConfigurationData(null, 'symbol-config-1', 'both', 'payment-binding-1', 'payment-version-1', 'fixed', '0.25', 0, '0.5', 'USD'));
         $upline = Mockery::mock(ResolveRewardUplinePort::class);
-        $upline->shouldReceive('resolve')->twice()->andReturn(ResolveRewardUplineResultData::resolved([
+        $upline->shouldReceive('resolve')->once()->andReturn(ResolveRewardUplineResultData::resolved([
             new RewardUplineBeneficiaryData('00000000-0000-7000-8000-000000000003', 0),
         ], '2026-10-02T00:00:00+00:00'));
         $subscriptions = Mockery::mock(ResolveSubscriptionContextPort::class);

@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
+use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
+use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineResultData;
+use App\Features\Rewards\Contracts\Data\V1\RewardUplineBeneficiaryData;
+use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use App\Features\Rewards\DTOs\RecordVolumeRewardEventData;
+use App\Features\Rewards\DTOs\VolumeRewardEvaluationData;
+use App\Features\Rewards\DTOs\VolumeRewardPreparedInputsData;
 use App\Features\Rewards\Repositories\VolumeRewardProcessingRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
@@ -13,6 +19,85 @@ use Illuminate\Support\Str;
 final class PostgreSqlVolumeRewardProcessingRepository implements VolumeRewardProcessingRepositoryInterface
 {
     public function __construct(private readonly ConnectionInterface $connection) {}
+
+    public function claimEvaluation(VolumeRewardActivityData $activity, CarbonImmutable $now, CarbonImmutable $expiresAt): ?VolumeRewardEvaluationData
+    {
+        return $this->connection->transaction(function () use ($activity, $now, $expiresAt) {
+            $this->connection->table('volume_reward_evaluations')->insertOrIgnore(['id' => (string) Str::uuid7(), 'module_id' => $activity->module_id, 'source_activity_id' => $activity->source_activity_id, 'activity' => json_encode($activity->toArray(), JSON_THROW_ON_ERROR), 'created_at' => $now, 'updated_at' => $now]);
+            $row = $this->connection->table('volume_reward_evaluations')->where('module_id', $activity->module_id)->where('source_activity_id', $activity->source_activity_id)->lockForUpdate()->firstOrFail();
+            if ($row->lease_expires_at !== null && CarbonImmutable::parse($row->lease_expires_at)->greaterThan($now)) {
+                return null;
+            }
+            $frozenActivity = json_decode($row->activity, true, 512, JSON_THROW_ON_ERROR);
+            if ($frozenActivity['broker_granted_commission'] === null && $activity->broker_granted_commission !== null && json_decode($row->preparations, true, 512, JSON_THROW_ON_ERROR) === []) {
+                $frozenActivity['broker_granted_commission'] = $activity->broker_granted_commission;
+                $row->activity = json_encode($frozenActivity, JSON_THROW_ON_ERROR);
+                $this->connection->table('volume_reward_evaluations')->where('id', $row->id)->update(['activity' => $row->activity]);
+            }
+            $token = (string) Str::uuid7();
+            $this->connection->table('volume_reward_evaluations')->where('id', $row->id)->update(['lease_token' => $token, 'lease_expires_at' => $expiresAt, 'updated_at' => $now]);
+            $distribution = null;
+            if ($row->distribution !== null) {
+                $data = json_decode($row->distribution, true, 512, JSON_THROW_ON_ERROR);
+                $distribution = ResolveRewardUplineResultData::resolved(array_map(fn ($item) => RewardUplineBeneficiaryData::from($item), $data['beneficiaries']), $data['resolved_at']);
+            }
+            $preparations = [];
+            foreach (json_decode($row->preparations, true, 512, JSON_THROW_ON_ERROR) as $channel => $data) {
+                $preparations[$channel] = new VolumeRewardPreparedInputsData(array_map(fn ($item) => PersistVolumeRewardData::from($item), $data['rewards']), $data['skipped'], $data['outcomes']);
+            }
+
+            return new VolumeRewardEvaluationData($row->id, $token, VolumeRewardActivityData::from(json_decode($row->activity, true, 512, JSON_THROW_ON_ERROR)), $distribution, $preparations);
+        });
+    }
+
+    public function freezeDistribution(VolumeRewardEvaluationData $evaluation, ResolveRewardUplineResultData $distribution): void
+    {
+        $this->evaluationTransaction($evaluation, function () use ($evaluation, $distribution): void {
+            $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->whereNull('distribution')->update(['distribution' => json_encode($distribution->toArray(), JSON_THROW_ON_ERROR)]);
+        });
+    }
+
+    public function freezePreparation(VolumeRewardEvaluationData $evaluation, string $channel, VolumeRewardPreparedInputsData $inputs): void
+    {
+        $this->evaluationTransaction($evaluation, function () use ($evaluation, $channel, $inputs): void {
+            $row = $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->firstOrFail();
+            $preparations = json_decode($row->preparations, true, 512, JSON_THROW_ON_ERROR);
+            if (! array_key_exists($channel, $preparations)) {
+                $preparations[$channel] = $inputs->toArray();
+                $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->update(['preparations' => json_encode($preparations, JSON_THROW_ON_ERROR)]);
+            }
+        });
+    }
+
+    public function recordEvaluationOutcome(VolumeRewardEvaluationData $evaluation, string $key, string $outcome): void
+    {
+        $this->evaluationTransaction($evaluation, function () use ($evaluation, $key, $outcome): void {
+            $outcomes = json_decode($this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->value('outcomes'), true, 512, JSON_THROW_ON_ERROR);
+            $outcomes[$key] ??= $outcome;
+            $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->update(['outcomes' => json_encode($outcomes, JSON_THROW_ON_ERROR)]);
+        });
+    }
+
+    public function evaluationTransaction(VolumeRewardEvaluationData $evaluation, \Closure $callback): mixed
+    {
+        return $this->connection->transaction(function () use ($evaluation, $callback): mixed {
+            $row = $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->lockForUpdate()->firstOrFail();
+            if ($row->lease_token !== $evaluation->lease_token || $row->lease_expires_at === null || CarbonImmutable::parse($row->lease_expires_at)->lessThanOrEqualTo(CarbonImmutable::now('UTC'))) {
+                throw new \RuntimeException('volume_evaluation_lease_lost');
+            }
+            $result = $callback();
+            if (CarbonImmutable::parse($row->lease_expires_at)->lessThanOrEqualTo(CarbonImmutable::now('UTC'))) {
+                throw new \RuntimeException('volume_evaluation_lease_lost');
+            }
+
+            return $result;
+        });
+    }
+
+    public function releaseEvaluation(VolumeRewardEvaluationData $evaluation): void
+    {
+        $this->connection->table('volume_reward_evaluations')->where('id', $evaluation->id)->where('lease_token', $evaluation->lease_token)->update(['lease_token' => null, 'lease_expires_at' => null]);
+    }
 
     public function recordEvent(RecordVolumeRewardEventData $data): void
     {
