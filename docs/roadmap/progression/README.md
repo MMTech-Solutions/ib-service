@@ -6,7 +6,7 @@ Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 Subscriptions P0.2, Plans P0.3
 Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
 IAM; la distribución se congela localmente por actividad
-Última revisión: 2026-09-29
+Última revisión: 2026-10-03
 
 ## Objetivo
 
@@ -131,6 +131,14 @@ distribución resultante; no depende de una consulta histórica de red.
 - [`architecture.md`](../../rules/architecture.md)
 - [`strategies.md`](../../rules/strategies.md)
 - [`integrations.md`](../../rules/integrations.md)
+
+## Evidencia del cierre local E2E
+
+La regresión de actividad → contribución → cierre de ventana → placement verifica
+configuración y suscripción locales, conservación del programa histórico y
+idempotencia de evaluación, run y aplicación. No requiere refactor de PG1/PG2.
+La evidencia conjunta está en el [plan E2E](../rewards/11-e2e-historical-pnl.md#entrega-de-cierre-local-e2e).
+Broker/IAM reales y scheduler compartido se validarán después con ib-labs.
 
 ## Próximo paso
 

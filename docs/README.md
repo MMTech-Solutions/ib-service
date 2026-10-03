@@ -49,10 +49,12 @@ sustituir los BDS ni las reglas técnicas.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
   RWD4.2a local con S2S pendiente; RWD-A1 documental completada y RWD-A2 completada (A2.1–A2.3).
   RWD4.2.1 incorpora configuración histórica y cálculo PnL; RWD4.2.2 completa localmente
-  runner, recuperación y Rewards PnL `pending`, con generación habilitada por defecto.
+  runner y recuperación. El cierre local E2E completa settlement PnL, coordinación
+  financiera, snapshots de volumen y consultas HTTP; generación y settlement están
+  habilitados por defecto.
   Las pruebas integradas se realizarán con ib-labs, todavía inconcluso; siguen pendientes
   para el cierre E2E, sin bloquear desarrollo ni habilitación del código.
-  [Plan E2E y evidencia](roadmap/rewards/11-e2e-historical-pnl.md): en curso.
+  [Plan E2E y evidencia](roadmap/rewards/11-e2e-historical-pnl.md): código completado localmente.
 
 ## Jerarquía de autoridad
 

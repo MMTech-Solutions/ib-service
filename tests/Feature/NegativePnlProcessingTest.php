@@ -24,6 +24,7 @@ use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use App\Features\Rewards\Services\Strategies\NegativePnlShareCalculationStrategy;
 use App\Features\Rewards\UseCases\ProcessNegativePnlRewardsUseCase;
+use App\Features\Rewards\UseCases\SettlePendingRewardsUseCase;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -131,6 +132,35 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertNull(app(RewardRepositoryFactory::class)->make()->claimNextSettlement(now('UTC')->toImmutable(), now('UTC')->subMinute()->toImmutable(), now('UTC')->addMinute()->toImmutable(), []));
         self::assertSame($f['subscription']['id'], json_decode(DB::table('rewards')->first()->summary_snapshot, true)['inputs']['subscription']['subscription_id']);
         Http::assertNothingSent();
+    }
+
+    public function test_local_configuration_baseline_period_reward_and_finance_settlement_flow(): void
+    {
+        $fixture = $this->activeFixture();
+        $this->process();
+        $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
+        self::assertSame(1, $this->process()['rewards']);
+        $reward = DB::table('rewards')->first();
+        self::assertSame(0, $reward->network_level);
+        self::assertSame('pending', $reward->status);
+        Http::fake(fn ($request) => Http::response(['data' => [
+            'status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main',
+            'event' => ['id' => 991, 'status' => 'posted', 'idempotency_key' => $request['idempotency_key'],
+                'commission_type' => $request['commission_type'], 'ib_user_id' => $request['ib_user_id'],
+                'amount_minor' => $request['amount_minor'], 'reference_type' => 'reward',
+                'reference_id' => $request['reference_id'], 'network_level' => $request['network_level']],
+        ]]));
+        self::assertSame(['settled' => 1, 'failed' => 0, 'skipped' => 0], app(SettlePendingRewardsUseCase::class)->execute(10));
+        self::assertSame(0, $this->process()['rewards']);
+        self::assertSame(0, app(SettlePendingRewardsUseCase::class)->execute(10)['settled']);
+        $settled = DB::table('rewards')->first();
+        self::assertSame('settled', $settled->status);
+        self::assertSame(0, $settled->network_level);
+        self::assertSame('991', $settled->settlement_reference_id);
+        self::assertSame($fixture['subscription']['id'], json_decode($settled->summary_snapshot, true)['inputs']['subscription']['subscription_id']);
+        self::assertSame(1, json_decode($settled->settlement_request_snapshot, true)['network_level']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request['commission_type'] === 'pnl' && $request['network_level'] === 1 && $request['amount_minor'] === 1000);
     }
 
     public function test_context_final_rates_and_frozen_inputs_survive_partial_reward_creation(): void

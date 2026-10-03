@@ -1,6 +1,6 @@
 # Próxima entrega: E2E Broker, Progression y Rewards con cortes PnL históricos
 
-Estado: **En curso; contrato histórico, RWD4.2.1 y RWD4.2.2 completados localmente; operatividad/S2S pospuestas para activación y cierre**
+Estado: **Cierre de código completado localmente; operatividad, S2S y datos reales pendientes de validación con ib-labs**
 Última revisión: 2026-10-03
 
 ## Entrega de cierre local E2E
@@ -19,7 +19,7 @@ que se conservan abajo como evidencia de entregas anteriores.
 | Coordinación financiera | Completado localmente | Leases compartidas, recuperación y cancelación incierta |
 | Snapshots de volumen | Completado localmente | Entradas completas antes de efectos parciales |
 | Consultas HTTP | Completado localmente | Rewards por propietario y jobs/períodos administrativos |
-| Progression y regresión integrada | Pendiente | Flujo local de actividad a placement y settlement |
+| Progression y regresión integrada | Completado localmente | Flujo local de actividad a placement y settlement |
 
 Primer incremento: se incorpora solicitud financiera congelada y selección PnL
 condicionada por `rewards.negative_pnl.settlement_enabled` (default `true`).
@@ -58,6 +58,24 @@ Los filtros temporales son UTC y semiabiertos. HTTP y arquitectura: 19 pruebas /
 Postman v2.1 válido: 86 requests cubren las 85 rutas propias de `route:list`
 y `/up` configurado en bootstrap. Pint y Graphify completados.
 
+Consultas HTTP: commit `34ca7e3`. Las pruebas integradas nuevas enlazan actividad
+→ contribución → cierre de ventana → placement y configuración PnL → baseline
+→ período → Reward → settlement con Finance simulado. Conservan el programa
+histórico de la contribución, nivel económico y solicitud financiera traducida;
+repetir los runs no duplica contribuciones, placement, Rewards ni envíos.
+La revisión final exige operación y Reward vinculadas a la misma lease vigente;
+un fallo del puerto operativo libera el claim y permite continuar la cola.
+Una respuesta financiera inválida conserva hold sin nuevos pagos automáticos.
+El entorno local no acredita transporte S2S ni datos reales.
+
+Verificación conjunta local: **335 pruebas / 2437 assertions** aprobadas de
+CPA, volumen, cortes/configuración/procesamiento PnL, suscripciones, Progression,
+proveedores, unitarias y arquitectura. Tras reforzar la recuperación de holds:
+**53 pruebas / 263 assertions** financieras y de arquitectura aprobadas.
+Incluyen consulta consistente para retirar holds de reversa/compensación sin
+repetir POST, exclusión de claims ajenos, lease vencida y continuidad de la cola.
+Pint aprobado y Graphify actualizado. No hay cambios en Broker, Finance o ib-labs.
+
 ## Dependencias y evidencia
 
 A1 y A2.1–A2.3 están completadas; no se repite su refactor.
@@ -81,30 +99,31 @@ La selección no demuestra un historial completo de elegibilidad Trading: usa
 pertenencia, existencia al corte y grupo Live actual. Ese límite requiere evidencia
 contractual antes de afirmar cobertura histórica completa.
 
-## Incrementos pendientes y salida
+## Trabajo pendiente y salida E2E
 
 1. **Broker–IB e IAM: S2S pendiente.** Fuente y contrato histórico implementados localmente; demostrar S2S
    cierre posterior a cambio de plan y profundidad IAM. Ampliar después contratos,
    documentación, Postman y pruebas de los servicios afectados.
-2. **PnL económico: completado localmente hasta Rewards `pending`.** RWD4.2.1
-   completa configuración histórica y Strategy pura;
-   [RWD4.2.2](#rwd422-runner-pnl-recuperacion-y-generacion-de-rewards) completa
-   baselines independientes, cierres durables de suscripciones terminadas,
-   períodos ordenados, evidencia/red/configuración congeladas y recuperación
-   idempotente. El runner permanece deshabilitado por defecto y PnL queda fuera
-   del claim automático de settlement. S2S y datos reales continúan pendientes
-   para activación y cierre; no se declaran pagos PnL.
-3. **Rewards/Finance: en curso.** Completar validación contractual, condiciones y
-   holds al claim, coordinación administrativa, reconciliación y snapshots completos
-   de volumen. Incorporar consultas HTTP con autorización, propiedad y Postman.
-   Salida: concurrencia y reintentos sin duplicar obligaciones ni pagos.
-4. **Progression: pendiente.** Validar PG1/PG2, contexto histórico, red congelada,
-   duplicados, fallos parciales y placement, sin refactor de arquitectura.
-5. **Activación: pendiente de 1–4.** Plan/grupo controlado y observación del backlog.
-   Salida: CPA/volumen/PnL settled, placement y remuneración exclusiva del tramo
-   anterior al cambio de plan. Separar evidencia local, S2S y datos reales.
+2. **Finance y actividad: S2S pendiente.** Demostrar respuestas perdidas,
+   duplicados, incertidumbre, holds, reversas y compensaciones usando los
+   contratos reales; verificar evento/barrido de volumen y depósitos CPA.
+3. **Operatividad con ib-labs: pendiente.** Preparar plan/grupo controlado y
+   observar scheduler, backlog, cortes/cierres pendientes y errores de evidencia
+   o financieros. Generación y settlement PnL ya están habilitados por defecto;
+   esta validación no es un gate del código.
+4. **Datos reales y cierre: pendientes.** CPA/volumen/PnL deben llegar a `settled`,
+   Progression resolver placement y un cambio de plan remunerar solo el tramo
+   anterior, sin duplicar obligaciones ni pagos. Separar evidencia local,
+   S2S con datos controlados y validación con datos reales.
 
-## Primer cambio independiente
+## Evidencia de incrementos anteriores
+
+Los estados y restricciones de las entregas anteriores que aparecen a
+continuación describen su alcance al cerrarlas. La decisión y el estado vigentes
+son los registrados en «Entrega de cierre local E2E»; sustituyen el default
+deshabilitado y el gate S2S de activación sin borrar esa evidencia histórica.
+
+### Primer cambio independiente
 
 La reversa transmite el nivel original de la Reward a Finance; anteriormente
 enviaba siempre `1`. La regresión local usa volumen de nivel 3 y comprueba payload
@@ -296,14 +315,17 @@ El claim excluye holds de reconciliación y operaciones de cancelación/compensa
 incompletas; las operaciones administrativas rechazan una lease de settlement
 activa. El runner consulta operabilidad de plan y módulo mediante sus puertos,
 libera claims no elegibles y continúa con otras Rewards. No exige que una
-suscripción histórica siga activa. Estas medidas no completan por sí solas toda
-la coordinación concurrente pendiente. Settlement y reversa validan además nivel
+suscripción histórica siga activa. La coordinación del cierre local comparte la
+lease con operaciones y recuperación, valida token y vencimiento antes de confirmar
+y conserva solicitudes inmutables. Settlement y reversa validan además nivel
 e importe entero devueltos por Finance; reconciliación/cancelación comparten
 validación de identidad, moneda, wallet, nivel y origen de reversa. La evidencia
 S2S Finance permanece pendiente.
 
-Pendiente contractual de niveles: el adapter IAM de Rewards normaliza nivel 1
+Convención vigente de niveles: el adapter IAM de Rewards normaliza nivel 1
 de IAM como nivel de distribución 0; Finance exige `network_level >= 1`.
-El gateway actual transmite el nivel persistido. No se cambia esa convención por
-inferencia: el cierre Finance de volumen/PnL debe fijar y probar la traducción
-contractual conservando el nivel económico original en IB y sus reversas.
+Las solicitudes nuevas de volumen/PnL transmiten nivel económico + 1; CPA usa 1.
+El nivel económico permanece intacto. Las Rewards ya intentadas conservan la
+convención anterior y sus reversas el nivel financiero original. Un nivel histórico
+incompatible conserva hold; no se cambia payload bajo la misma clave idempotente.
+La solicitud congelada, no los campos actuales, es autoridad de reconciliación.

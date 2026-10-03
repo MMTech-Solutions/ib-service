@@ -1,19 +1,25 @@
 # RWD3.2: correcciones y reconciliación selectiva
 
 Estado: **Implementado; validación contractual pendiente**
-Última revisión: 2026-10-02
+Última revisión: 2026-10-03
 
 ## Alcance
 
-Administración puede cancelar una Reward no asentada, revertir una comisión CPA asentada y crear una compensación como nueva Reward. Todas requieren `ib.rewards.manage`, motivo e idempotencia; cliente conserva solo lectura por propiedad.
+Administración puede cancelar una Reward no asentada, revertir una comisión asentada y crear una compensación como nueva Reward. Todas requieren `ib.rewards.manage`, motivo e idempotencia; cliente conserva solo lectura por propiedad.
 
-Una cancelación consulta Finance antes de modificar IB. Una reversa crea `commission_type=reversal` contra el evento Finance original. Una compensación conserva el origen de la Reward reversada, usa importe explícito en la misma moneda/precisión y se asienta síncronamente como comisión CPA independiente.
+Una cancelación consulta Finance antes de modificar IB. Una reversa crea `commission_type=reversal` contra el evento Finance original. Una compensación conserva el origen de la Reward reversada, usa importe explícito en la misma moneda/precisión y se asienta como comisión independiente de la misma modalidad.
 
 ## Reconciliación
 
-`rewards:reconcile-settlements` se programa cada cinco minutos, pero solo selecciona reversas pendientes/fallidas y Rewards con hold de reconciliación. No inspecciona por antigüedad las Rewards `settled` o `reversed` que ya fueron confirmadas.
+`rewards:reconcile-settlements` se programa cada cinco minutos, pero selecciona operaciones incompletas, pagos fallidos inciertos y Rewards con hold de reconciliación. No inspecciona por antigüedad las Rewards `settled` o `reversed` que ya fueron confirmadas.
 
 Una discrepancia contractual activa un hold y bloquea nuevas operaciones. No existe desbloqueo manual ni corrección automática: una consulta posterior consistente a Finance elimina el hold. Finance no modifica unilateralmente comisiones IB asentadas; una auditoría histórica fuera de este flujo requiere una política independiente.
+
+El [cierre local E2E](11-e2e-historical-pnl.md#entrega-de-cierre-local-e2e)
+completa la lease compartida por Reward, token y vencimiento, confirmación local
+atómica, recuperación de solicitudes congeladas y cancelación incierta sin
+cancelar obligaciones que pudieron pagarse. Las operaciones con hold se consultan
+por clave; no vuelven a enviar pagos hasta confirmar una respuesta compatible.
 
 ## Errores HTTP de operaciones administrativas
 

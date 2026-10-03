@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Rewards;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
+use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\Models\PlanRecord;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\Models\ProgramRecord;
 use App\Features\Rewards\UseCases\SettlePendingRewardsUseCase;
@@ -72,6 +73,33 @@ final class RewardSettlementTest extends TestCase
         Http::fake(fn () => Http::response($response));
         self::assertSame(1, app(SettlePendingRewardsUseCase::class)->execute(1)['failed']);
         self::assertSame('finance_contract_invalid', DB::table('rewards')->where('id', $id)->value('last_settlement_error_code'));
+        self::assertNotNull(DB::table('rewards')->where('id', $id)->value('reconciliation_hold_at'));
+        self::assertSame(0, app(SettlePendingRewardsUseCase::class)->execute(1)['settled']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_an_operational_context_failure_releases_its_lease_and_other_rewards_continue(): void
+    {
+        config(['finance.base_url' => 'http://finance.test']);
+        $first = $this->seedReward('pending');
+        $second = $this->seedReward('pending');
+        DB::table('rewards')->where('id', $first)->update(['created_at' => now('UTC')->subMinute()]);
+        $actual = app(ResolveModulesPort::class);
+        $calls = 0;
+        $mock = \Mockery::mock(ResolveModulesPort::class);
+        $mock->shouldReceive('findByIds')->andReturnUsing(function ($ids) use ($actual, &$calls) {
+            if (++$calls === 1) {
+                throw new \RuntimeException('Owner context unavailable');
+            }
+
+            return $actual->findByIds($ids);
+        });
+        $this->app->instance(ResolveModulesPort::class, $mock);
+        Http::fake(fn () => Http::response($this->financeResponse($second, 'created')));
+        self::assertSame(['settled' => 1, 'failed' => 0, 'skipped' => 1], app(SettlePendingRewardsUseCase::class)->execute(1));
+        self::assertNull(DB::table('rewards')->where('id', $first)->value('settlement_lock_token'));
+        self::assertSame('pending', DB::table('rewards')->where('id', $first)->value('status'));
+        Http::assertSentCount(1);
     }
 
     public function test_a_held_reward_does_not_block_other_settlements(): void

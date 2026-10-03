@@ -50,6 +50,20 @@ final class RewardFinancialOperationService
             if ($request->network_level < 1) {
                 throw new RewardSettlementException('finance_legacy_level_invalid');
             }
+            if ($reward->reconciliation_hold_at !== null && $operation->operation_type !== 'cancellation') {
+                if ($operation->request_snapshot === null) {
+                    throw new RewardSettlementException('finance_reconciliation_mismatch');
+                }
+                $snapshot = json_decode($operation->request_snapshot, true, 512, JSON_THROW_ON_ERROR);
+                $expected = $operation->operation_type === 'compensation' ? new RewardSettlementRequestData(...$snapshot) : $request;
+                $event = $this->financial->findByIdempotencyKey($snapshot['idempotency_key']);
+                if ($event === null || ! $this->validate->matchesRequest($expected, $event, $operation->operation_type === 'reversal' ? 'reversal' : null, $snapshot['idempotency_key'], isset($snapshot['original_finance_event_id']) ? (int) $snapshot['original_finance_event_id'] : null)) {
+                    throw new RewardSettlementException('finance_reconciliation_mismatch');
+                }
+                $repository->completeFinancialOperation((string) $reward->id, (string) $operation->id, $operation->operation_type === 'reversal' ? 'reversed' : null, $operation->compensation_reward_id, (string) $event->id, CarbonImmutable::now('UTC'), (string) $operation->lock_token);
+
+                return;
+            }
             $reference = null;
             $compensationId = null;
             $outcome = null;
@@ -60,6 +74,8 @@ final class RewardFinancialOperationService
                         throw new RewardSettlementException('finance_reconciliation_mismatch');
                     }
                     $reference = (string) $event->id;
+                } elseif ($reward->reconciliation_hold_at !== null) {
+                    throw new RewardSettlementException('finance_reconciliation_mismatch');
                 } elseif ((int) $reward->settlement_attempt_count > 0) {
                     $this->assertPayable($reward);
                     $frozen = $repository->freezeFinancialOperationRequest((string) $reward->id, (string) $operation->id, (string) $operation->lock_token, get_object_vars($request));

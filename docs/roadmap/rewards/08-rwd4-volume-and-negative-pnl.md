@@ -1,6 +1,6 @@
 # RWD4 — volumen tradeado y PnL negativo
 
-Estado: **RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 implementados localmente; S2S pendiente para activación y cierre**
+Estado: **RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 implementados localmente; cierre local de código completado; S2S y datos reales pendientes**
 Dependencias: Modules M5, Rules R2, Programs, Subscriptions, IAM y Broker Service
 Última revisión: 2026-10-03
 
@@ -44,7 +44,7 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 - El runner económico no forma parte de RWD4.2a. [RWD-A2](10-rwd-a2-cpa-volume-refactor.md)
   está completada. Por decisión del usuario, las pruebas operativas y S2S de corte
   histórico Broker–IB e IAM se posponen: no bloquean desarrollo de código, pero
-  siguen siendo requisitos de activación y cierre E2E.
+  siguen siendo requisitos de cierre E2E, sin bloquear la habilitación del código.
 
 ### RWD4.2.1 — configuración histórica y cálculo (completada localmente)
 
@@ -68,10 +68,11 @@ no crean Rewards. Mínimo explícito previo al redondeo; el runner RWD4.2.2 tran
 el mínimo de configuración cuyo default sigue `0.01`.
 
 RWD4.2.2 reutiliza RWD4.2.1 y los snapshots locales del contrato
-histórico: runner inicialmente deshabilitado, períodos vencidos en orden, baselines,
+histórico: períodos vencidos en orden, baselines,
 recuperación, cierres durables al cambiar de plan, red/configuración congeladas y
 unicidad de Rewards. Salida: pruebas locales de idempotencia y recuperación.
-La activación y el cierre requieren además S2S Broker/IAM/Finance y evidencia operativa.
+Generación y settlement PnL están habilitados por defecto; el cierre E2E requiere
+S2S Broker/IAM/Finance y evidencia operativa posterior con ib-labs.
 
 Evidencia RWD4.2.1: regresiones CPA/volumen/cortes PnL, templates y arquitectura,
 112 pruebas y 638 assertions aprobadas. Tras ajustar la proyección HTTP y su
@@ -88,13 +89,14 @@ La implementación y evidencia quedan registradas en el
 Reutiliza RWD4.2.1 y snapshots históricos locales: selección de períodos vencidos,
 referidos IAM, baselines, cierres durables al cambiar de plan, snapshots congelados,
 leases y creación idempotente de Rewards `pending`.
-El comando se programa cada minuto y permanece deshabilitado por defecto;
-Rewards PnL quedan excluidas del settlement automático hasta habilitación financiera.
+El comando se programa cada minuto. La entrega original dejó generación y settlement
+PnL deshabilitados; el cierre local E2E sustituye esa restricción por controles
+habilitados por defecto e independientes para desactivarlos explícitamente.
 Aceptación local aprobada: 47 pruebas/652 assertions focalizadas y de arquitectura;
 169 pruebas/1098 assertions en regresiones CPA/volumen/cortes PnL y suscripciones.
 Pint y Graphify completados (5971 nodos, 14383 relaciones).
-Settlement, traducción de niveles Finance y consultas HTTP quedan para entregas
-posteriores; S2S/operatividad siguen siendo requisitos de activación/cierre.
+Settlement, traducción de niveles Finance y consultas HTTP están implementados
+localmente en el cierre E2E; S2S/operatividad siguen pendientes para su cierre.
 
 ## Diseño PnL acordado y límites vigentes
 
@@ -131,7 +133,7 @@ La fuente histórica seleccionada es la última lectura de margen anterior o igu
 al corte solicitado, asumiendo continuidad hasta ese corte. El desfase posible
 con cashflow es un bug conocido aceptado, sin detección ni gracia; véase el
 [plan E2E actualizado](11-e2e-historical-pnl.md). La ampliación está implementada
-localmente y el gate de activación/cierre todavía exige evidencia S2S del contrato
+localmente y el cierre E2E todavía exige evidencia S2S del contrato
 versionado/compatible, cobertura de cuentas históricamente elegibles, límites
 temporales exactos y error explícito sin Reward/avance de baseline cuando falta
 evidencia. La evidencia S2S reproducible debe cubrir cambio de plan y consulta
@@ -158,7 +160,7 @@ no acredita por sí sola todas las vigencias operativas de Trading.
 
 Los snapshots locales conservan la cuenta externa y el contexto de suscripción,
 grupo y cadencia sin FK distribuida. El primer corte persistido prevalece en
-reintentos. Esta capacidad aún no se conecta al runner económico pendiente.
+reintentos. RWD4.2.2 conecta esta capacidad al runner económico.
 
 - Tests de contrato contra Broker e IAM; pruebas de rangos UTC, precisión, deduplicación y concurrencia.
 - Volumen `event`, `periodic` y `both` producen una sola Reward por identidad económica.

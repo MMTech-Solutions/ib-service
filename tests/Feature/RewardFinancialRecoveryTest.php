@@ -84,6 +84,57 @@ final class RewardFinancialRecoveryTest extends TestCase
         app(ManageRewardFinancialOperationUseCase::class)->execute(new ManageRewardFinancialOperationData($id, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'compensation', 'admin.test', null, 200, 'compensation-test'));
     }
 
+    public function test_a_valid_reward_lease_cannot_confirm_another_rewards_operation(): void
+    {
+        $first = $this->seedReward('pending');
+        $second = $this->seedReward('pending');
+        $repository = app(RewardRepositoryFactory::class)->make();
+        [$reward] = $repository->beginFinancialOperation($first, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'cancellation', 'admin.test', null, null, null);
+        [, $foreign] = $repository->beginFinancialOperation($second, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'cancellation', 'admin.test', null, null, null);
+        try {
+            $repository->completeFinancialOperation($first, $foreign->id, 'cancelled', null, null, now('UTC')->toImmutable(), $reward->settlement_lock_token);
+            self::fail('Expected the foreign operation to be rejected.');
+        } catch (RewardSettlementException $exception) {
+            self::assertSame('financial_lease_lost', $exception->error_code);
+        }
+        self::assertSame('pending', DB::table('rewards')->where('id', $first)->value('status'));
+        self::assertSame('processing', DB::table('reward_financial_operations')->where('id', $foreign->id)->value('status'));
+    }
+
+    public function test_held_compensation_is_confirmed_only_by_a_matching_get_without_another_payment(): void
+    {
+        $id = $this->seedReward('settled');
+        DB::table('rewards')->where('id', $id)->update(['status' => 'reversed']);
+        $reads = 0;
+        $childId = null;
+        Http::fake(function ($request) use (&$reads, &$childId) {
+            if ($request->method() === 'POST') {
+                $childId = $request['reference_id'];
+                $response = $this->posted($childId);
+                $response['data']['event']['amount_minor'] = 999;
+
+                return Http::response($response);
+            }
+            if (++$reads === 1) {
+                return Http::response(['data' => []]);
+            }
+            $event = $this->posted($childId)['data']['event'];
+            $event['amount_minor'] = 100;
+            $event += ['minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main'];
+
+            return Http::response(['data' => [$event]]);
+        });
+        $command = new ManageRewardFinancialOperationData($id, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'compensation', 'admin.test', null, 100, 'held-compensation');
+        self::assertSame('failed', app(ManageRewardFinancialOperationUseCase::class)->execute($command)->status);
+        self::assertSame(0, app(ReconcileRewardSettlementsUseCase::class)->execute(1)['confirmed']);
+        self::assertSame(1, app(ReconcileRewardSettlementsUseCase::class)->execute(1)['confirmed']);
+        self::assertSame('settled', DB::table('rewards')->where('id', $childId)->value('status'));
+        self::assertSame('reversed', DB::table('rewards')->where('id', $id)->value('status'));
+        self::assertNull(DB::table('rewards')->where('id', $id)->value('reconciliation_hold_at'));
+        self::assertSame(1, DB::table('rewards')->where('compensates_reward_id', $id)->count());
+        self::assertSame(1, Http::recorded(fn ($request) => $request->method() === 'POST')->count());
+    }
+
     private function command(string $id, string $type): ManageRewardFinancialOperationData
     {
         return new ManageRewardFinancialOperationData($id, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $type, 'admin.test');

@@ -2,7 +2,9 @@
 
 ## Estado
 
-### Convención financiera de niveles Rewards
+Reglas base aprobadas para comunicación externa. Los nombres definitivos de topics, envelopes y catálogos de eventos permanecen marcados como pendientes cuando corresponda.
+
+## Convención financiera de niveles Rewards
 
 El nivel económico de volumen/PnL empieza en cero y se conserva en IB. Para
 Finance se traduce a `nivel + 1`; CPA conserva el nivel financiero `1`.
@@ -11,8 +13,6 @@ y payload. Rewards ya intentadas conservan la convención anterior; las reversas
 reutilizan el nivel financiero original. Una incompatibilidad histórica exige
 hold y no autoriza cambiar payload bajo la misma clave. Moneda, precisión e
 importe se validan estrictamente sin convertir tipos recibidos.
-
-Reglas base aprobadas para comunicación externa. Los nombres definitivos de topics, envelopes y catálogos de eventos permanecen marcados como pendientes cuando corresponda.
 
 ## Principios
 
@@ -184,8 +184,8 @@ localmente. IB conserva referencias e instante de lectura; una lectura ausente
 impide crear snapshot. El desfase lectura/cashflow permanece como bug conocido,
 sin detección ni gracia. No depende de snapshots del antiguo IB de Broker.
 RWD-A2 y configuración/cálculo RWD4.2.1 están completados localmente.
-La evidencia S2S Broker/IAM se pospone para activación/cierre E2E, sin bloquear
-desarrollo del runner. No se afirma cobertura ni validación con datos reales.
+La evidencia S2S Broker/IAM se pospone para cierre E2E, sin bloquear
+desarrollo ni habilitación del runner. No se afirma cobertura ni validación con datos reales.
 
 ## Decisiones pendientes
 

@@ -81,7 +81,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
         ]);
 
         if (! $this->isValidEventResponse($data, $request->idempotency_key, 'reversal', $request->beneficiary_user_id, $request->amount_minor, $request->currency_code, $request->currency_precision, $request->reward_id, $request->network_level)
-            || (int) ($data['event']['reverses_commission_event_id'] ?? 0) !== (int) $request->original_finance_event_id) {
+            || ($data['event']['reverses_commission_event_id'] ?? null) !== (int) $request->original_finance_event_id) {
             throw new RewardSettlementException('finance_contract_invalid');
         }
 
@@ -164,7 +164,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
     {
         $event = $data['event'] ?? null;
 
-        return in_array($data['status'] ?? null, ['created', 'duplicate'], true) && is_array($event) && is_int($event['id'] ?? null)
+        return in_array($data['status'] ?? null, ['created', 'duplicate'], true) && is_array($event) && is_int($event['id'] ?? null) && $event['id'] > 0
             && ($event['status'] ?? null) === 'posted' && ($event['idempotency_key'] ?? null) === $key && ($event['commission_type'] ?? null) === $type
             && ($event['ib_user_id'] ?? null) === $beneficiary && ($event['amount_minor'] ?? null) === $amount
             && ($event['network_level'] ?? null) === $networkLevel
@@ -181,6 +181,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
         return in_array($data['status'] ?? null, ['created', 'duplicate'], true)
             && is_array($event)
             && is_int($event['id'] ?? null)
+            && $event['id'] > 0
             && ($event['status'] ?? null) === 'posted'
             && ($event['idempotency_key'] ?? null) === $request->idempotency_key
             && ($event['commission_type'] ?? null) === $request->commission_type

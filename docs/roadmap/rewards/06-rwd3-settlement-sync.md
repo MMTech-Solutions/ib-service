@@ -1,7 +1,14 @@
 # RWD3.1: settlement síncrono de Rewards CPA
 
 Estado: **Implementado; validación contractual pendiente**
-Última revisión: 2026-10-02
+Última revisión: 2026-10-03
+
+## Extensión vigente
+
+El [cierre local E2E](11-e2e-historical-pnl.md#entrega-de-cierre-local-e2e)
+completa settlement CPA/volumen/PnL, solicitudes congeladas, traducción de niveles
+y holds. Generación y settlement PnL están habilitados por defecto con controles
+independientes. El alcance CPA original de este documento se conserva como evidencia.
 
 ## Propósito
 

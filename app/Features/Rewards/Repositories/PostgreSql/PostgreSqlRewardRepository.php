@@ -214,7 +214,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
                 })
                 ->where(function ($query) use ($now): void {
                     $query->whereNull('rewards.settlement_lock_expires_at')->orWhere('rewards.settlement_lock_expires_at', '<=', $now);
-                })->orderBy('rewards.created_at')->lockForUpdate()->first(['rewards.*']);
+                })->orderBy('rewards.created_at')->lock('FOR UPDATE SKIP LOCKED')->first(['rewards.*']);
             if ($reward === null) {
                 return null;
             }
@@ -309,8 +309,8 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function freezeFinancialOperationRequest(string $rewardId, string $operationId, string $token, array $request): array
     {
-        return $this->financialTransaction($rewardId, $token, function () use ($operationId, $request): array {
-            $operation = $this->findFinancialOperation($operationId);
+        return $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $token, $request): array {
+            $operation = $this->financialOperationForLease($rewardId, $operationId, $token);
             if ($operation->request_snapshot === null) {
                 $this->connection->table('reward_financial_operations')->where('id', $operationId)->update(['request_snapshot' => json_encode($request, JSON_THROW_ON_ERROR)]);
 
@@ -324,7 +324,7 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
     public function createCompensationReward(object $reward, object $operation, int $amountMinor, string $reasonCode, CarbonImmutable $at): string
     {
         return $this->financialTransaction((string) $reward->id, (string) $operation->lock_token, function () use ($reward, $operation, $amountMinor, $reasonCode, $at): string {
-            $locked = $this->findFinancialOperation((string) $operation->id);
+            $locked = $this->financialOperationForLease((string) $reward->id, (string) $operation->id, (string) $operation->lock_token);
             if ($locked->compensation_reward_id !== null) {
                 return (string) $locked->compensation_reward_id;
             }
@@ -343,8 +343,11 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function completeFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, ?string $compensationRewardId, ?string $providerReferenceId, CarbonImmutable $at, string $token, ?string $outcome = null): void
     {
-        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $compensationRewardId, $providerReferenceId, $at, $outcome): void {
-            $operation = $this->findFinancialOperation($operationId);
+        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $compensationRewardId, $providerReferenceId, $at, $outcome, $token): void {
+            $operation = $this->financialOperationForLease($rewardId, $operationId, $token);
+            if ($operation->compensation_reward_id !== $compensationRewardId) {
+                throw new RewardSettlementException('financial_lease_lost');
+            }
             $updates = ['reconciliation_hold_code' => null, 'reconciliation_hold_at' => null, 'last_reconciled_at' => $at, 'settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at];
             if ($rewardStatus !== null) {
                 $updates['status'] = $rewardStatus;
@@ -362,13 +365,13 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function failFinancialOperation(string $rewardId, string $operationId, ?string $rewardStatus, string $errorCode, CarbonImmutable $at, string $token): void
     {
-        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $errorCode, $at): void {
+        $this->financialTransaction($rewardId, $token, function () use ($rewardId, $operationId, $rewardStatus, $errorCode, $at, $token): void {
+            $operation = $this->financialOperationForLease($rewardId, $operationId, $token);
             $updates = ['settlement_lock_token' => null, 'settlement_lock_expires_at' => null, 'updated_at' => $at];
             if ($rewardStatus !== null) {
                 $updates['status'] = $rewardStatus;
             }
             $this->connection->table('rewards')->where('id', $rewardId)->update($updates);
-            $operation = $this->findFinancialOperation($operationId);
             if ($operation->compensation_reward_id !== null) {
                 $this->connection->table('rewards')->where('id', $operation->compensation_reward_id)->update(['status' => 'failed', 'last_settlement_error_code' => $errorCode, 'updated_at' => $at]);
             }
@@ -427,6 +430,17 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             }
             $this->connection->table('rewards')->where('id', $reward->id)->update($updates);
         });
+    }
+
+    private function financialOperationForLease(string $rewardId, string $operationId, string $token): object
+    {
+        $operation = $this->findFinancialOperation($operationId);
+        if ($operation->reward_id !== $rewardId || $operation->lock_token !== $token || $operation->status === 'completed'
+            || $operation->lock_expires_at === null || ! CarbonImmutable::parse($operation->lock_expires_at)->greaterThan(CarbonImmutable::now('UTC'))) {
+            throw new RewardSettlementException('financial_lease_lost');
+        }
+
+        return $operation;
     }
 
     private function financialTransaction(string $rewardId, string $token, \Closure $callback): mixed

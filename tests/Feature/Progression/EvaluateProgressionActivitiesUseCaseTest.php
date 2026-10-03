@@ -23,6 +23,7 @@ use App\Features\Progression\Enums\ExclusionReason;
 use App\Features\Progression\Factories\ActivityDistributionRepositoryFactory;
 use App\Features\Progression\Factories\ActivityEvaluationRepositoryFactory;
 use App\Features\Progression\Models\ActivityDistribution;
+use App\Features\Progression\UseCases\CloseProgressionWindowsUseCase;
 use App\Features\Progression\UseCases\EvaluateProgressionActivitiesUseCase;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\Features\Rules\Contracts\Data\V1\PointsContributionContextData;
@@ -108,6 +109,37 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame($first->evaluations[0]->id, $stored->id);
 
         CarbonImmutable::setTestNow();
+    }
+
+    public function test_local_activity_contribution_window_and_placement_flow_is_idempotent(): void
+    {
+        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1', period: 'daily');
+        $advanced = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/programs", [
+            'code' => 'advanced', 'name' => 'Advanced', 'entry_threshold' => 10, 'module_ids' => [$fixture['module_id']],
+        ])->assertCreated()->json('data');
+        $activity = $this->activity($fixture['module_id'], 'local-e2e-deposit', $this->customerSub, '100', 'usd', '2026-09-10T12:00:00Z');
+        $this->stubActivities([$activity]);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00Z'));
+        try {
+            $evaluator = app(EvaluateProgressionActivitiesUseCase::class);
+            $query = new EvaluateProgressionActivitiesData($fixture['plan_id'], $fixture['module_id'], '2026-09-10T00:00:00Z', '2026-09-11T00:00:00Z');
+            $first = $evaluator->execute($query);
+            $retry = $evaluator->execute($query);
+            self::assertSame($first->evaluations[0]->id, $retry->evaluations[0]->id);
+            self::assertSame('10', $first->evaluations[0]->contribution->points->value());
+            CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-11T01:00:00Z'));
+            $closer = app(CloseProgressionWindowsUseCase::class);
+            $closed = $closer->execute();
+            self::assertSame(1, $closed->results_completed);
+            self::assertSame(1, DB::table('progression_contributions')->count());
+            self::assertSame($advanced['id'], DB::table('progression_run_results')->first()->target_program_id);
+            self::assertSame($advanced['id'], DB::table('subscription_placements')->where('subscription_id', $fixture['subscription_id'])->whereNull('effective_until')->value('program_id'));
+            self::assertSame(0, $closer->execute()->results_completed);
+            self::assertSame(1, DB::table('progression_placement_applications')->count());
+            self::assertSame($fixture['program_id'], DB::table('progression_activity_evaluations')->first()->program_id);
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
     }
 
     public function test_it_creates_independent_evaluations_for_each_frozen_beneficiary(): void

@@ -10,6 +10,7 @@ use App\Features\Programs\Catalog\Repositories\PostgreSql\Models\ProgramRecord;
 use App\Features\Rewards\DTOs\ManageRewardFinancialOperationData;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\UseCases\ManageRewardFinancialOperationUseCase;
+use App\Features\Rewards\UseCases\ReconcileRewardSettlementsUseCase;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\Features\Rules\Catalog\Enums\RuleVersionStatus;
 use App\Features\Rules\Catalog\Repositories\PostgreSql\Models\RuleRecord;
@@ -56,6 +57,24 @@ final class RewardFinancialOperationTest extends TestCase
         self::assertSame('reversed', DB::table('rewards')->where('id', $rewardId)->value('status'));
         self::assertSame('782', DB::table('reward_financial_operations')->where('reward_id', $rewardId)->value('provider_reference_id'));
         Http::assertSent(fn ($request): bool => $request['network_level'] === 3);
+    }
+
+    public function test_reversal_rejects_a_string_original_event_reference(): void
+    {
+        $rewardId = $this->seedReward('settled');
+        $event = ['id' => 782, 'status' => 'posted', 'idempotency_key' => 'ib-service:reward:'.$rewardId.':reversal', 'commission_type' => 'reversal', 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'amount_minor' => 2500, 'reference_type' => 'reward', 'reference_id' => $rewardId, 'reverses_commission_event_id' => 781, 'network_level' => 1, 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main'];
+        $invalid = [...$event, 'reverses_commission_event_id' => '781'];
+        Http::fake(['http://finance.test/*' => Http::sequence()->push(['data' => ['status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main', 'event' => $invalid]])->push(['data' => []])->push(['data' => [$event]])]);
+        $result = app(ManageRewardFinancialOperationUseCase::class)->execute(new ManageRewardFinancialOperationData($rewardId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'reversal', 'admin.reversal'));
+        self::assertSame('failed', $result->status);
+        self::assertSame('reversal_failed', DB::table('rewards')->where('id', $rewardId)->value('status'));
+        self::assertNotNull(DB::table('rewards')->where('id', $rewardId)->value('reconciliation_hold_at'));
+        self::assertSame(0, app(ReconcileRewardSettlementsUseCase::class)->execute(1)['confirmed']);
+        self::assertSame(1, Http::recorded(fn ($request) => $request->method() === 'POST')->count());
+        self::assertSame(1, app(ReconcileRewardSettlementsUseCase::class)->execute(1)['confirmed']);
+        self::assertSame('reversed', DB::table('rewards')->where('id', $rewardId)->value('status'));
+        self::assertNull(DB::table('rewards')->where('id', $rewardId)->value('reconciliation_hold_at'));
+        self::assertSame(1, Http::recorded(fn ($request) => $request->method() === 'POST')->count());
     }
 
     private function seedReward(string $status): string

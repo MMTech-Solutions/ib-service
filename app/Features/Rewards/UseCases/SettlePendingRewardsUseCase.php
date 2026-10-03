@@ -35,8 +35,16 @@ final class SettlePendingRewardsUseCase
             if ($claim === null) {
                 break;
             }
-            $module = $this->modules->findByIds([(string) $claim->module_id])[0] ?? null;
-            $plan = $this->plans->resolve(new ResolvePlanSubscriptionContextQueryData((string) $claim->plan_id));
+            try {
+                $module = $this->modules->findByIds([(string) $claim->module_id])[0] ?? null;
+                $plan = $this->plans->resolve(new ResolvePlanSubscriptionContextQueryData((string) $claim->plan_id));
+            } catch (\Throwable) {
+                $repository->releaseSettlementClaim((string) $claim->id, (string) $claim->settlement_lock_token);
+                $excludedIds[] = (string) $claim->id;
+                $result['skipped']++;
+
+                continue;
+            }
             if ($module === null || ! $module->is_active || $module->processing_status !== 'running'
                 || ! $plan->is_active || $plan->archived) {
                 $repository->releaseSettlementClaim((string) $claim->id, (string) $claim->settlement_lock_token);
@@ -53,6 +61,15 @@ final class SettlePendingRewardsUseCase
                 $confirmed = $repository->markRewardSettled((string) $claim->id, (string) $claim->settlement_lock_token, $settlement->provider, $settlement->reference_id, CarbonImmutable::now('UTC'));
                 $confirmed ? $result['settled']++ : $result['skipped']++;
             } catch (RewardSettlementException $exception) {
+                if ($exception->error_code === 'finance_contract_invalid') {
+                    try {
+                        $repository->placeReconciliationHold((string) $claim->id, 'FINANCE_EVENT_MISMATCH', CarbonImmutable::now('UTC'), (string) $claim->settlement_lock_token);
+                    } catch (RewardSettlementException) {
+                        $result['skipped']++;
+
+                        continue;
+                    }
+                }
                 $confirmed = $repository->markRewardSettlementFailed((string) $claim->id, (string) $claim->settlement_lock_token, $exception->error_code, CarbonImmutable::now('UTC'));
                 $confirmed ? $result['failed']++ : $result['skipped']++;
             }

@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.7
+- **Versión:** 1.8
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -109,6 +109,9 @@ erDiagram
 | BR-REWARD-032 | Cambiar de plan conserva el cierre pendiente de la suscripción anterior junto con su terminación y la nueva suscripción; si el cambio no se confirma, tampoco existe ese cierre. Se evalúan primero los períodos anteriores y luego el tramo final; si termina en un límite de cadencia, existe un único período y ningún tramo vacío. |
 | BR-REWARD-033 | La baseline inicial, el PnL cero o positivo y los importes descartados por mínimo o redondeo conservan un resultado auditable sin Reward. La evidencia ausente o inválida conserva el período pendiente y no avanza baseline. |
 | BR-REWARD-034 | La red PnL se conserva tal como fue obtenida al iniciar el período; no representa una reconstrucción histórica de la red. Una pausa conserva las entradas ya congeladas y difiere su evaluación; la reanudación no convierte actividad previa no congelada en remunerable. |
+| BR-REWARD-035 | Antes de crear la primera obligación de una posición, volumen conserva su actividad, distribución y todas las entradas económicas aplicables al canal de procesamiento. Los reintentos reutilizan esas entradas y conservan los resultados parciales; evento y barrido mantienen la misma identidad económica aunque su elegibilidad difiera. |
+| BR-REWARD-036 | Pago, cancelación, reversa, compensación y recuperación coordinan el trabajo sobre la misma Reward. Una autorización de trabajo vencida no permite confirmar resultados. Las solicitudes financieras conservan identidad e importe antes de su envío; un reintento no los reemplaza por datos actuales. La compensación y su vínculo al origen son indivisibles. |
+| BR-REWARD-037 | El cliente consulta únicamente sus Rewards y su estado económico, sin evidencia ni datos administrativos de otros beneficiarios. Administración requiere la capacidad de gestión de Rewards para consultar evidencia y procesamiento PnL; expone solo la información necesaria para auditoría, excluyendo credenciales y autorizaciones internas de trabajo. |
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
