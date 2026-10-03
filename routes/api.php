@@ -50,6 +50,7 @@ use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationControlle
 use App\Features\Rewards\Http\V1\Controllers\CancelRewardController;
 use App\Features\Rewards\Http\V1\Controllers\CreateRewardCompensationController;
 use App\Features\Rewards\Http\V1\Controllers\ListCpaVerificationProgressController;
+use App\Features\Rewards\Http\V1\Controllers\ReadRewardsController;
 use App\Features\Rewards\Http\V1\Controllers\ReverseRewardController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
@@ -178,6 +179,12 @@ Route::prefix('ib/v1')
                 Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)
                     ->defaults('user_surface', UserSurface::AdminPanel->value)
                     ->name('ib.v1.admin.rewards.cpa-progress.index');
+                Route::get('rewards', ReadRewardsController::class)->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'rewards')->name('ib.v1.admin.rewards.index');
+                Route::get('rewards/{reward}', ReadRewardsController::class)->whereUuid('reward')->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'rewards')->name('ib.v1.admin.rewards.show');
+                Route::get('rewards/negative-pnl/jobs', ReadRewardsController::class)->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'jobs')->name('ib.v1.admin.rewards.pnl-jobs.index');
+                Route::get('rewards/negative-pnl/jobs/{job}', ReadRewardsController::class)->whereUuid('job')->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'jobs')->name('ib.v1.admin.rewards.pnl-jobs.show');
+                Route::get('rewards/negative-pnl/periods', ReadRewardsController::class)->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'periods')->name('ib.v1.admin.rewards.pnl-periods.index');
+                Route::get('rewards/negative-pnl/periods/{period}', ReadRewardsController::class)->whereUuid('period')->defaults('user_surface', UserSurface::AdminPanel->value)->defaults('read_resource', 'periods')->name('ib.v1.admin.rewards.pnl-periods.show');
                 Route::post('rewards/{reward}/cancel', CancelRewardController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.cancel');
                 Route::post('rewards/{reward}/reverse', ReverseRewardController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.reverse');
                 Route::post('rewards/{reward}/compensations', CreateRewardCompensationController::class)->whereUuid('reward')->name('ib.v1.admin.rewards.compensations.store');
@@ -191,5 +198,7 @@ Route::prefix('ib/v1')
                 Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)
                     ->defaults('user_surface', UserSurface::CustomerApp->value)
                     ->name('ib.v1.customer.rewards.cpa-progress.index');
+                Route::get('rewards', ReadRewardsController::class)->defaults('user_surface', UserSurface::CustomerApp->value)->defaults('read_resource', 'rewards')->name('ib.v1.customer.rewards.index');
+                Route::get('rewards/{reward}', ReadRewardsController::class)->whereUuid('reward')->defaults('user_surface', UserSurface::CustomerApp->value)->defaults('read_resource', 'rewards')->name('ib.v1.customer.rewards.show');
             });
     });

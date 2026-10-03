@@ -18,7 +18,7 @@ que se conservan abajo como evidencia de entregas anteriores.
 | Contrato financiero y settlement PnL | Completado localmente | Solicitud congelada, niveles traducidos y controles independientes |
 | Coordinación financiera | Completado localmente | Leases compartidas, recuperación y cancelación incierta |
 | Snapshots de volumen | Completado localmente | Entradas completas antes de efectos parciales |
-| Consultas HTTP | Pendiente | Rewards por propietario y jobs/períodos administrativos |
+| Consultas HTTP | Completado localmente | Rewards por propietario y jobs/períodos administrativos |
 | Progression y regresión integrada | Pendiente | Flujo local de actividad a placement y settlement |
 
 Primer incremento: se incorpora solicitud financiera congelada y selección PnL
@@ -48,6 +48,15 @@ económica original. Regresiones de volumen y arquitectura: 37 pruebas /
 228 assertions aprobadas; Pint completado. Campos económicos aún ausentes no
 constituyen una obligación; una comisión fuente inicialmente ausente puede
 completarse antes de conservar una preparación, sin reescribir cantidades válidas.
+
+Snapshots de volumen: commit `7955fb9`.
+Las ocho rutas GET de Rewards y jobs/períodos PnL mantienen `data` como recurso
+o colección y paginación/filtros en `meta`. Cliente solo consulta sus Rewards;
+administración requiere `ib.rewards.manage` y recibe auditoría sin tokens de lease.
+Los filtros temporales son UTC y semiabiertos. HTTP y arquitectura: 19 pruebas /
+155 assertions; filtro de fecha adicional: 5 pruebas / 50 assertions aprobadas.
+Postman v2.1 válido: 86 requests cubren las 85 rutas propias de `route:list`
+y `/up` configurado en bootstrap. Pint y Graphify completados.
 
 ## Dependencias y evidencia
 

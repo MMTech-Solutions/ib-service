@@ -20,6 +20,7 @@ use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface
 use App\Features\Rewards\Factories\NegativePnlPeriodsProviderFactory;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlCpaVerificationProgressRepository;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlNegativePnlProcessingRepository;
+use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlRewardReadRepository;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlRewardRepository;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlVolumeRewardProcessingRepository;
 use App\Features\Rewards\Services\Adapters\FinanceRewardSettlementGateway;
@@ -41,6 +42,7 @@ final class RewardsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton('rewards.read.repositories.postgresql', fn () => new PostgreSqlRewardReadRepository(DB::connection()));
         $this->app->singleton(RecordNegativePnlClosurePort::class, RecordNegativePnlClosureUseCase::class);
         $this->app->singleton(ResolveNegativePnlReferralsPort::class, IamResolveNegativePnlReferralsAdapter::class);
         $this->app->singleton('rewards.negative-pnl-processing.repositories.postgresql', fn (): PostgreSqlNegativePnlProcessingRepository => new PostgreSqlNegativePnlProcessingRepository(DB::connection()));
