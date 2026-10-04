@@ -97,6 +97,12 @@ A2.3 completa las factories específicas de proveedores de evidencia.
 
 ## Próximo paso
 
+El handler de Trading identifica cierres por `event_name = position_closed`,
+siguiendo el precedente de broker-service. La librería deserializa Avro/JSON;
+IB valida el payload y conserva referencias técnicas sin atribuir un esquema
+no verificado. Los productores y fixtures de ib-labs deben incluir `event_name`;
+su ausencia se ignora, y no se ejecuta replay automático de mensajes descartados.
+
 La recuperación Finance se adapta al GET real mediante una segunda consulta
 al listado paginado de wallets, enlazada por ID exacto. La evidencia local y
 los límites S2S se registran en [RWD3.2](07-rwd3-corrections-and-reconciliation.md).

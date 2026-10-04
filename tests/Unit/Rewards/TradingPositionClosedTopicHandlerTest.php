@@ -11,18 +11,20 @@ use App\Features\Rewards\Repositories\VolumeRewardProcessingRepositoryInterface;
 use App\Features\Rewards\UseCases\RecordVolumeRewardEventUseCase;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class TradingPositionClosedTopicHandlerTest extends TestCase
 {
-    public function test_it_records_only_technical_references_from_the_avro_v1_payload(): void
+    #[DataProvider('serializationHeaders')]
+    public function test_it_records_deserialized_position_closed_events(array $headers): void
     {
         config()->set('rewards.volume.broker_module_id', '00000000-0000-7000-8000-000000000001');
         $repository = Mockery::mock(VolumeRewardProcessingRepositoryInterface::class);
         $repository->shouldReceive('recordEvent')->once()->withArgs(function (RecordVolumeRewardEventData $data): bool {
             self::assertSame('position-1', $data->order_id);
             self::assertSame('login-1', $data->external_trader_id);
-            self::assertSame('com.mmt.platform.PositionClosed', $data->transport_snapshot['contract_subject']);
+            self::assertSame(['event_name' => 'position_closed', 'topic' => 'trading-services.events.v1', 'partition' => 2, 'offset' => 8], $data->transport_snapshot);
             self::assertArrayNotHasKey('login', $data->transport_snapshot);
             self::assertArrayNotHasKey('payload', $data->transport_snapshot);
 
@@ -36,11 +38,23 @@ final class TradingPositionClosedTopicHandlerTest extends TestCase
         );
         $handler->handle($this->message(
             ['id' => 'position-1', 'login' => 'login-1', 'email' => 'private@example.test'],
-            ['content_type' => 'application/avro', 'login' => 'login-1'],
+            $headers + ['event_name' => 'position_closed', 'login' => 'login-1'],
         ));
     }
 
-    public function test_it_rejects_non_avro_and_mismatched_identifiers(): void
+    public static function serializationHeaders(): array
+    {
+        return [
+            'avro' => [['content_type' => 'application/avro']],
+            'json' => [['content_type' => 'application/json']],
+            'absent' => [[]],
+            'alternate header' => [['Content-Type' => 'Application/Avro']],
+            'alternate value' => [['content_type' => ' application/avro ']],
+            'array event name' => [['event_name' => ['position_closed']]],
+        ];
+    }
+
+    public function test_it_ignores_other_events_and_rejects_invalid_position_closed_payloads(): void
     {
         config()->set('rewards.volume.broker_module_id', '00000000-0000-7000-8000-000000000001');
         $repository = Mockery::mock(VolumeRewardProcessingRepositoryInterface::class);
@@ -52,16 +66,25 @@ final class TradingPositionClosedTopicHandlerTest extends TestCase
         );
 
         $handler->handle($this->message(['id' => 'position-1', 'login' => 'login-1'], ['content_type' => 'application/json']));
-        $handler->handle($this->message(['id' => 'position-1', 'order_id' => 'position-2', 'login' => 'login-1'], ['content_type' => 'application/avro']));
-        $handler->handle($this->message(['id' => 'position-1', 'login' => 'login-1'], ['content_type' => 'application/avro', 'login' => 'login-2']));
+        foreach (['position_added', 'margin_level_updated', 'unknown', ''] as $eventName) {
+            $handler->handle($this->message(['id' => 'position-1', 'login' => 'login-1'], ['event_name' => $eventName, 'content_type' => 'application/avro']));
+        }
+        $headers = ['event_name' => 'position_closed'];
+        $handler->handle($this->message('invalid body', $headers));
+        $handler->handle($this->message(['id' => 'position-1', 'order_id' => 'position-2', 'login' => 'login-1'], $headers));
+        $handler->handle($this->message(['id' => 'position-1', 'login' => 'login-1'], $headers + ['login' => 'login-2']));
+        $handler->handle($this->message(['id' => 'position-1'], $headers));
+        $handler->handle($this->message(['login' => 'login-1'], $headers));
+        config()->set('rewards.volume.broker_module_id', null);
+        $handler->handle($this->message(['id' => 'position-1', 'login' => 'login-1'], $headers));
     }
 
-    /** @param array<string, mixed> $body @param array<string, mixed> $headers */
-    private function message(array $body, array $headers): ConsumerMessage
+    /** @param array<string, mixed> $headers */
+    private function message(mixed $body, array $headers): ConsumerMessage
     {
         return new class($body, $headers) implements ConsumerMessage
         {
-            public function __construct(private readonly array $body, private readonly array $headers) {}
+            public function __construct(private readonly mixed $body, private readonly array $headers) {}
 
             public function getKey(): mixed
             {

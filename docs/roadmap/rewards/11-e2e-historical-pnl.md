@@ -311,6 +311,14 @@ La ausencia de una lectura es un error distinto y sí impide crear el snapshot.
 
 ## Garantías financieras avanzadas
 
+Refactor de recepción Trading (2026-10-03): selección por cabecera
+`event_name = position_closed`, sin restricción de serialización en el handler.
+El body llega deserializado por la librería. Nuevos snapshots conservan evento,
+topic, partición y offset, sin subject/version fijos; los históricos no se migran.
+La validación integrada de Avro/JSON y el replay permanecen pendientes en ib-labs.
+Evidencia local: handler Trading, repositorio y UseCase de volumen, y arquitectura:
+30 pruebas y 246 assertions aprobadas; Pint aprobado.
+
 El claim excluye holds de reconciliación y operaciones de cancelación/compensación
 incompletas; las operaciones administrativas rechazan una lease de settlement
 activa. El runner consulta operabilidad de plan y módulo mediante sus puertos,

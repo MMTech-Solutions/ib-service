@@ -22,10 +22,13 @@ final class TradingPositionClosedTopicHandler implements TopicMessageHandlerInte
 
     public function handle(ConsumerMessage $message): void
     {
-        $body = $message->getBody();
         $headers = $message->getHeaders() ?? [];
-        $contentType = $this->header($headers, 'content_type');
-        if ($contentType !== 'application/avro' || ! is_array($body)) {
+        $eventName = $this->header($headers, 'event_name');
+        if ($eventName !== 'position_closed') {
+            return;
+        }
+        $body = $message->getBody();
+        if (! is_array($body)) {
             Log::warning('Rejected trading position closed reward event contract.');
 
             return;
@@ -58,8 +61,7 @@ final class TradingPositionClosedTopicHandler implements TopicMessageHandlerInte
             (string) $orderId,
             (string) $traderId,
             [
-                'contract_subject' => 'com.mmt.platform.PositionClosed',
-                'contract_version' => 1,
+                'event_name' => $eventName,
                 'topic' => $message->getTopicName(),
                 'partition' => $message->getPartition(),
                 'offset' => $message->getOffset(),
