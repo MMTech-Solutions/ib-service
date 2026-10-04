@@ -34,6 +34,17 @@ final class PostgreSqlProgressionTemplateRepository implements ProgressionTempla
         return $row === null ? null : $this->hydrate($row);
     }
 
+    public function findVersion(string $versionId): ?ProgressionTemplateVersion
+    {
+        $row = $this->connection->table('progression_template_versions')->where('id', $versionId)->first();
+        if ($row === null) {
+            return null;
+        }
+        $levels = $this->connection->table('progression_template_levels')->where('template_version_id', $versionId)->orderBy('distribution_level')->get()->map(fn ($level): ProgressionTemplateLevel => new ProgressionTemplateLevel((string) $level->id, (int) $level->distribution_level, (string) $level->weight))->all();
+
+        return new ProgressionTemplateVersion((string) $row->id, (string) $row->template_id, (int) $row->version_number, (string) $row->status, $row->published_at === null ? null : (string) $row->published_at, (int) $row->lock_version, $levels, (string) $row->created_at, (string) $row->updated_at);
+    }
+
     public function save(ProgressionTemplate $template, ?int $expectedLockVersion = null): void
     {
         try {

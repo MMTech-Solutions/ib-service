@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.8
+- **Versión:** 1.9
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -173,6 +173,13 @@ cortes válidos quedan conservados. Al terminar la evaluación pasa a evaluado,
 con Rewards `pending` o resultados auditables sin Reward. Un fallo conserva el
 estado alcanzado y sus entradas; recuperar un período tiene prioridad sobre
 abrir el siguiente en el mismo contexto. Evaluar el período no confirma un pago.
+
+## Vinculación de plantillas de pago
+
+La selección de plantillas de pago consume una vinculación permanente de la
+familia de pago perteneciente al mismo plan (BR-TEMPLATE-001–006 del BDS de
+planes). Publicar o vincular otra versión no sustituye selecciones económicas,
+asignaciones ni snapshots históricos. La vinculación no genera obligaciones.
 
 ## Decisiones pendientes
 

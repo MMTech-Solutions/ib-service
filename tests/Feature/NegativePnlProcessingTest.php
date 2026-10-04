@@ -538,8 +538,7 @@ final class NegativePnlProcessingTest extends TestCase
         $template = $this->gatewayJson('POST', '/api/ib/v1/admin/payment-templates', ['name' => 'PnL rates '.$code])->assertCreated()->json('data.id');
         $v = $this->gatewayJson('POST', "/api/ib/v1/admin/payment-templates/{$template}/versions", ['levels' => [['distribution_level' => 0, 'rate' => '0.1'], ['distribution_level' => 1, 'rate' => '0.05']]])->assertCreated()->json('data.versions.0');
         $this->gatewayJson('POST', "/api/ib/v1/admin/payment-templates/{$template}/versions/{$v['id']}/publish", ['lock_version' => $v['lock_version']])->assertOk();
-        $binding = (string) Str::uuid7();
-        DB::table('plan_payment_template_version_bindings')->insert(['id' => $binding, 'plan_id' => $plan, 'template_version_id' => $v['id'], 'created_at' => now('UTC')]);
+        $binding = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan}/payment-template-version-bindings", ['template_version_id' => $v['id']])->assertCreated()->json('data.id');
         $rule = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan}/rules", ['name' => 'PnL share', 'strategy_type' => 'negative_pnl_share'])->assertCreated()->json('data.id');
         $version = $this->version($plan, $rule, $binding);
         $assignment = $this->assign($plan, $rule, $program, $module, $version);

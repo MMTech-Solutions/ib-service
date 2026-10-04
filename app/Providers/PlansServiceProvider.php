@@ -7,9 +7,12 @@ namespace App\Providers;
 use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
 use App\Features\Plans\Catalog\Jobs\DeactivatePlansWithoutOperationalModulesJob;
 use App\Features\Plans\Catalog\Listeners\DeactivatePlansAfterModuleDeactivated;
+use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPaymentTemplateBindingRepository;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPlanRepository;
+use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryProgressionTemplateBindingRepository;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPaymentTemplateBindingRepository;
 use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlPlanRepository;
+use App\Features\Plans\Catalog\Repositories\PostgreSql\PostgreSqlProgressionTemplateBindingRepository;
 use App\Features\Plans\Catalog\UseCases\IsModuleReferencedUseCase;
 use App\Features\Plans\Catalog\UseCases\ListActivePlansForProgressionUseCase;
 use App\Features\Plans\Catalog\UseCases\LockPlanRowsUseCase;
@@ -34,6 +37,9 @@ final class PlansServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton('plans.payment-template-bindings.repositories.memory', fn (): InMemoryPaymentTemplateBindingRepository => new InMemoryPaymentTemplateBindingRepository);
+        $this->app->singleton('plans.progression-template-bindings.repositories.postgresql', fn (): PostgreSqlProgressionTemplateBindingRepository => new PostgreSqlProgressionTemplateBindingRepository(DB::connection()));
+        $this->app->singleton('plans.progression-template-bindings.repositories.memory', fn (): InMemoryProgressionTemplateBindingRepository => new InMemoryProgressionTemplateBindingRepository);
         $this->app->singleton(ResolvePaymentTemplateBindingPort::class, ResolvePaymentTemplateBindingUseCase::class);
         $this->app->singleton('plans.payment-template-bindings.repositories.postgresql', fn (): PostgreSqlPaymentTemplateBindingRepository => new PostgreSqlPaymentTemplateBindingRepository(DB::connection()));
         $this->app->singleton(IsModuleReferencedPort::class, IsModuleReferencedUseCase::class);

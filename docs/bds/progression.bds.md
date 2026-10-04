@@ -1,6 +1,6 @@
 # Progresión multi-módulo por puntos — BDS
 
-- **Versión:** 0.8
+- **Versión:** 0.9
 - **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, distribución inmutable y catálogo inicial de motivos de exclusión para PG1/PG2
 
 **Propósito:** normalizar actividades heterogéneas para que todos los módulos habilitados puedan contribuir al crecimiento del IB.
@@ -203,6 +203,11 @@ Un resultado por suscripción puede completarse, omitirse cuando la fijación o 
 - Conversión FX y autoridad de la tasa cuando la métrica monetaria no coincida con la unidad de la regla.
 
 ## Extensión de configuración de símbolos
+
+La plantilla seleccionada para progresión debe usar una vinculación de la
+familia de progresión perteneciente al plan del programa
+(BR-TEMPLATE-001–006 del BDS de planes). Publicar o vincular otra versión no
+sustituye la selección vigente ni recalcula contribuciones históricas.
 
 - Los símbolos seleccionados por programa conservan una referencia opaca del módulo, su server group y la moneda de ese grupo.
 - Una configuración de símbolo puede habilitar de forma acumulable progresión, recompensa por volumen y elegibilidad CPA.

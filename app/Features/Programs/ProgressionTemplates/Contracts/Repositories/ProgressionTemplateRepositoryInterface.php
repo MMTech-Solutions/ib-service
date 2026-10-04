@@ -17,6 +17,8 @@ interface ProgressionTemplateRepositoryInterface
 
     public function find(string $id): ?ProgressionTemplate;
 
+    public function findVersion(string $versionId): ?ProgressionTemplateVersion;
+
     public function save(ProgressionTemplate $template, ?int $expectedLockVersion = null): void;
 
     public function delete(ProgressionTemplate $template, int $expectedLockVersion): void;

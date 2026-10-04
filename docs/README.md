@@ -37,6 +37,7 @@ sustituir los BDS ni las reglas técnicas.
   capacidades y control operativo.
 - [`plans/`](roadmap/plans/README.md): primer consumidor inter-feature de
   Modules; P1 completado; P0.3 (período de progresión) publicado.
+  P3 completada localmente: vinculación administrativa de versiones de plantillas.
 - [`programs/`](roadmap/programs/README.md): PR1 y P2 completados (catálogo
   administrativo y ladder vivo de umbrales, incluido el primer nivel en `0`).
 - [`rules/`](roadmap/rules/README.md): R1 y R2 completados (catálogo,

@@ -14,9 +14,15 @@ use App\Features\Modules\Catalog\Http\V1\Controllers\UpdateModuleController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\ActivatePlanController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\ArchivePlanController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\DeactivatePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ListPaymentTemplateBindingsController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\ListPlansController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ListProgressionTemplateBindingsController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ShowPaymentTemplateBindingController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\ShowPlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\ShowProgressionTemplateBindingController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\StorePaymentTemplateBindingController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\StorePlanController;
+use App\Features\Plans\Catalog\Http\V1\Controllers\StoreProgressionTemplateBindingController;
 use App\Features\Plans\Catalog\Http\V1\Controllers\UpdatePlanController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ListProgramsController;
 use App\Features\Programs\Catalog\Http\V1\Controllers\ReorderProgramsController;
@@ -90,6 +96,12 @@ Route::prefix('ib/v1')
         Route::prefix('admin')
             ->group(function (): void {
                 Route::get('payment-templates', ListPaymentTemplatesController::class)->name('ib.v1.admin.payment-templates.index');
+                Route::post('plans/{plan}/payment-template-version-bindings', StorePaymentTemplateBindingController::class)->name('ib.v1.admin.plans.payment-template-version-bindings.store');
+                Route::get('plans/{plan}/payment-template-version-bindings', ListPaymentTemplateBindingsController::class)->name('ib.v1.admin.plans.payment-template-version-bindings.index');
+                Route::get('plans/{plan}/payment-template-version-bindings/{binding}', ShowPaymentTemplateBindingController::class)->name('ib.v1.admin.plans.payment-template-version-bindings.show');
+                Route::post('plans/{plan}/progression-template-version-bindings', StoreProgressionTemplateBindingController::class)->name('ib.v1.admin.plans.progression-template-version-bindings.store');
+                Route::get('plans/{plan}/progression-template-version-bindings', ListProgressionTemplateBindingsController::class)->name('ib.v1.admin.plans.progression-template-version-bindings.index');
+                Route::get('plans/{plan}/progression-template-version-bindings/{binding}', ShowProgressionTemplateBindingController::class)->name('ib.v1.admin.plans.progression-template-version-bindings.show');
                 Route::post('payment-templates', StorePaymentTemplateController::class)->name('ib.v1.admin.payment-templates.store');
                 Route::get('payment-templates/{paymentTemplate}', ShowPaymentTemplateController::class)->name('ib.v1.admin.payment-templates.show');
                 Route::patch('payment-templates/{paymentTemplate}', UpdatePaymentTemplateController::class)->name('ib.v1.admin.payment-templates.update');

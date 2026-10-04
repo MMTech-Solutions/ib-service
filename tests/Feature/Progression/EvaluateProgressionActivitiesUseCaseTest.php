@@ -234,12 +234,11 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         });
         $templateId = (string) Str::uuid7();
         $templateVersionId = (string) Str::uuid7();
-        $bindingId = (string) Str::uuid7();
         $configurationId = (string) Str::uuid7();
         $timestamp = '2026-09-10T10:00:00Z';
         DB::table('progression_templates')->insert(['id' => $templateId, 'name' => 'Network '.Str::random(6), 'created_at' => $timestamp, 'updated_at' => $timestamp]);
         DB::table('progression_template_versions')->insert(['id' => $templateVersionId, 'template_id' => $templateId, 'version_number' => 1, 'status' => 'published', 'published_at' => $timestamp, 'created_at' => $timestamp, 'updated_at' => $timestamp]);
-        DB::table('plan_progression_template_version_bindings')->insert(['id' => $bindingId, 'plan_id' => $fixture['plan_id'], 'template_version_id' => $templateVersionId, 'created_at' => $timestamp]);
+        $bindingId = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/progression-template-version-bindings", ['template_version_id' => $templateVersionId])->assertCreated()->json('data.id');
         DB::table('program_symbol_configurations')->insert(['id' => $configurationId, 'program_id' => $fixture['program_id'], 'module_id' => $fixture['module_id'], 'symbol_reference' => 'XAUUSD', 'server_group_reference' => 'default', 'currency_code' => 'USD', 'use_for_progression' => true, 'plan_progression_template_version_binding_id' => $bindingId, 'use_for_volume_reward' => false, 'use_for_cpa' => false, 'starts_at' => $timestamp, 'created_at' => $timestamp, 'updated_at' => $timestamp]);
         $configuration = new ProgramProgressionConfigurationData($configurationId, $bindingId, $templateVersionId, '1');
         $this->app->instance(ResolveProgramProgressionConfigurationPort::class, new class($configuration) implements ResolveProgramProgressionConfigurationPort

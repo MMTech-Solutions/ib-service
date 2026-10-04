@@ -1,8 +1,8 @@
 # Roadmap del feature Plans
 
-Estado: **P1 completado; extensión de Progression (P0.3) completada**
+Estado: **P1, extensión de Progression (P0.3) y vinculación de plantillas (P3) completados localmente**
 Dependencia satisfecha: `Modules M1` completado
-Última revisión: 2026-09-17
+Última revisión: 2026-10-04
 
 ## Posición en la secuencia
 
@@ -55,6 +55,10 @@ desde la siguiente ventana (`BR-PLAN-018`, `BR-PLAN-019`).
   (sección Evidencia P0.3).
 
 ## Próximo paso
+
+P3: [vinculación administrativa de versiones de plantillas](06-template-version-bindings.md),
+completada localmente. Cierra la creación y consulta HTTP de bindings de pago y
+progresión. Siguiente validación: preparación integrada de escenarios con ib-labs.
 
 Ninguno en Plans para PG1. Progression puede ejecutar la sesión 3 de
 evaluación pull-only consumiendo el puerto publicado.

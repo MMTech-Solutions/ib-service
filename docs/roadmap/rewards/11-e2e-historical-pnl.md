@@ -1,7 +1,7 @@
 # Próxima entrega: E2E Broker, Progression y Rewards con cortes PnL históricos
 
 Estado: **Cierre de código completado localmente; operatividad, S2S y datos reales pendientes de validación con ib-labs**
-Última revisión: 2026-10-03
+Última revisión: 2026-10-04
 
 ## Entrega de cierre local E2E
 
@@ -100,6 +100,10 @@ pertenencia, existencia al corte y grupo Live actual. Ese límite requiere evide
 contractual antes de afirmar cobertura histórica completa.
 
 ## Trabajo pendiente y salida E2E
+
+La brecha de preparación administrativa de bindings se registra y resuelve en
+[Plans P3](../plans/06-template-version-bindings.md). La evidencia local anterior
+creaba esas asociaciones en fixtures; no validaba su creación autorizada HTTP.
 
 1. **Broker–IB e IAM: S2S pendiente.** Fuente y contrato histórico implementados localmente; demostrar S2S
    cierre posterior a cambio de plan y profundidad IAM. Ampliar después contratos,

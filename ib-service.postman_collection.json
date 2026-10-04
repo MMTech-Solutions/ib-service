@@ -965,6 +965,806 @@
                                 "description": "Logically archives an inactive plan. Bindings are preserved and the code remains reserved. Not restored in P1."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "Payment template bindings",
+                            "item": [
+                                {
+                                    "name": "Create payment template binding",
+                                    "request": {
+                                        "method": "POST",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "payment-template-version-bindings"
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "POST",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "payment-template-version-bindings"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                                "body": {
+                                                    "mode": "raw",
+                                                    "raw": "{\n    \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\"\n}",
+                                                    "options": {
+                                                        "raw": {
+                                                            "language": "json"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "status": "Created",
+                                            "code": 201,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template version bound successfully.\"\n    }\n}"
+                                        },
+                                        {
+                                            "name": "Existing binding",
+                                            "originalRequest": {
+                                                "method": "POST",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "payment-template-version-bindings"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                                "body": {
+                                                    "mode": "raw",
+                                                    "raw": "{\n    \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\"\n}",
+                                                    "options": {
+                                                        "raw": {
+                                                            "language": "json"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template version bound successfully.\"\n    }\n}"
+                                        }
+                                    ],
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "type": "text/javascript",
+                                                "exec": [
+                                                    "if ([200, 201].includes(pm.response.code)) { pm.collectionVariables.set(\"PAYMENT_TEMPLATE_VERSION_BINDING_ID\", pm.response.json().data.id); }"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "List payment template bindings",
+                                    "request": {
+                                        "method": "GET",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "payment-template-version-bindings"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Positive page number; defaults to 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Between 1 and 100; defaults to 100."
+                                                }
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "GET",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings?page=1&per_page=100",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "payment-template-version-bindings"
+                                                    ],
+                                                    "query": [
+                                                        {
+                                                            "key": "page",
+                                                            "value": "1",
+                                                            "description": "Positive page number; defaults to 1."
+                                                        },
+                                                        {
+                                                            "key": "per_page",
+                                                            "value": "100",
+                                                            "description": "Between 1 and 100; defaults to 100."
+                                                        }
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}\",\n            \"plan_id\": \"{{PLAN_ID}}\",\n            \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\",\n            \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n        }\n    ],\n    \"meta\": {\n        \"message\": \"Template bindings retrieved successfully.\",\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 100,\n            \"total\": 1,\n            \"last_page\": 1\n        }\n    }\n}"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Show payment template binding",
+                                    "request": {
+                                        "method": "GET",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings/{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "payment-template-version-bindings",
+                                                "{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}"
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "GET",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/payment-template-version-bindings/{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "payment-template-version-bindings",
+                                                        "{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published payment versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PAYMENT_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PAYMENT_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template binding retrieved successfully.\"\n    }\n}"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Progression template bindings",
+                            "item": [
+                                {
+                                    "name": "Create progression template binding",
+                                    "request": {
+                                        "method": "POST",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "progression-template-version-bindings"
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "POST",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "progression-template-version-bindings"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                                "body": {
+                                                    "mode": "raw",
+                                                    "raw": "{\n    \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\"\n}",
+                                                    "options": {
+                                                        "raw": {
+                                                            "language": "json"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "status": "Created",
+                                            "code": 201,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template version bound successfully.\"\n    }\n}"
+                                        },
+                                        {
+                                            "name": "Existing binding",
+                                            "originalRequest": {
+                                                "method": "POST",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "progression-template-version-bindings"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta.",
+                                                "body": {
+                                                    "mode": "raw",
+                                                    "raw": "{\n    \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\"\n}",
+                                                    "options": {
+                                                        "raw": {
+                                                            "language": "json"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template version bound successfully.\"\n    }\n}"
+                                        }
+                                    ],
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "type": "text/javascript",
+                                                "exec": [
+                                                    "if ([200, 201].includes(pm.response.code)) { pm.collectionVariables.set(\"PROGRESSION_TEMPLATE_VERSION_BINDING_ID\", pm.response.json().data.id); }"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "List progression template bindings",
+                                    "request": {
+                                        "method": "GET",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "progression-template-version-bindings"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Positive page number; defaults to 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Between 1 and 100; defaults to 100."
+                                                }
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "GET",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings?page=1&per_page=100",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "progression-template-version-bindings"
+                                                    ],
+                                                    "query": [
+                                                        {
+                                                            "key": "page",
+                                                            "value": "1",
+                                                            "description": "Positive page number; defaults to 1."
+                                                        },
+                                                        {
+                                                            "key": "per_page",
+                                                            "value": "100",
+                                                            "description": "Between 1 and 100; defaults to 100."
+                                                        }
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}\",\n            \"plan_id\": \"{{PLAN_ID}}\",\n            \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\",\n            \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n        }\n    ],\n    \"meta\": {\n        \"message\": \"Template bindings retrieved successfully.\",\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 100,\n            \"total\": 1,\n            \"last_page\": 1\n        }\n    }\n}"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Show progression template binding",
+                                    "request": {
+                                        "method": "GET",
+                                        "auth": {
+                                            "type": "noauth"
+                                        },
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings/{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "plans",
+                                                "{{PLAN_ID}}",
+                                                "progression-template-version-bindings",
+                                                "{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}"
+                                            ]
+                                        },
+                                        "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                    },
+                                    "response": [
+                                        {
+                                            "name": "Success",
+                                            "originalRequest": {
+                                                "method": "GET",
+                                                "auth": {
+                                                    "type": "noauth"
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "key": "X-Internal-Gateway",
+                                                        "value": "{{GATEWAY_INTERNAL_SECRET}}"
+                                                    },
+                                                    {
+                                                        "key": "X-Userinfo",
+                                                        "value": "{{ADMIN_USERINFO}}"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/progression-template-version-bindings/{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}",
+                                                    "host": [
+                                                        "{{BASE_URL}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "ib",
+                                                        "v1",
+                                                        "admin",
+                                                        "plans",
+                                                        "{{PLAN_ID}}",
+                                                        "progression-template-version-bindings",
+                                                        "{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}"
+                                                    ]
+                                                },
+                                                "description": "Requires ib.plans.manage on admin_panel. Published progression versions only. Bindings are permanent; creation returns 201, repeat returns 200 with original ID/time. Archived plans allow reads only. data is the binding object or the item array; pagination is in meta."
+                                            },
+                                            "status": "OK",
+                                            "code": 200,
+                                            "_postman_previewlanguage": "json",
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                }
+                                            ],
+                                            "body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"{{PROGRESSION_TEMPLATE_VERSION_BINDING_ID}}\",\n        \"plan_id\": \"{{PLAN_ID}}\",\n        \"template_version_id\": \"{{PROGRESSION_TEMPLATE_VERSION_ID}}\",\n        \"created_at\": \"2026-10-04T00:00:00.000000Z\"\n    },\n    \"meta\": {\n        \"message\": \"Template binding retrieved successfully.\"\n    }\n}"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -4485,6 +5285,26 @@
         {
             "key": "OCCURRED_UNTIL",
             "value": "2026-10-02T00:00:00Z",
+            "type": "string"
+        },
+        {
+            "key": "PAYMENT_TEMPLATE_VERSION_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PAYMENT_TEMPLATE_VERSION_BINDING_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRESSION_TEMPLATE_VERSION_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRESSION_TEMPLATE_VERSION_BINDING_ID",
+            "value": "",
             "type": "string"
         }
     ]

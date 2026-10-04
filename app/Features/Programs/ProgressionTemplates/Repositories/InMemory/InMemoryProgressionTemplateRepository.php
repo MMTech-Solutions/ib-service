@@ -40,6 +40,19 @@ final class InMemoryProgressionTemplateRepository implements ProgressionTemplate
         return isset($this->templates[$id]) ? $this->copy($this->templates[$id]) : null;
     }
 
+    public function findVersion(string $versionId): ?ProgressionTemplateVersion
+    {
+        foreach ($this->all() as $template) {
+            foreach ($template->versions as $version) {
+                if ($version->id === $versionId) {
+                    return $version;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function save(ProgressionTemplate $template, ?int $expectedLockVersion = null): void
     {
         $stored = $this->templates[$template->id] ?? null;

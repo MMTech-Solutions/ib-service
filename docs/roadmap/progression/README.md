@@ -1,12 +1,17 @@
 # Roadmap del feature Progression
 
 Estado: **PG1 y PG2 completadas**
+
 Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 `Modules M3` (contrato + adapter deposits), Progression sesiones 1–5, Rules P0.1,
 Subscriptions P0.2, Plans P0.3
 Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
 IAM; la distribución se congela localmente por actividad
-Última revisión: 2026-10-03
+Última revisión: 2026-10-04
+
+La preparación administrativa de bindings de plantillas quedó completada localmente
+en [Plans P3](../plans/06-template-version-bindings.md). PG2 demostró su consumo
+con fixtures preparadas, sin cerrar su creación pública.
 
 ## Objetivo
 

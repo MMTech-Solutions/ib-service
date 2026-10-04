@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.15
+- **Versión:** 0.16
 - **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan; S1 cierra las reglas de solicitud, aprobación, suscripción, placement y fijación administrativa; Progression cierra el período obligatorio del plan, el umbral cero del primer programa y el retiro inmediato de módulos
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -15,6 +15,9 @@ Los programas pueden seleccionar símbolos de sus módulos habilitados. Cada sel
 
 | Concepto | Definición |
 | --- | --- |
+| Plantilla de pago | Catálogo reutilizable de versiones de distribución económica por nivel. Es independiente de una plantilla de progresión. |
+| Versión publicada de plantilla | Configuración inmutable que puede habilitarse expresamente para uno o varios planes. |
+| Vinculación de plantilla | Asociación permanente entre un plan y una versión publicada de una plantilla de pago o progresión; habilita su selección sin seleccionarla automáticamente en un programa. |
 | Plan IB | Producto comercial y elemento de mayor jerarquía de la suscripción. |
 | Plan dedicado | Plan cuya configuración favorece la actividad de un módulo o perfil de negocio concreto. |
 | Plan mixto | Plan que combina de forma deliberada contribuciones y recompensas de varios módulos. |
@@ -59,6 +62,8 @@ erDiagram
     PROGRAM ||--o{ PROGRAM_MODULE_SELECTION : selects
     MODULE_BINDING ||--o{ PROGRAM_MODULE_SELECTION : constrains
     PLAN ||--o{ SUBSCRIPTION : receives
+    PLAN ||--o{ TEMPLATE_BINDING : enables
+    TEMPLATE_VERSION ||--o{ TEMPLATE_BINDING : referenced_by
     SUBSCRIPTION ||--|| PLACEMENT : has
     PLACEMENT }o--|| PROGRAM : current_level
 ```
@@ -250,6 +255,20 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Placement fijado administrativamente.
 - Programa fijado modificado administrativamente.
 - Fijación administrativa de placement retirada.
+
+## Vinculación de versiones de plantillas
+
+| ID | Regla |
+| --- | --- |
+| BR-TEMPLATE-001 | Administración puede vincular versiones publicadas de plantillas de pago y progresión a un plan no archivado, activo o inactivo. Un borrador no puede vincularse. |
+| BR-TEMPLATE-002 | Un plan puede vincular varias plantillas y varias versiones de una misma plantilla. Una versión publicada puede vincularse a distintos planes. |
+| BR-TEMPLATE-003 | Para cada plan y versión de una familia existe una única vinculación. Repetir la asociación conserva su identidad e instante original. |
+| BR-TEMPLATE-004 | La vinculación es permanente: no admite cambiar su plan o versión, eliminarse ni retirarse. El archivo del plan conserva las vinculaciones y permite su consulta, pero impide nuevas asociaciones, incluidas solicitudes repetidas. |
+| BR-TEMPLATE-005 | Vincular o publicar otra versión no sustituye la plantilla seleccionada por una configuración, ni crea asignaciones de reglas, contribuciones o recompensas. |
+| BR-TEMPLATE-006 | Una configuración consumidora selecciona explícitamente una vinculación de su mismo plan y de la familia correspondiente. Cambiar su selección conserva las referencias y resultados históricos conforme a su propia vigencia. |
+
+El hecho de negocio es «versión de plantilla vinculada al plan». Una solicitud
+repetida conserva el hecho original y no representa una nueva vinculación.
 
 ## Decisiones pendientes
 

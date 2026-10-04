@@ -20,18 +20,22 @@ use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardProgramConfigurati
 use App\Features\Programs\Contracts\Ports\Input\ListNegativePnlConfigurationsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveNegativePnlProgramConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateRatesPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateVersionPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramCpaSymbolsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
+use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTemplateVersionPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardProgramConfigurationPort;
 use App\Features\Programs\PaymentTemplates\Repositories\InMemory\InMemoryPaymentTemplateRepository;
 use App\Features\Programs\PaymentTemplates\Repositories\PostgreSql\PostgreSqlPaymentTemplateRepository;
 use App\Features\Programs\PaymentTemplates\UseCases\ResolvePaymentTemplateRatesUseCase;
+use App\Features\Programs\PaymentTemplates\UseCases\ResolvePaymentTemplateVersionUseCase;
 use App\Features\Programs\ProgressionTemplates\Repositories\InMemory\InMemoryProgressionTemplateRepository;
 use App\Features\Programs\ProgressionTemplates\Repositories\PostgreSql\PostgreSqlProgressionTemplateRepository;
+use App\Features\Programs\ProgressionTemplates\UseCases\ResolveProgressionTemplateVersionUseCase;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -40,6 +44,8 @@ final class ProgramsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ResolvePaymentTemplateVersionPort::class, ResolvePaymentTemplateVersionUseCase::class);
+        $this->app->singleton(ResolveProgressionTemplateVersionPort::class, ResolveProgressionTemplateVersionUseCase::class);
         $this->app->singleton(ListNegativePnlConfigurationsPort::class, ListNegativePnlConfigurationsUseCase::class);
         $this->app->singleton(ResolveNegativePnlProgramConfigurationPort::class, ResolveNegativePnlProgramConfigurationUseCase::class);
         $this->app->singleton(ResolvePaymentTemplateRatesPort::class, ResolvePaymentTemplateRatesUseCase::class);

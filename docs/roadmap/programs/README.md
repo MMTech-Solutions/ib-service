@@ -2,7 +2,7 @@
 
 Estado: **PR1 y P2 completados; BR-PROGRAM-015 cerrado; configuración histórica PnL local disponible (RWD4.2.1)**
 Dependencia satisfecha: `Plans P1` completado
-Última revisión: 2026-10-03
+Última revisión: 2026-10-04
 
 La configuración PnL por programa/grupo conserva revisiones y contexto económico;
 GET/PUT administrativos y puertos de consulta histórica están disponibles.
@@ -82,5 +82,9 @@ Ninguno dentro de Programs P2. Progression puede resolver cero puntos contra
 el primer programa del ladder sin una extensión pendiente en Programs.
 
 ## Configuración de símbolos
+
+La creación administrativa de las vinculaciones quedó completada localmente en
+[Plans P3](../plans/06-template-version-bindings.md). Las pruebas locales
+anteriores preparaban bindings directamente; no demostraban este paso por HTTP.
 
 Programs incorpora configuraciones versionadas por símbolo y módulo. Los usos de progresión, volumen y CPA son acumulables; las configuraciones de volumen conservan el tipo y valor de comisión y la moneda del server group. Las plantillas tienen ABM independiente del plan: cada plan vincula explícitamente una versión publicada, que luego referencia la configuración del programa para conservar el contexto histórico.

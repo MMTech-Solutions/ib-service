@@ -3,7 +3,7 @@
 Estado: **Cierre de código E2E completado localmente; RWD-A1/A2 completadas; validación integrada con ib-labs pendiente**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
-Última revisión: 2026-10-03
+Última revisión: 2026-10-04
 
 ## Objetivo
 
@@ -96,6 +96,10 @@ A2.3 completa las factories específicas de proveedores de evidencia.
 - Cancelación, reversa y compensación son administrativas, idempotentes y auditables. La reconciliación recurrente solo trata incertidumbre u holds, nunca el histórico financiero confirmado.
 
 ## Próximo paso
+
+[Plans P3](../plans/06-template-version-bindings.md), completada localmente, cierra la creación
+administrativa de bindings de pago necesaria para preparar los escenarios de
+ib-labs por HTTP. Los cierres locales previos consumían bindings preparados.
 
 El handler de Trading identifica cierres por `event_name = position_closed`,
 siguiendo el precedente de broker-service. La librería deserializa Avro/JSON;
