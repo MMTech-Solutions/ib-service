@@ -63,8 +63,22 @@ final class RewardFinancialOperationTest extends TestCase
     {
         $rewardId = $this->seedReward('settled');
         $event = ['id' => 782, 'status' => 'posted', 'idempotency_key' => 'ib-service:reward:'.$rewardId.':reversal', 'commission_type' => 'reversal', 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'amount_minor' => 2500, 'reference_type' => 'reward', 'reference_id' => $rewardId, 'reverses_commission_event_id' => 781, 'network_level' => 1, 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main'];
+        unset($event['currency_code'], $event['system_wallet_slug']);
+        $event['ib_wallet_id'] = 42;
         $invalid = [...$event, 'reverses_commission_event_id' => '781'];
-        Http::fake(['http://finance.test/*' => Http::sequence()->push(['data' => ['status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main', 'event' => $invalid]])->push(['data' => []])->push(['data' => [$event]])]);
+        $reads = 0;
+        Http::fake(function ($request) use ($event, $invalid, &$reads) {
+            if ($request->method() === 'POST' && str_ends_with($request->url(), '/commission-events')) {
+                return Http::response(['data' => ['status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main', 'event' => $invalid]]);
+            }
+            if ($request->method() === 'GET' && str_contains($request->url(), '/commission-events?')) {
+                return Http::response(['data' => ++$reads === 1 ? [] : [$event]]);
+            }
+            self::assertSame('GET', $request->method());
+            self::assertStringContainsString('/ib/wallets?', $request->url());
+
+            return Http::response(['data' => [['id' => 42, 'ib_user_id' => $event['ib_user_id'], 'minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main']], 'meta' => ['current_page' => 1, 'last_page' => 1]]);
+        });
         $result = app(ManageRewardFinancialOperationUseCase::class)->execute(new ManageRewardFinancialOperationData($rewardId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'reversal', 'admin.reversal'));
         self::assertSame('failed', $result->status);
         self::assertSame('reversal_failed', DB::table('rewards')->where('id', $rewardId)->value('status'));

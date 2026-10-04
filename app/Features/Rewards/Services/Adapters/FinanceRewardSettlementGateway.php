@@ -109,16 +109,22 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
         }
         $event = $events[0];
         if (! is_array($event) || ! is_int($event['id'] ?? null) || $event['id'] < 1
+            || ! is_int($event['ib_wallet_id'] ?? null) || $event['ib_wallet_id'] < 1
             || ! is_int($event['amount_minor'] ?? null) || ! is_int($event['minor_units'] ?? null)
             || ! is_int($event['network_level'] ?? null) || $event['network_level'] < 1
             || (isset($event['reverses_commission_event_id']) && ! is_int($event['reverses_commission_event_id']))) {
             throw new RewardSettlementException('finance_contract_invalid');
         }
-        foreach (['idempotency_key', 'commission_type', 'ib_user_id', 'reference_type', 'reference_id', 'status', 'currency_code', 'system_wallet_slug'] as $field) {
+        foreach (['idempotency_key', 'commission_type', 'ib_user_id', 'reference_type', 'reference_id', 'status'] as $field) {
             if (! is_string($event[$field] ?? null) || $event[$field] === '') {
                 throw new RewardSettlementException('finance_contract_invalid');
             }
         }
+
+        if ($event['idempotency_key'] !== $idempotencyKey) {
+            throw new RewardSettlementException('finance_contract_invalid');
+        }
+        $wallet = $this->resolveEventWallet($event['ib_wallet_id'], $event['ib_user_id'], $event['minor_units']);
 
         return new FinanceCommissionEventData(
             id: $event['id'], idempotency_key: (string) ($event['idempotency_key'] ?? ''), commission_type: (string) ($event['commission_type'] ?? ''),
@@ -126,9 +132,51 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
             minor_units: (int) ($event['minor_units'] ?? -1), reference_type: (string) ($event['reference_type'] ?? ''),
             reference_id: (string) ($event['reference_id'] ?? ''), status: (string) ($event['status'] ?? ''),
             reverses_commission_event_id: isset($event['reverses_commission_event_id']) ? (int) $event['reverses_commission_event_id'] : null,
-            currency_code: (string) ($event['currency_code'] ?? ''), system_wallet_slug: (string) ($event['system_wallet_slug'] ?? ''),
+            currency_code: $wallet['currency_code'], system_wallet_slug: $wallet['system_wallet_slug'],
             network_level: is_int($event['network_level'] ?? null) ? $event['network_level'] : -1,
         );
+    }
+
+    /** @return array{currency_code: string, system_wallet_slug: string} */
+    private function resolveEventWallet(int $walletId, string $beneficiary, int $precision): array
+    {
+        $lastPage = null;
+        for ($page = 1; ; $page++) {
+            try {
+                $response = $this->client()->get('/api/finance/v1/ib/wallets', ['ib_user_id' => $beneficiary, 'per_page' => 100, 'page' => $page]);
+            } catch (ConnectionException) {
+                throw new RewardSettlementException('finance_unavailable');
+            }
+            if (! $response->successful()) {
+                throw new RewardSettlementException($response->serverError() ? 'finance_unavailable' : 'finance_rejected');
+            }
+            $wallets = $response->json('data');
+            $meta = $response->json('meta');
+            if (! is_array($wallets) || ! array_is_list($wallets) || ! is_array($meta)
+                || ($meta['current_page'] ?? null) !== $page || ! is_int($meta['last_page'] ?? null)
+                || $meta['last_page'] < $page || ($lastPage !== null && $lastPage !== $meta['last_page'])) {
+                throw new RewardSettlementException('finance_contract_invalid');
+            }
+            $lastPage = $meta['last_page'];
+            foreach ($wallets as $wallet) {
+                if (! is_array($wallet) || ! is_int($wallet['id'] ?? null) || $wallet['id'] < 1) {
+                    throw new RewardSettlementException('finance_contract_invalid');
+                }
+                if ($wallet['id'] !== $walletId) {
+                    continue;
+                }
+                if (($wallet['ib_user_id'] ?? null) !== $beneficiary || ($wallet['minor_units'] ?? null) !== $precision
+                    || ! is_string($wallet['currency_code'] ?? null) || trim($wallet['currency_code']) === ''
+                    || ! is_string($wallet['system_wallet_slug'] ?? null) || trim($wallet['system_wallet_slug']) === '') {
+                    throw new RewardSettlementException('finance_contract_invalid');
+                }
+
+                return ['currency_code' => $wallet['currency_code'], 'system_wallet_slug' => $wallet['system_wallet_slug']];
+            }
+            if ($page === $lastPage || $wallets === []) {
+                throw new RewardSettlementException('finance_contract_invalid');
+            }
+        }
     }
 
     /** @param array<string, mixed> $payload @return array<string, mixed> */

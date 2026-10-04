@@ -187,6 +187,24 @@ RWD-A2 y configuración/cálculo RWD4.2.1 están completados localmente.
 La evidencia S2S Broker/IAM se pospone para cierre E2E, sin bloquear
 desarrollo ni habilitación del runner. No se afirma cobertura ni validación con datos reales.
 
+## Recuperación de comisiones Finance
+
+La recuperación consulta `GET /api/finance/v1/ib/commission-events` por
+`idempotency_key`. Su colección contiene `ib_wallet_id`, importe y precisión,
+pero no moneda ni slug de wallet. Si hay un evento, el adapter consulta
+`GET /api/finance/v1/ib/wallets` con `ib_user_id` del evento, `per_page=100`
+y páginas secuenciales. Selecciona el ID exacto, comprueba beneficiario y
+precisión, y completa moneda y slug desde la wallet. No existe un endpoint
+de detalle `/ib/wallets/{id}` para esta resolución.
+
+Ambas consultas reutilizan `X-Internal-Token` y `X-Internal-Source`. Una ausencia
+válida del evento no consulta wallets; una wallet ausente, payload inválido o
+paginación incoherente constituye `finance_contract_invalid`. Los fallos de
+conexión/5xx son `finance_unavailable`; otros HTTP no exitosos son
+`finance_rejected`. Un fallo de resolución no se convierte en ausencia del pago.
+No se asume USD ni se usa un POST como fallback de la consulta de wallets.
+La validación financiera conserva la solicitud congelada como autoridad.
+
 ## Decisiones pendientes
 
 - Confirmar `ib-service.events.v1` como nombre del topic de salida.

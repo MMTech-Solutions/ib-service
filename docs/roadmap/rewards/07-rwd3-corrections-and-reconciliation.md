@@ -27,4 +27,15 @@ Cancelación, reversa y compensación expresan sus rechazos de negocio con excep
 
 ## Cierre pendiente
 
+La adaptación local del 2026-10-03 al contrato real de Finance recupera moneda
+y slug mediante el listado paginado de wallets del beneficiario, enlazado por
+`ib_wallet_id` del evento. Conserva el DTO y las validaciones de solicitudes
+congeladas; no modifica Finance ni presupone USD. Las pruebas incluyen
+paginación, errores de wallet, hold y recuperación consistente, cancelación,
+reversa, compensación y vencimiento de la lease durante la consulta.
+
+Evidencia local: `FinanceRewardRecoveryGatewayTest`, `RewardFinancialRecoveryTest`,
+`Rewards/RewardFinancialOperationTest`, `Rewards/RewardSettlementTest` y
+`tests/Architecture/`: **64 pruebas, 349 assertions aprobadas**. Pint aprobado.
+
 Contract tests y smoke S2S contra Finance real, incluidos permisos de la identidad interna para crear, revertir y consultar comisiones. IB Lab aporta la evidencia reproducible antes del cierre operativo.

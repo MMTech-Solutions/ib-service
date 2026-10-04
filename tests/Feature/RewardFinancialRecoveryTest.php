@@ -21,17 +21,87 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class RewardFinancialRecoveryTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[DataProvider('walletRecoveryFailures')]
+    public function test_wallet_failure_cannot_cancel_or_pay_and_can_be_recovered(string $failure, bool $held): void
+    {
+        $id = $this->seedReward('failed');
+        $walletReads = 0;
+        Http::fake(function ($request) use ($id, $failure, &$walletReads) {
+            self::assertSame('GET', $request->method());
+            if (str_contains($request->url(), '/commission-events?')) {
+                $event = $this->posted($id)['data']['event'];
+                $event += ['minor_units' => 2, 'ib_wallet_id' => 42];
+
+                return Http::response(['data' => [$event]]);
+            }
+            self::assertStringContainsString('/ib/wallets?', $request->url());
+            $wallet = ['id' => 42, 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main'];
+            if (++$walletReads === 1) {
+                if ($failure === 'timeout') {
+                    return Http::failedConnection();
+                }
+                if ($failure === 'server' || $failure === 'rejected') {
+                    return Http::response([], $failure === 'server' ? 503 : 403);
+                }
+                $wallet[$failure === 'currency' ? 'currency_code' : 'system_wallet_slug'] = $failure === 'currency' ? 'EUR' : 'usd-other';
+            }
+
+            return Http::response(['data' => [$wallet], 'meta' => ['current_page' => 1, 'last_page' => 1]]);
+        });
+        $result = app(ManageRewardFinancialOperationUseCase::class)->execute($this->command($id, 'cancellation'));
+        self::assertSame('failed', $result->status);
+        self::assertSame('failed', DB::table('rewards')->where('id', $id)->value('status'));
+        self::assertSame($held, DB::table('rewards')->where('id', $id)->value('reconciliation_hold_at') !== null);
+        self::assertSame(1, app(ReconcileRewardSettlementsUseCase::class)->execute(1)['confirmed']);
+        self::assertSame('settled', DB::table('rewards')->where('id', $id)->value('status'));
+        self::assertNull(DB::table('rewards')->where('id', $id)->value('reconciliation_hold_at'));
+        Http::assertSentCount(4);
+    }
+
+    public static function walletRecoveryFailures(): array
+    {
+        return [['currency', true], ['slug', true], ['timeout', false], ['server', false], ['rejected', false]];
+    }
+
+    public function test_wallet_lookup_cannot_confirm_after_the_lease_expires(): void
+    {
+        $id = $this->seedReward('failed');
+        Http::fake(function ($request) use ($id) {
+            self::assertSame('GET', $request->method());
+            if (str_contains($request->url(), '/commission-events?')) {
+                $event = $this->posted($id)['data']['event'];
+
+                return Http::response(['data' => [[...$event, 'minor_units' => 2, 'ib_wallet_id' => 42]]]);
+            }
+            self::assertStringContainsString('/ib/wallets?', $request->url());
+            DB::table('rewards')->where('id', $id)->update(['settlement_lock_expires_at' => now('UTC')->subSecond()]);
+
+            return Http::response(['data' => [['id' => 42, 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main']], 'meta' => ['current_page' => 1, 'last_page' => 1]]);
+        });
+        $result = app(ManageRewardFinancialOperationUseCase::class)->execute($this->command($id, 'cancellation'));
+        self::assertSame('processing', $result->status);
+        self::assertSame('failed', DB::table('rewards')->where('id', $id)->value('status'));
+        self::assertNull(DB::table('rewards')->where('id', $id)->value('settlement_reference_id'));
+        Http::assertSentCount(2);
+    }
+
     public function test_uncertain_cancellation_recovers_original_payment_and_rejects_cancellation(): void
     {
         $id = $this->seedReward('failed');
         DB::table('rewards')->where('id', $id)->update(['settlement_attempt_count' => 1]);
-        Http::fake(['*' => Http::sequence()->push(['data' => []])->push($this->posted($id))]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://finance.test/api/finance/v1/ib/commission-events*' => function ($request) use ($id) {
+                return $request->method() === 'GET' ? Http::response(['data' => []]) : Http::response($this->posted($id));
+            },
+        ]);
         $result = app(ManageRewardFinancialOperationUseCase::class)->execute($this->command($id, 'cancellation'));
         self::assertSame('rejected_already_settled', $result->outcome);
         self::assertSame('settled', DB::table('rewards')->where('id', $id)->value('status'));
@@ -43,7 +113,19 @@ final class RewardFinancialRecoveryTest extends TestCase
     {
         $id = $this->seedReward('failed');
         DB::table('rewards')->where('id', $id)->update(['settlement_attempt_count' => 1]);
-        Http::fake(['*' => Http::sequence()->push([], 503)->push(['data' => []])->push($this->posted($id))]);
+        $reads = 0;
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://finance.test/api/finance/v1/ib/commission-events*' => function ($request) use ($id, &$reads) {
+                if ($request->method() === 'GET') {
+                    return ++$reads === 1 ? Http::response([], 503) : Http::response(['data' => []]);
+                }
+
+                self::assertSame('POST', $request->method());
+
+                return Http::response($this->posted($id));
+            },
+        ]);
         $result = app(ManageRewardFinancialOperationUseCase::class)->execute($this->command($id, 'cancellation'));
         self::assertSame('failed', $result->status);
         self::assertSame('failed', DB::table('rewards')->where('id', $id)->value('status'));
@@ -108,19 +190,25 @@ final class RewardFinancialRecoveryTest extends TestCase
         $reads = 0;
         $childId = null;
         Http::fake(function ($request) use (&$reads, &$childId) {
+            if ($request->method() === 'GET' && str_contains($request->url(), '/ib/wallets?')) {
+                return Http::response(['data' => [['id' => 42, 'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main']], 'meta' => ['current_page' => 1, 'last_page' => 1]]);
+            }
             if ($request->method() === 'POST') {
+                self::assertStringEndsWith('/commission-events', $request->url());
                 $childId = $request['reference_id'];
                 $response = $this->posted($childId);
                 $response['data']['event']['amount_minor'] = 999;
 
                 return Http::response($response);
             }
+            self::assertSame('GET', $request->method());
+            self::assertStringContainsString('/commission-events?', $request->url());
             if (++$reads === 1) {
                 return Http::response(['data' => []]);
             }
             $event = $this->posted($childId)['data']['event'];
             $event['amount_minor'] = 100;
-            $event += ['minor_units' => 2, 'currency_code' => 'USD', 'system_wallet_slug' => 'usd-main'];
+            $event += ['minor_units' => 2, 'ib_wallet_id' => 42];
 
             return Http::response(['data' => [$event]]);
         });
