@@ -12,7 +12,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotPendingException;
 use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use App\Features\Subscriptions\Catalog\Http\V1\Commands\RejectSubscriptionCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class RejectSubscriptionUseCase
@@ -44,7 +44,7 @@ final class RejectSubscriptionUseCase
                 actorExternalUserId: $command->actorExternalUserId,
                 reason: $command->reason,
                 generateId: $generateId,
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
 
             $repository->save($subscription, $expectedLockVersion);

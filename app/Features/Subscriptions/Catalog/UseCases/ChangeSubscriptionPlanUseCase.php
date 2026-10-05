@@ -23,7 +23,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use App\Features\Subscriptions\Catalog\Http\V1\Commands\ChangeSubscriptionPlanCommand;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ChangeSubscriptionPlanUseCase
@@ -92,7 +92,7 @@ final class ChangeSubscriptionPlanUseCase
 
             $generateId = static fn (): string => (string) Str::uuid7();
             $operationId = $generateId();
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
 
             $subscription->endForPlanChange(
                 operationId: $operationId,

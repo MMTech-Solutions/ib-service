@@ -13,7 +13,7 @@ use App\Features\Plans\Catalog\Exceptions\PlanNotFoundException;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Http\V1\Commands\DeactivatePlanCommand;
 use App\Features\Plans\Catalog\Models\PlanOperationalChange;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class DeactivatePlanUseCase
@@ -37,7 +37,7 @@ final class DeactivatePlanUseCase
                 throw PlanConcurrencyException::forPlan($command->planId);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $previousIsActive = $plan->isActive;
             if (! $plan->deactivate($now)) {
                 return $this->presentPlan->toDetail($plan);

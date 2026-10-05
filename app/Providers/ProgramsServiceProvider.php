@@ -8,6 +8,7 @@ use App\Features\Programs\Catalog\Repositories\InMemory\InMemoryProgramRepositor
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlNegativePnlConfigurationRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramRepository;
 use App\Features\Programs\Catalog\Repositories\PostgreSql\PostgreSqlProgramVolumeRewardConfigurationRepository;
+use App\Features\Programs\Catalog\UseCases\CaptureProgressionLadderUseCase;
 use App\Features\Programs\Catalog\UseCases\ListNegativePnlConfigurationsUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveNegativePnlProgramConfigurationUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveProgramContextUseCase;
@@ -17,6 +18,7 @@ use App\Features\Programs\Catalog\UseCases\ResolveProgramSubscriptionContextUseC
 use App\Features\Programs\Catalog\UseCases\ResolveProgressionTargetProgramUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardDistributionLimitUseCase;
 use App\Features\Programs\Catalog\UseCases\ResolveVolumeRewardProgramConfigurationUseCase;
+use App\Features\Programs\Contracts\Ports\Input\CaptureProgressionLadderPort;
 use App\Features\Programs\Contracts\Ports\Input\ListNegativePnlConfigurationsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveNegativePnlProgramConfigurationPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateRatesPort;
@@ -44,6 +46,7 @@ final class ProgramsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(CaptureProgressionLadderPort::class, CaptureProgressionLadderUseCase::class);
         $this->app->singleton(ResolvePaymentTemplateVersionPort::class, ResolvePaymentTemplateVersionUseCase::class);
         $this->app->singleton(ResolveProgressionTemplateVersionPort::class, ResolveProgressionTemplateVersionUseCase::class);
         $this->app->singleton(ListNegativePnlConfigurationsPort::class, ListNegativePnlConfigurationsUseCase::class);

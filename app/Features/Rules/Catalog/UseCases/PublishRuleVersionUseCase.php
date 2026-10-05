@@ -12,7 +12,7 @@ use App\Features\Rules\Catalog\Exceptions\RuleVersionConcurrencyException;
 use App\Features\Rules\Catalog\Exceptions\RuleVersionNotFoundException;
 use App\Features\Rules\Catalog\Factories\RuleRepositoryFactory;
 use App\Features\Rules\Catalog\Http\V1\Commands\PublishRuleVersionCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class PublishRuleVersionUseCase
 {
@@ -48,7 +48,7 @@ final class PublishRuleVersionUseCase
                 $version->configuration,
             );
 
-            $version->publish(CarbonImmutable::now('UTC')->toISOString());
+            $version->publish(app(DomainClock::class)->now()->toISOString());
             $repository->updateVersion($version, $command->lockVersion);
 
             return $version->toData();

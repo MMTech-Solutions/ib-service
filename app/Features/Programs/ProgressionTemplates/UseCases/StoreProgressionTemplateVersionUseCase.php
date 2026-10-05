@@ -11,7 +11,7 @@ use App\Features\Programs\ProgressionTemplates\DTOs\ProgressionTemplateData;
 use App\Features\Programs\ProgressionTemplates\Factories\ProgressionTemplateRepositoryFactory;
 use App\Features\Programs\ProgressionTemplates\Http\V1\Commands\ManageProgressionTemplateCommand;
 use App\Features\Programs\ProgressionTemplates\Models\ProgressionTemplateVersion;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StoreProgressionTemplateVersionUseCase
@@ -29,7 +29,7 @@ final class StoreProgressionTemplateVersionUseCase
 
         return $repository->transaction(function () use ($repository, $id, $command): ProgressionTemplateData {
             $template = $this->resolveTemplate->execute($id);
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $version = new ProgressionTemplateVersion(
                 (string) Str::uuid7(),
                 $template->id,

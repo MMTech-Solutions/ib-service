@@ -9,7 +9,7 @@ use App\Features\Plans\Catalog\Enums\PlanActorKind;
 use App\Features\Plans\Catalog\Enums\PlanOperationalAction;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Models\PlanOperationalChange;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class DeactivatePlansWithoutOperationalModulesUseCase
@@ -46,7 +46,7 @@ final class DeactivatePlansWithoutOperationalModulesUseCase
                     return;
                 }
 
-                $now = CarbonImmutable::now('UTC')->toISOString();
+                $now = app(DomainClock::class)->now()->toISOString();
                 if (! $fresh->deactivate($now)) {
                     return;
                 }

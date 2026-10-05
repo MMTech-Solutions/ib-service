@@ -10,7 +10,7 @@ use App\Features\Programs\PaymentTemplates\Actions\TransformPaymentTemplateToDat
 use App\Features\Programs\PaymentTemplates\DTOs\PaymentTemplateData;
 use App\Features\Programs\PaymentTemplates\Exceptions\PaymentTemplateException;
 use App\Features\Programs\PaymentTemplates\Factories\PaymentTemplateRepositoryFactory;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class PublishPaymentTemplateVersionUseCase
 {
@@ -32,7 +32,7 @@ final class PublishPaymentTemplateVersionUseCase
                 throw PaymentTemplateException::immutable($versionId);
             }
 
-            $version->publish(CarbonImmutable::now('UTC')->toISOString());
+            $version->publish(app(DomainClock::class)->now()->toISOString());
             $repository->saveVersion($version, false, $lockVersion);
 
             return $this->transform->execute($template);

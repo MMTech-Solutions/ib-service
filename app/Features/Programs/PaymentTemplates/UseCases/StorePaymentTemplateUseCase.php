@@ -9,7 +9,7 @@ use App\Features\Programs\PaymentTemplates\DTOs\PaymentTemplateData;
 use App\Features\Programs\PaymentTemplates\Factories\PaymentTemplateRepositoryFactory;
 use App\Features\Programs\PaymentTemplates\Http\V1\Commands\ManagePaymentTemplateCommand;
 use App\Features\Programs\PaymentTemplates\Models\PaymentTemplate;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StorePaymentTemplateUseCase
@@ -21,7 +21,7 @@ final class StorePaymentTemplateUseCase
 
     public function execute(ManagePaymentTemplateCommand $command): PaymentTemplateData
     {
-        $now = CarbonImmutable::now('UTC')->toISOString();
+        $now = app(DomainClock::class)->now()->toISOString();
         $template = new PaymentTemplate((string) Str::uuid7(), $command->name ?? '', $command->description, 1, [], $now, $now);
         $this->repositoryFactory->make()->save($template);
 

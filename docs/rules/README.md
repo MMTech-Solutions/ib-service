@@ -14,5 +14,6 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 | [`programming-best-practices.md`](programming-best-practices.md) | Calidad, pruebas y confiabilidad. |
 | [`security.md`](security.md) | Seguridad de entradas, integraciones y datos. |
 | [`bds.md`](bds.md) | Creación y mantenimiento de especificaciones de dominio. |
+| [`domain-clock.md`](domain-clock.md) | Instante de dominio por operación y controles privados de Lab. |
 
 Toda regla nueva debe indicar si es obligatoria, recomendada o una decisión todavía pendiente.

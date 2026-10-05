@@ -15,7 +15,7 @@ use App\Features\Rules\Catalog\Exceptions\RuleConcurrencyException;
 use App\Features\Rules\Catalog\Exceptions\RuleNotFoundException;
 use App\Features\Rules\Catalog\Factories\RuleRepositoryFactory;
 use App\Features\Rules\Catalog\Http\V1\Commands\UpdateRuleCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class UpdateRuleUseCase
 {
@@ -43,7 +43,7 @@ final class UpdateRuleUseCase
             $changed = $rule->updateAdministrativeFields(
                 $command->hasName ? (string) $command->name : $rule->name,
                 $command->hasDescription ? $command->description : $rule->description,
-                CarbonImmutable::now('UTC')->toISOString(),
+                app(DomainClock::class)->now()->toISOString(),
             );
 
             if ($changed) {

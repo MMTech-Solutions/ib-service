@@ -15,7 +15,7 @@ use App\Features\Rules\Assignments\Factories\RuleAssignmentRepositoryFactory;
 use App\Features\Rules\Assignments\Http\V1\Commands\StoreRuleAssignmentCommand;
 use App\Features\Rules\Assignments\Models\RuleAssignment;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StoreRuleAssignmentUseCase
@@ -60,7 +60,7 @@ final class StoreRuleAssignmentUseCase
                 ruleVersionId: $command->ruleVersionId,
                 programId: $command->programId,
                 moduleId: $command->moduleId,
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
             $repository->create($assignment);
 

@@ -19,12 +19,16 @@ Estado: **Implementado; pendiente de evidencia de despliegue**
 1. Revisar los logs `progression.close_windows.completed`,
    `progression.result.retryable_failure` y
    `progression.placement.retryable_failure` por `run_id` y `run_result_id`.
-2. Confirmar en PostgreSQL los resultados `failed` o los `completed` sin fila
-   en `progression_placement_applications`.
-3. Ejecutar `php artisan progression:recover-runs --run=<uuid>`; para una
+2. Consultar `GET /api/ib/v1/admin/progression-runs/{run}/results` y revisar
+   resultados `failed` y placements `pending` o `failed`.
+3. Ejecutar `php artisan progression:recover-runs --run=<uuid> --json`; para una
    reconciliación global usar `php artisan progression:recover-runs`.
 4. Verificar que no quedan fallos recuperables ni placements pendientes. Los
    outcomes `applied`, `unchanged`, `fixed` y `not_active` son terminales.
+
+El contrato CLI versionado y el contexto conservado para reintentos están en
+[LAB5](15-lab5-contract.md). Exit 0 incluye `locked` y omisiones de negocio;
+no acredita por sí solo que se haya ejecutado el escenario.
 
 ## Observabilidad y release
 

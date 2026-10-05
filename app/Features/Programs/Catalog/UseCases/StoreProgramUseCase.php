@@ -13,7 +13,7 @@ use App\Features\Programs\Catalog\Exceptions\DuplicateProgramCodeException;
 use App\Features\Programs\Catalog\Factories\ProgramRepositoryFactory;
 use App\Features\Programs\Catalog\Http\V1\Commands\StoreProgramCommand;
 use App\Features\Programs\Catalog\Models\Program;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StoreProgramUseCase
@@ -42,7 +42,7 @@ final class StoreProgramUseCase
                 entryThreshold: $command->entryThreshold,
                 moduleIds: $command->moduleIds,
                 generateId: static fn (): string => (string) Str::uuid7(),
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
             $this->assertLadder->assert([...$existing, $program]);
 

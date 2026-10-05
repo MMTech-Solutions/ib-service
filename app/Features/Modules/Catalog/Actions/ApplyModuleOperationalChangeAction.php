@@ -12,7 +12,7 @@ use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Models\OperationalControlChange;
 use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ApplyModuleOperationalChangeAction
@@ -28,7 +28,7 @@ final class ApplyModuleOperationalChangeAction
     ): ModuleDetailData {
         $repository = $this->repositoryFactory->make();
         $changed = false;
-        $occurredAt = CarbonImmutable::now('UTC')->toISOString();
+        $occurredAt = app(DomainClock::class)->now()->toISOString();
 
         $detail = $repository->transaction(function () use (
             $repository,
@@ -49,7 +49,7 @@ final class ApplyModuleOperationalChangeAction
                 throw ModuleConcurrencyException::forModule($moduleId);
             }
 
-            $occurredAt = CarbonImmutable::now('UTC')->toISOString();
+            $occurredAt = app(DomainClock::class)->now()->toISOString();
             $previousIsActive = $module->isActive;
             $previousProcessingStatus = $module->processingStatus;
             $changed = $this->apply($module, $action, $occurredAt);

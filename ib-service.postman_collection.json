@@ -3916,6 +3916,349 @@
                                 "description": "Requires ib.progression.read. Returns one evaluation with contribution when accepted, or exclusion_reason and generated exclusion_explanation when excluded. No customer surface."
                             },
                             "response": []
+                        },
+                        {
+                            "name": "List progression distributions",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-distributions",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-distributions"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Page number, minimum 1.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Items per page, 1..100.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "module_id",
+                                            "value": "{{MODULE_ID}}",
+                                            "description": "Module UUID.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "source_activity_id",
+                                            "value": "{{SOURCE_ACTIVITY_ID}}",
+                                            "description": "Opaque source activity reference.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "plan_id",
+                                            "value": "{{PLAN_ID}}",
+                                            "description": "Plan UUID through evaluations.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "subscription_id",
+                                            "value": "{{SUBSCRIPTION_ID}}",
+                                            "description": "Subscription UUID through evaluations.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "resolved_at_from",
+                                            "value": "{{OCCURRED_FROM}}",
+                                            "description": "Inclusive UTC lower bound.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "resolved_at_to",
+                                            "value": "{{OCCURRED_UNTIL}}",
+                                            "description": "Exclusive UTC upper bound.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show progression distribution",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-distributions/{{PROGRESSION_DISTRIBUTION_ID}}",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-distributions",
+                                        "{{PROGRESSION_DISTRIBUTION_ID}}"
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List progression runs",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-runs",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-runs"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Page number, minimum 1.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Items per page, 1..100.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "plan_id",
+                                            "value": "{{PLAN_ID}}",
+                                            "description": "Plan UUID.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "status",
+                                            "value": "completed_with_errors",
+                                            "description": "pending, running, completed or completed_with_errors.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "window_from",
+                                            "value": "{{OCCURRED_FROM}}",
+                                            "description": "Inclusive window-start UTC lower bound.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "window_to",
+                                            "value": "{{OCCURRED_UNTIL}}",
+                                            "description": "Exclusive window-start UTC upper bound.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show progression run",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-runs/{{PROGRESSION_RUN_ID}}",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-runs",
+                                        "{{PROGRESSION_RUN_ID}}"
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List progression results",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-runs/{{PROGRESSION_RUN_ID}}/results",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-runs",
+                                        "{{PROGRESSION_RUN_ID}}",
+                                        "results"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Page number, minimum 1.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Items per page, 1..100.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "subscription_id",
+                                            "value": "{{SUBSCRIPTION_ID}}",
+                                            "description": "Subscription UUID.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "status",
+                                            "value": "failed",
+                                            "description": "completed, skipped or failed.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show progression result",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/progression-runs/{{PROGRESSION_RUN_ID}}/results/{{PROGRESSION_RESULT_ID}}",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "progression-runs",
+                                        "{{PROGRESSION_RUN_ID}}",
+                                        "results",
+                                        "{{PROGRESSION_RESULT_ID}}"
+                                    ]
+                                },
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                            },
+                            "response": []
                         }
                     ]
                 },
@@ -5304,6 +5647,26 @@
         },
         {
             "key": "PROGRESSION_TEMPLATE_VERSION_BINDING_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRESSION_DISTRIBUTION_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRESSION_RUN_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "PROGRESSION_RESULT_ID",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "SOURCE_ACTIVITY_ID",
             "value": "",
             "type": "string"
         }

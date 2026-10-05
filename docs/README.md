@@ -26,6 +26,7 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`programming-best-practices.md`](rules/programming-best-practices.md): calidad, pruebas, idempotencia y observabilidad.
 - [`security.md`](rules/security.md): controles de seguridad y protección de datos.
 - [`bds.md`](rules/bds.md): propósito, formato y mantenimiento de los BDS.
+- [`domain-clock.md`](rules/domain-clock.md): reloj de aplicación y controles exclusivos de Lab.
 
 ### [`roadmap/`](roadmap/README.md)
 
@@ -46,7 +47,7 @@ sustituir los BDS ni las reglas técnicas.
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
-  runs y placement operativos.
+  runs y placement operativos; [contrato LAB5](roadmap/progression/15-lab5-contract.md) implementado localmente, pendiente de aceptación integrada.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;
   RWD4.2a local con S2S pendiente; RWD-A1 documental completada y RWD-A2 completada (A2.1–A2.3).
   RWD4.2.1 incorpora configuración histórica y cálculo PnL; RWD4.2.2 completa localmente

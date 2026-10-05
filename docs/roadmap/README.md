@@ -17,7 +17,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 | [`Programs`](programs/README.md) | PR1 y P2 completados; BR-PROGRAM-015 cerrado | Sin extensión pendiente de Progression | 2026-09-29 |
 | [`Rules`](rules/README.md) | R1 y R2 completados; P0.1 completada | Extensión Progression: puerto de contexto publicado | 2026-09-17 |
 | [`Subscriptions`](subscriptions/README.md) | S1 + P0.2 completadas | Extensión Progression publicada | 2026-09-17 |
-| [`Progression`](progression/README.md) | PG1/PG2 y regresión integrada local completadas | Validación con ib-labs, despliegue y alertas operativas | 2026-10-03 |
+| [`Progression`](progression/README.md) | PG1/PG2 y contrato LAB5 implementados localmente | Aceptación integrada LAB5 con ib-labs, despliegue y alertas | 2026-10-05 |
 | [`Rewards`](rewards/README.md) | Cierre de código E2E completado localmente; A1/A2 completadas | [E2E](rewards/11-e2e-historical-pnl.md): Generación y settlement PnL habilitados; consultas y regresiones locales aprobadas; validación posterior con ib-labs | 2026-10-03 |
 
 ## Secuencia entre features

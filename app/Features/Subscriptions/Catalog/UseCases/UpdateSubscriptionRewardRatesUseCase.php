@@ -11,7 +11,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionConcurrencyExcepti
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use App\Features\Subscriptions\Catalog\Http\V1\Commands\UpdateSubscriptionRewardRatesCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class UpdateSubscriptionRewardRatesUseCase
@@ -45,7 +45,7 @@ final class UpdateSubscriptionRewardRatesUseCase
                 actorExternalUserId: $command->actorExternalUserId,
                 reason: $command->reason,
                 generateId: $generateId,
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
 
             if ($changed) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Contracts\Repositories;
 
+use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
 use App\Features\Progression\Models\ProgressionRunRetry;
@@ -15,6 +16,24 @@ use Closure;
 
 interface ProgressionRunRepositoryInterface
 {
+    /** @return list<ProgressionRun> */
+    public function incompleteRuns(?string $runId = null): array;
+
+    public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool;
+
+    public function snapshot(string $runId): ?ProgressionRunSnapshotData;
+
+    public function saveSnapshot(string $runId, ProgressionRunSnapshotData $snapshot): void;
+
+    /** @return list<string> */
+    public function contributionIds(string $planId, string $subscriptionId, ProgressionWindow $window): array;
+
+    public function consistentRead(Closure $callback): mixed;
+
+    public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void;
+
+    public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void;
+
     public function transaction(Closure $callback): mixed;
 
     public function latestWindowEndsAt(string $planId): ?CarbonImmutable;

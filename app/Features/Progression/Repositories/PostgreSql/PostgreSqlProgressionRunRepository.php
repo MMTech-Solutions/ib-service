@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Repositories\PostgreSql;
 
+use App\Features\Programs\Contracts\Data\V1\ProgressionLadderData;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
+use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
 use App\Features\Progression\Models\ProgressionRun;
@@ -23,6 +25,69 @@ use Illuminate\Support\Str;
 
 final class PostgreSqlProgressionRunRepository implements ProgressionRunRepositoryInterface
 {
+    public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool
+    {
+        return $this->connection->table('progression_runs')->where('plan_id', $planId)->where('window_starts_at', $window->startsAt)->where('window_ends_at', $window->endsAt)
+            ->where(fn ($query) => $query->whereNotNull('snapshot')->orWhereIn('status', ['completed', 'completed_with_errors']))->exists();
+    }
+
+    public function incompleteRuns(?string $runId = null): array
+    {
+        return ProgressionRunRecord::query()->where('status', '!=', 'completed')->when($runId !== null, fn ($query) => $query->whereKey($runId))->orderBy('created_at')->orderBy('id')->get()->map(fn ($record): ProgressionRun => $this->run($record))->all();
+    }
+
+    public function snapshot(string $runId): ?ProgressionRunSnapshotData
+    {
+        $json = $this->connection->table('progression_runs')->where('id', $runId)->value('snapshot');
+        if ($json === null) {
+            return null;
+        }
+        $data = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+
+        return new ProgressionRunSnapshotData(new ProgressionLadderData($data['ladder']['programs']), $data['participants'], $data['captured_at'], $data['legacy']);
+    }
+
+    public function saveSnapshot(string $runId, ProgressionRunSnapshotData $snapshot): void
+    {
+        $this->connection->table('progression_runs')->where('id', $runId)->whereNull('snapshot')->update(['snapshot' => json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR)]);
+    }
+
+    public function contributionIds(string $planId, string $subscriptionId, ProgressionWindow $window): array
+    {
+        return $this->connection->table('progression_contributions as c')->join('progression_activity_evaluations as e', 'e.id', '=', 'c.evaluation_id')
+            ->where('e.status', 'accepted')->where('e.plan_id', $planId)->where('e.subscription_id', $subscriptionId)
+            ->where('e.window_starts_at', $window->startsAt)->where('e.window_ends_at', $window->endsAt)
+            ->where('e.occurred_at', '>=', $window->startsAt)->where('e.occurred_at', '<', $window->endsAt)
+            ->orderBy('c.id')->pluck('c.id')->all();
+    }
+
+    public function consistentRead(Closure $callback): mixed
+    {
+        return $this->connection->transaction(function () use ($callback): mixed {
+            if ($this->connection->getDriverName() === 'pgsql' && $this->connection->transactionLevel() === 1) {
+                $this->connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+            }
+
+            return $callback();
+        });
+    }
+
+    public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void
+    {
+        $this->connection->table('progression_run_results')->where('id', $result->id)->where('status', 'failed')->whereNull('decision_at')->update([
+            'total_points' => $points->value(), 'target_program_id' => $targetProgramId, 'decision_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void
+    {
+        $this->connection->table('progression_run_results')->where('id', $resultId)->update([
+            'placement_attempt_count' => $this->connection->raw('placement_attempt_count + 1'),
+            'placement_failure_code' => 'retryable_failure', 'placement_last_attempt_at' => $now,
+        ]);
+    }
+
     public function __construct(private readonly ConnectionInterface $connection) {}
 
     public function transaction(Closure $callback): mixed
@@ -40,12 +105,12 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
     public function findOrCreateRun(string $planId, ProgressionWindow $window, CarbonImmutable $now): ProgressionRun
     {
         try {
-            $record = ProgressionRunRecord::query()->create([
+            $record = $this->connection->transaction(fn () => ProgressionRunRecord::query()->create([
                 'id' => (string) Str::uuid7(), 'plan_id' => $planId,
                 'window_starts_at' => $window->startsAt, 'window_ends_at' => $window->endsAt,
                 'status' => ProgressionRunStatus::Pending->value, 'started_at' => $now,
                 'completed_at' => null, 'created_at' => $now, 'updated_at' => $now,
-            ]);
+            ]));
         } catch (UniqueConstraintViolationException) {
             $record = ProgressionRunRecord::query()->where('plan_id', $planId)
                 ->where('window_starts_at', $window->startsAt)->where('window_ends_at', $window->endsAt)->firstOrFail();
@@ -64,12 +129,12 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
     public function findOrCreateResult(string $runId, string $subscriptionId, CarbonImmutable $now): ProgressionRunResult
     {
         try {
-            $record = ProgressionRunResultRecord::query()->create([
+            $record = $this->connection->transaction(fn () => ProgressionRunResultRecord::query()->create([
                 'id' => (string) Str::uuid7(), 'run_id' => $runId, 'subscription_id' => $subscriptionId,
                 'status' => ProgressionRunResultStatus::Failed->value, 'total_points' => null,
                 'target_program_id' => null, 'attempt_count' => 0, 'failure_message' => 'Pending evaluation.',
                 'completed_at' => null, 'created_at' => $now, 'updated_at' => $now,
-            ]);
+            ]));
         } catch (UniqueConstraintViolationException) {
             $record = ProgressionRunResultRecord::query()->where('run_id', $runId)->where('subscription_id', $subscriptionId)->firstOrFail();
         }
@@ -113,7 +178,7 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
             return $run;
         }
         $hasFailures = ProgressionRunResultRecord::query()->where('run_id', $run->id)->where('status', 'failed')->exists();
-        ProgressionRunRecord::query()->whereKey($run->id)->update([
+        ProgressionRunRecord::query()->whereKey($run->id)->where('status', '!=', ProgressionRunStatus::Completed->value)->update([
             'status' => $hasFailures ? ProgressionRunStatus::CompletedWithErrors->value : ProgressionRunStatus::Completed->value,
             'completed_at' => $hasFailures ? null : $now, 'updated_at' => $now,
         ]);
@@ -168,6 +233,10 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
 
     public function recordPlacementApplication(string $resultId, ProgressionPlacementOutcome $outcome, CarbonImmutable $now): void
     {
+        $this->connection->table('progression_run_results')->where('id', $resultId)->update([
+            'placement_attempt_count' => $this->connection->raw('placement_attempt_count + 1'),
+            'placement_failure_code' => null, 'placement_last_attempt_at' => $now,
+        ]);
         $this->connection->table('progression_placement_applications')->insert([
             'run_result_id' => $resultId,
             'outcome' => $outcome->value,
@@ -180,15 +249,26 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
         if ($result->isFinal()) {
             return;
         }
-        ProgressionRunResultRecord::query()->whereKey($result->id)->where('status', 'failed')->update([
-            'status' => $status->value, 'total_points' => $points->value(), 'target_program_id' => $targetProgramId,
-            'failure_message' => $failureMessage, 'completed_at' => $now, 'updated_at' => $now,
-        ]);
+        $this->connection->transaction(function () use ($result, $status, $points, $targetProgramId, $failureMessage, $now): void {
+            $stored = ProgressionRunResultRecord::query()->whereKey($result->id)->where('status', 'failed')->lockForUpdate()->first();
+            if ($stored === null) {
+                return;
+            }
+            if ($stored->decision_at !== null && $status === ProgressionRunResultStatus::Completed) {
+                $points = ExactDecimal::fromString((string) $stored->total_points);
+                $targetProgramId = (string) $stored->target_program_id;
+            }
+            $stored->update([
+                'status' => $status->value, 'total_points' => $points->value(), 'target_program_id' => $targetProgramId,
+                'failure_message' => $failureMessage, 'completed_at' => $now, 'updated_at' => $now,
+                'attempt_count' => (int) $stored->attempt_count + 1,
+            ]);
+        });
     }
 
     private function run(ProgressionRunRecord $record): ProgressionRun
     {
-        return new ProgressionRun((string) $record->id, (string) $record->plan_id, ProgressionWindow::of($record->window_starts_at, $record->window_ends_at), ProgressionRunStatus::from((string) $record->status), $record->started_at, $record->completed_at);
+        return new ProgressionRun((string) $record->id, (string) $record->plan_id, ProgressionWindow::of($record->window_starts_at, $record->window_ends_at), ProgressionRunStatus::from((string) $record->status), $record->started_at, $record->completed_at, (int) $record->snapshot_generation === 0);
     }
 
     private function result(ProgressionRunResultRecord $record): ProgressionRunResult

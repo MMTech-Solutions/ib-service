@@ -13,7 +13,7 @@ use App\Features\Programs\Catalog\Exceptions\ProgramNotFoundException;
 use App\Features\Programs\Catalog\Factories\ProgramRepositoryFactory;
 use App\Features\Programs\Catalog\Http\V1\Commands\UpdateProgramCommand;
 use App\Features\Programs\Catalog\Models\Program;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class UpdateProgramUseCase
@@ -41,7 +41,7 @@ final class UpdateProgramUseCase
                 throw ProgramConcurrencyException::forProgram($command->programId);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $changed = false;
             if ($command->hasName || $command->hasDescription) {
                 $changed = $program->updateAdministrativeFields(

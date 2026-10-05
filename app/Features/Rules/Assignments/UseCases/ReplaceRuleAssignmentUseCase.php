@@ -15,7 +15,7 @@ use App\Features\Rules\Assignments\Factories\RuleAssignmentRepositoryFactory;
 use App\Features\Rules\Assignments\Http\V1\Commands\ReplaceRuleAssignmentCommand;
 use App\Features\Rules\Assignments\Models\RuleAssignment;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ReplaceRuleAssignmentUseCase
@@ -51,7 +51,7 @@ final class ReplaceRuleAssignmentUseCase
                 $current->moduleId,
             );
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $current->withdraw($now);
             $repository->update($current, $command->lockVersion);
 

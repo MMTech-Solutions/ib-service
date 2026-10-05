@@ -9,7 +9,7 @@ use App\Features\Programs\PaymentTemplates\Actions\TransformPaymentTemplateToDat
 use App\Features\Programs\PaymentTemplates\DTOs\PaymentTemplateData;
 use App\Features\Programs\PaymentTemplates\Factories\PaymentTemplateRepositoryFactory;
 use App\Features\Programs\PaymentTemplates\Http\V1\Commands\ManagePaymentTemplateCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class UpdatePaymentTemplateUseCase
 {
@@ -25,7 +25,7 @@ final class UpdatePaymentTemplateUseCase
 
         return $repository->transaction(function () use ($repository, $id, $command): PaymentTemplateData {
             $template = $this->resolveTemplate->execute($id);
-            $template->updateDetails($command->name, $command->description, CarbonImmutable::now('UTC')->toISOString());
+            $template->updateDetails($command->name, $command->description, app(DomainClock::class)->now()->toISOString());
             $repository->save($template, $command->lockVersion);
 
             return $this->transform->execute($template);

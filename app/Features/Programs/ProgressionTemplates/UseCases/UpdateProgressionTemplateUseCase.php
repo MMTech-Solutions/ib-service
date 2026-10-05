@@ -9,7 +9,7 @@ use App\Features\Programs\ProgressionTemplates\Actions\TransformProgressionTempl
 use App\Features\Programs\ProgressionTemplates\DTOs\ProgressionTemplateData;
 use App\Features\Programs\ProgressionTemplates\Factories\ProgressionTemplateRepositoryFactory;
 use App\Features\Programs\ProgressionTemplates\Http\V1\Commands\ManageProgressionTemplateCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class UpdateProgressionTemplateUseCase
 {
@@ -25,7 +25,7 @@ final class UpdateProgressionTemplateUseCase
 
         return $repository->transaction(function () use ($repository, $id, $command): ProgressionTemplateData {
             $template = $this->resolveTemplate->execute($id);
-            $template->updateDetails($command->name, $command->description, CarbonImmutable::now('UTC')->toISOString());
+            $template->updateDetails($command->name, $command->description, app(DomainClock::class)->now()->toISOString());
             $repository->save($template, $command->lockVersion);
 
             return $this->transform->execute($template);

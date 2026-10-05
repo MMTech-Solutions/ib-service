@@ -52,6 +52,7 @@ use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\StoreProgress
 use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateController;
 use App\Features\Programs\ProgressionTemplates\Http\V1\Controllers\UpdateProgressionTemplateVersionController;
 use App\Features\Progression\Http\V1\Controllers\ListActivityEvaluationsController;
+use App\Features\Progression\Http\V1\Controllers\ReadProgressionController;
 use App\Features\Progression\Http\V1\Controllers\ShowActivityEvaluationController;
 use App\Features\Rewards\Http\V1\Controllers\CancelRewardController;
 use App\Features\Rewards\Http\V1\Controllers\CreateRewardCompensationController;
@@ -186,6 +187,12 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.subscriptions.reward-rates.update');
                 Route::get('activity-evaluations', ListActivityEvaluationsController::class)
                     ->name('ib.v1.admin.activity-evaluations.index');
+                foreach (['distributions', 'runs'] as $resource) {
+                    Route::get('progression-'.$resource, ReadProgressionController::class)->defaults('read_resource', $resource)->name('ib.v1.admin.progression-'.$resource.'.index');
+                    Route::get('progression-'.$resource.'/{id}', ReadProgressionController::class)->whereUuid('id')->defaults('read_resource', $resource)->name('ib.v1.admin.progression-'.$resource.'.show');
+                }
+                Route::get('progression-runs/{run}/results', ReadProgressionController::class)->whereUuid('run')->defaults('read_resource', 'results')->name('ib.v1.admin.progression-results.index');
+                Route::get('progression-runs/{run}/results/{result}', ReadProgressionController::class)->whereUuid('run')->whereUuid('result')->defaults('read_resource', 'results')->name('ib.v1.admin.progression-results.show');
                 Route::get('activity-evaluations/{activity_evaluation}', ShowActivityEvaluationController::class)
                     ->name('ib.v1.admin.activity-evaluations.show');
                 Route::get('rewards/cpa-progress', ListCpaVerificationProgressController::class)

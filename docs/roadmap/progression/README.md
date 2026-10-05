@@ -7,7 +7,7 @@ Dependencias satisfechas: `Programs P2`, `Rules R2`, `Subscriptions S1`,
 Subscriptions P0.2, Plans P0.3
 Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
 IAM; la distribución se congela localmente por actividad
-Última revisión: 2026-10-04
+Última revisión: 2026-10-05
 
 La preparación administrativa de bindings de plantillas quedó completada localmente
 en [Plans P3](../plans/06-template-version-bindings.md). PG2 demostró su consumo
@@ -73,6 +73,7 @@ distribución resultante; no depende de una consulta histórica de red.
 | 7. Runs y placement | [`12-pg2-network-runs-placement.md`](12-pg2-network-runs-placement.md) | Implementada (PG2.4 y PG2.5) |
 | 8. Cierre | [`13-pg2-network-closure.md`](13-pg2-network-closure.md) | Completado |
 | 9. Operación y release | [`14-operations-release.md`](14-operations-release.md) | Implementado; pendiente de evidencia de despliegue |
+| 10. Contrato LAB5 | [`15-lab5-contract.md`](15-lab5-contract.md) | Implementado localmente; aceptación integrada de ib-labs pendiente |
 
 ## Decisiones confirmadas
 
@@ -91,7 +92,7 @@ distribución resultante; no depende de una consulta histórica de red.
 - Ventanas fijas con reinicio de puntos; margen técnico global de una hora
   (`BR-POINTS-019`, `BR-POINTS-020`).
 - Contexto de suscripción, placement y regla por instante de ocurrencia;
-  distribución de red congelada por actividad y umbrales vigentes al run
+  distribución de red congelada por actividad y ladder capturado al inicio del run y reutilizado en recuperación
   (`BR-POINTS-015`, `BR-POINTS-036`–`039`).
 - Actividad tardía: evaluación durable sin puntos (`BR-POINTS-021`).
 - Catálogo inicial de motivos de exclusión cerrado (BDS v0.6).

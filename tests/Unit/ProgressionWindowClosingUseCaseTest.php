@@ -9,19 +9,24 @@ use App\Features\Plans\Contracts\Ports\Input\ListActivePlansForProgressionPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanProgressionContextPort;
 use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
-use App\Features\Programs\Contracts\Data\V1\ProgressionTargetProgramData;
+use App\Features\Programs\Contracts\Data\V1\ProgressionLadderData;
+use App\Features\Programs\Contracts\Ports\Input\CaptureProgressionLadderPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
+use App\Features\Progression\Contracts\Ports\Output\ProgressionFailurePort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
+use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
 use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
 use App\Features\Progression\Services\ApplyPendingProgressionPlacementsService;
+use App\Features\Progression\Services\PrepareProgressionRunService;
+use App\Features\Progression\Services\ProgressionExecutionEvidence;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
 use App\Features\Progression\Support\DeriveProgressionWindowFromPeriod;
 use App\Features\Progression\UseCases\CloseProgressionWindowsUseCase;
@@ -52,6 +57,42 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
     {
         $repository = new class implements ProgressionRunRepositoryInterface
         {
+            public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool
+            {
+                return false;
+            }
+
+            public function incompleteRuns(?string $runId = null): array
+            {
+                return [];
+            }
+
+            private ?ProgressionRunSnapshotData $snapshot = null;
+
+            public function snapshot(string $runId): ?ProgressionRunSnapshotData
+            {
+                return $this->snapshot;
+            }
+
+            public function saveSnapshot(string $runId, ProgressionRunSnapshotData $snapshot): void
+            {
+                $this->snapshot = $snapshot;
+            }
+
+            public function contributionIds(string $planId, string $subscriptionId, ProgressionWindow $window): array
+            {
+                return ['contribution'];
+            }
+
+            public function consistentRead(Closure $callback): mixed
+            {
+                return $callback();
+            }
+
+            public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void {}
+
+            public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void {}
+
             public ?ProgressionWindow $createdWindow = null;
 
             public function transaction(Closure $callback): mixed
@@ -122,7 +163,12 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
         $subscriptions = Mockery::mock(ListProgressionWindowSubscriptionsPort::class);
         $subscriptions->shouldReceive('list')->once()->andReturn([new ProgressionWindowSubscriptionData('subscription', true)]);
         $targets = Mockery::mock(ResolveProgressionTargetProgramPort::class);
-        $targets->shouldReceive('resolve')->once()->andReturn(new ProgressionTargetProgramData('program'));
+        $targets->shouldNotReceive('resolve');
+        $ladder = Mockery::mock(CaptureProgressionLadderPort::class);
+        $ladder->shouldReceive('execute')->once()->andReturn(new ProgressionLadderData([['program_id' => 'program', 'position' => 1, 'entry_threshold' => '0']]));
+        $failures = Mockery::mock(ProgressionFailurePort::class);
+        $failures->shouldReceive('check')->andReturnNull();
+        $evidence = new ProgressionExecutionEvidence;
         $iam = Mockery::mock(ResolveReferralUplinePort::class);
         $iam->shouldNotReceive('resolve');
 
@@ -133,7 +179,10 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
             new ProgressionRunRepositoryFactory($container),
             $gateways,
             new DeriveProgressionWindowFromPeriod,
-            new ApplyPendingProgressionPlacementsService($gateways),
+            new ApplyPendingProgressionPlacementsService($gateways, $failures, $evidence),
+            new PrepareProgressionRunService($ladder, $gateways),
+            $failures,
+            $evidence,
         );
 
         $result = $useCase->execute(CarbonImmutable::parse('2026-09-20T01:00:00Z'));

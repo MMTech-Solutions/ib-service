@@ -8,7 +8,7 @@ use App\Features\Progression\Contracts\Data\V1\ReferralUplineBeneficiaryData;
 use App\Features\Progression\Contracts\Data\V1\ResolveReferralUplineQueryData;
 use App\Features\Progression\Contracts\Data\V1\ResolveReferralUplineResultData;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Mmt\IamServiceSdk\Domains\ReferralNetwork\Contracts\ReferralNetworkServiceInterface;
 use Mmt\IamServiceSdk\Domains\ReferralNetwork\ObjectResponses\IbUplineResponse;
 use Throwable;
@@ -43,7 +43,7 @@ final class IamResolveReferralUplineAdapter implements ResolveReferralUplinePort
                 $beneficiaries[] = new ReferralUplineBeneficiaryData($beneficiaryId, $level);
             }
 
-            return ResolveReferralUplineResultData::resolved($beneficiaries, CarbonImmutable::now('UTC')->toISOString());
+            return ResolveReferralUplineResultData::resolved($beneficiaries, app(DomainClock::class)->now()->toISOString());
         } catch (Throwable) {
             return ResolveReferralUplineResultData::failed('invalid_response');
         }

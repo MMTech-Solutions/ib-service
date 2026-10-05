@@ -15,7 +15,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotActiveException
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use App\Features\Subscriptions\Catalog\Http\V1\Commands\ChangeSubscriptionProgramCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ChangeSubscriptionProgramUseCase
@@ -60,7 +60,7 @@ final class ChangeSubscriptionProgramUseCase
                 actorExternalUserId: $command->actorExternalUserId,
                 reason: $command->reason,
                 generateId: $generateId,
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
 
             $repository->save($subscription, $command->lockVersion);

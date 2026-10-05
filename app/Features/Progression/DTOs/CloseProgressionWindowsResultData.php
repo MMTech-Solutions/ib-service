@@ -15,5 +15,10 @@ final class CloseProgressionWindowsResultData extends Data
         public readonly int $results_completed,
         public readonly int $results_skipped,
         public readonly int $results_failed,
+        public readonly int $placements_applied = 0,
+        public readonly int $placements_unchanged = 0,
+        public readonly int $placements_fixed = 0,
+        public readonly int $placements_not_active = 0,
+        public readonly int $placements_failed = 0,
     ) {}
 }

@@ -14,7 +14,7 @@ use App\Features\Plans\Catalog\Http\V1\Commands\ArchivePlanCommand;
 use App\Features\Plans\Catalog\Models\PlanOperationalChange;
 use App\Features\Subscriptions\Contracts\Data\V1\HasOpenSubscriptionsForPlanQueryData;
 use App\Features\Subscriptions\Contracts\Ports\Input\HasOpenSubscriptionsForPlanPort;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ArchivePlanUseCase
@@ -46,7 +46,7 @@ final class ArchivePlanUseCase
                 throw PlanCannotArchiveWithOpenSubscriptionsException::forPlan($plan->id);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $previousIsActive = $plan->isActive;
             if (! $plan->archive($now)) {
                 return;

@@ -12,7 +12,7 @@ use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Factories\ProgressionTemplateBindingRepositoryFactory;
 use App\Features\Plans\Catalog\Http\V1\Commands\StoreProgressionTemplateBindingCommand;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTemplateVersionPort;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StoreProgressionTemplateBindingUseCase
@@ -40,7 +40,7 @@ final class StoreProgressionTemplateBindingUseCase
                 throw TemplateBindingException::unpublished($command->templateVersionId);
             }
 
-            return $this->bindings->make()->createOrFind(new ProgressionTemplateBindingData((string) Str::uuid7(), $command->planId, $version->id, CarbonImmutable::now('UTC')->toISOString()));
+            return $this->bindings->make()->createOrFind(new ProgressionTemplateBindingData((string) Str::uuid7(), $command->planId, $version->id, app(DomainClock::class)->now()->toISOString()));
         });
     }
 }

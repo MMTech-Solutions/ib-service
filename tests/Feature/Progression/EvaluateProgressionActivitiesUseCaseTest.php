@@ -31,6 +31,7 @@ use App\Features\Rules\Contracts\Data\V1\ResolvePointsContributionContextQueryDa
 use App\Features\Rules\Contracts\Data\V1\ResolvePointsContributionContextResultData;
 use App\Features\Rules\Contracts\Ports\Input\ResolvePointsContributionContextPort;
 use App\Features\Rules\Services\Strategies\PointsPerQuantityUnitStrategy;
+use App\SharedFeatures\Clock\DomainClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -77,6 +78,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         )]);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $useCase = $this->app->make(EvaluateProgressionActivitiesUseCase::class);
         $first = $useCase->execute(new EvaluateProgressionActivitiesData(
@@ -109,6 +111,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame($first->evaluations[0]->id, $stored->id);
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_local_activity_contribution_window_and_placement_flow_is_idempotent(): void
@@ -120,6 +123,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         $activity = $this->activity($fixture['module_id'], 'local-e2e-deposit', $this->customerSub, '100', 'usd', '2026-09-10T12:00:00Z');
         $this->stubActivities([$activity]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00Z'));
+        app(DomainClock::class)->end();
         try {
             $evaluator = app(EvaluateProgressionActivitiesUseCase::class);
             $query = new EvaluateProgressionActivitiesData($fixture['plan_id'], $fixture['module_id'], '2026-09-10T00:00:00Z', '2026-09-11T00:00:00Z');
@@ -128,6 +132,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
             self::assertSame($first->evaluations[0]->id, $retry->evaluations[0]->id);
             self::assertSame('10', $first->evaluations[0]->contribution->points->value());
             CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-11T01:00:00Z'));
+            app(DomainClock::class)->end();
             $closer = app(CloseProgressionWindowsUseCase::class);
             $closed = $closer->execute();
             self::assertSame(1, $closed->results_completed);
@@ -139,6 +144,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
             self::assertSame($fixture['program_id'], DB::table('progression_activity_evaluations')->first()->program_id);
         } finally {
             CarbonImmutable::setTestNow();
+            app(DomainClock::class)->end();
         }
     }
 
@@ -163,6 +169,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         });
         $this->stubActivities([$this->activity($fixture['module_id'], 'network-many', (string) Str::uuid7(), '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
 
@@ -170,6 +177,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame([0, 1], array_map(fn ($evaluation): int => $evaluation->distributionLevel, $result->evaluations));
         self::assertSame(['10', '10'], array_map(fn ($evaluation): string => $evaluation->contribution?->points->value() ?? '', $result->evaluations));
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_reuses_an_empty_or_existing_distribution_without_calling_iam(): void
@@ -187,12 +195,14 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         });
         $this->stubActivities([$this->activity($fixture['module_id'], 'network-empty', $source, '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
 
         self::assertSame([], $result->evaluations);
         self::assertSame([], $result->retryableFailures);
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_leaves_iam_failures_retryable_without_a_distribution(): void
@@ -208,6 +218,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         });
         $this->stubActivities([$this->activity($fixture['module_id'], 'network-failure', $source, '100', 'usd', '2026-09-10T12:00:00.000000Z')]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
 
@@ -215,6 +226,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame('unavailable', $result->retryableFailures[0]->failure_code);
         self::assertNull($this->app->make(ActivityDistributionRepositoryFactory::class)->make()->findBySourceActivity($fixture['module_id'], 'network-failure'));
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_a_beneficiary_failure_does_not_revert_other_final_evaluations(): void
@@ -257,6 +269,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         $activity = new NormalizedActivityData($fixture['module_id'], 'network-partial', (string) Str::uuid7(), 'confirmed_deposit', 'usd', '100', '2026-09-10T12:00:00Z', 'XAUUSD');
         $this->stubActivities([$activity]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00Z'));
+        app(DomainClock::class)->end();
 
         $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
 
@@ -264,12 +277,14 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertTrue($result->evaluations[0]->isAccepted());
         self::assertSame('beneficiary_evaluation_failed', $result->retryableFailures[0]->failure_code);
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_excludes_catalog_reasons_for_ineligible_activity(): void
     {
         $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $this->stubActivities([$this->activity(
             moduleId: $fixture['module_id'],
@@ -283,6 +298,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame(ExclusionReason::NoActiveSubscription, $noSub->evaluations[0]->exclusionReason);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T14:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $fixedSubscription = $this->gatewayJson('POST', "/api/ib/v1/admin/subscriptions/{$fixture['subscription_id']}/placement/fix", [
             'program_id' => $fixture['program_id'],
             'lock_version' => $fixture['subscription_lock_version'],
@@ -297,6 +313,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
             occurredAt: '2026-09-10T14:30:00.000000Z',
         )]);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T15:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $fixed = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute(new EvaluateProgressionActivitiesData(
             plan_id: $fixture['plan_id'],
             module_id: $fixture['module_id'],
@@ -311,6 +328,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         ])->assertOk();
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $this->stubActivities([$this->activity(
             moduleId: $fixture['module_id'],
             sourceActivityId: 'wrong-unit',
@@ -349,12 +367,14 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame(ExclusionReason::UnitMismatch, $mismatch->evaluations[0]->exclusionReason);
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_excludes_scale_exceeded_and_skips_inactive_plan(): void
     {
         $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $this->app->instance(ResolvePointsContributionContextPort::class, new class implements ResolvePointsContributionContextPort
         {
@@ -401,12 +421,14 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame([], $skipped->evaluations);
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_defers_while_module_paused_and_excludes_closed_window_after_resume(): void
     {
         $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1', period: 'daily');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-11T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $this->app->instance(FetchProgressionActivitiesPort::class, new class($fixture['module_id']) implements FetchProgressionActivitiesPort
         {
@@ -446,6 +468,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame(ExclusionReason::WindowClosedAfterPause, $closed->evaluations[0]->exclusionReason);
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_it_excludes_when_module_not_selected_on_program(): void
@@ -470,6 +493,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         )]);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $result = $this->app->make(EvaluateProgressionActivitiesUseCase::class)->execute($this->command($fixture));
 
         self::assertSame(EvaluateProgressionActivitiesResult::OUTCOME_EVALUATED, $result->outcome);
@@ -479,6 +503,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame($fixture['program_id'], $result->evaluations[0]->programId);
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     public function test_plan_reactivation_does_not_backfill_inactive_period_and_does_not_mutate_placement(): void
@@ -493,6 +518,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertNotNull($placementBefore);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T14:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $plan = $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$fixture['plan_id']}")->assertOk()->json('data');
         $deactivated = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/deactivate", [
             'reason' => 'Halt progression',
@@ -512,6 +538,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         self::assertSame([], $skipped->evaluations);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T15:00:00.000000Z'));
+        app(DomainClock::class)->end();
         $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/activate", [
             'reason' => 'Resume progression',
             'lock_version' => $deactivated['lock_version'],
@@ -566,6 +593,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         );
 
         CarbonImmutable::setTestNow();
+        app(DomainClock::class)->end();
     }
 
     /**
@@ -643,6 +671,7 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
     {
         $moduleId = $this->brokerId();
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T10:00:00.000000Z'));
+        app(DomainClock::class)->end();
 
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', [
             'code' => 'eval-'.Str::lower(Str::random(6)),

@@ -12,7 +12,7 @@ use App\Features\Plans\Catalog\Exceptions\PlanConcurrencyException;
 use App\Features\Plans\Catalog\Exceptions\PlanNotFoundException;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Http\V1\Commands\UpdatePlanCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class UpdatePlanUseCase
@@ -37,7 +37,7 @@ final class UpdatePlanUseCase
                 throw PlanConcurrencyException::forPlan($command->planId);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $changed = false;
             if ($command->hasName || $command->hasDescription) {
                 $changed = $plan->updateAdministrativeFields(

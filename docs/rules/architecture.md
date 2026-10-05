@@ -571,6 +571,11 @@ Las implementaciones de Resources en `broker-service` no constituyen precedente 
 
 ## Support
 
+`SharedFeatures/Clock` es la frontera transversal del instante de dominio por
+operación. Adapta el reloj de sistema o el archivo privado Lab y gestiona su
+captura/liberación. Su contrato está en [domain-clock.md](domain-clock.md);
+los controles de fallo de Progression permanecen dentro de Progression.
+
 `app/Support` contiene utilidades y primitivas técnicas transversales, sin lenguaje ni reglas de negocio. Puede alojar abstracciones acopladas al framework cuando representan una política técnica común a toda la aplicación y no constituyen por sí mismas una frontera de aplicación o integración. El `Support` de un feature sigue la misma regla dentro de su alcance.
 
 Son candidatos válidos clocks, serialización técnica, paginación, identificadores base, utilidades de testing y excepciones base de transporte como `App\Support\Exceptions\ApiException`. Las excepciones específicas permanecen en el feature propietario y solo heredan de esa base cuando representan un error esperado de la API. No pertenecen a `Support` calculadores de rewards, reglas de elegibilidad, DTOs compartidos ni helpers nombrados por conceptos de negocio.

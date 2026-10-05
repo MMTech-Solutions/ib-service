@@ -11,7 +11,7 @@ use App\Features\Rules\Assignments\DTOs\RuleAssignmentData;
 use App\Features\Rules\Assignments\Exceptions\RuleAssignmentInactiveException;
 use App\Features\Rules\Assignments\Factories\RuleAssignmentRepositoryFactory;
 use App\Features\Rules\Assignments\Http\V1\Commands\WithdrawRuleAssignmentCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class WithdrawRuleAssignmentUseCase
 {
@@ -37,7 +37,7 @@ final class WithdrawRuleAssignmentUseCase
                 throw RuleAssignmentInactiveException::forId($assignment->id);
             }
 
-            $assignment->withdraw(CarbonImmutable::now('UTC')->toISOString());
+            $assignment->withdraw(app(DomainClock::class)->now()->toISOString());
             $repository->update($assignment, $command->lockVersion);
 
             return $this->present->toData($assignment);

@@ -17,7 +17,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\DuplicateOpenSubscriptionExcep
 use App\Features\Subscriptions\Catalog\Factories\SubscriptionRepositoryFactory;
 use App\Features\Subscriptions\Catalog\Http\V1\Commands\ApplyForSubscriptionCommand;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class ApplyForSubscriptionUseCase
@@ -47,7 +47,7 @@ final class ApplyForSubscriptionUseCase
             ));
             $this->assertPlanEligible->assert($plan);
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $generateId = static fn (): string => (string) Str::uuid7();
             $operationId = $generateId();
 

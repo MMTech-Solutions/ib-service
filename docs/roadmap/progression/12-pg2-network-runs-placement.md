@@ -7,7 +7,9 @@ Estado: **PG2.4 y PG2.5 implementados**
 
 Un run cierra una ventana de un plan después del margen técnico, suma las
 contribuciones válidas ya persistidas para cada suscripción y determina el
-programa objetivo con el ladder vigente al ejecutar el run.
+programa objetivo con el ladder capturado al iniciar el run. La entrega
+[LAB5](15-lab5-contract.md) conserva también participantes, contribuciones,
+puntos y decisiones para recuperación reproducible.
 
 ## Reglas operativas
 

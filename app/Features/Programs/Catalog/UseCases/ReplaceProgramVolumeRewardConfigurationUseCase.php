@@ -8,6 +8,7 @@ use App\Features\Programs\Catalog\Factories\ProgramVolumeRewardConfigurationRepo
 use App\Features\Programs\Catalog\Http\V1\Commands\ReplaceProgramVolumeRewardConfigurationCommand;
 use App\Features\Programs\Contracts\Data\V1\AssertProgramBelongsToPlanQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class ReplaceProgramVolumeRewardConfigurationUseCase
 {
@@ -18,6 +19,6 @@ final class ReplaceProgramVolumeRewardConfigurationUseCase
     {
         $this->programs->assertBelongsToPlan(new AssertProgramBelongsToPlanQueryData($command->planId, $command->programId));
 
-        return $this->repositoryFactory->make()->replace($command->programId, $command->mode, now('UTC')->toIso8601String());
+        return $this->repositoryFactory->make()->replace($command->programId, $command->mode, app(DomainClock::class)->now()->toIso8601String());
     }
 }

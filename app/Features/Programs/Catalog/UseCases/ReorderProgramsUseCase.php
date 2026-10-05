@@ -14,7 +14,7 @@ use App\Features\Programs\Catalog\Exceptions\ProgramReorderConflictException;
 use App\Features\Programs\Catalog\Factories\ProgramRepositoryFactory;
 use App\Features\Programs\Catalog\Http\V1\Commands\ReorderProgramsCommand;
 use App\Features\Programs\Catalog\Models\Program;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class ReorderProgramsUseCase
 {
@@ -28,7 +28,7 @@ final class ReorderProgramsUseCase
     {
         $this->assertSelection->assertMutable($command->planId);
         $repository = $this->repositoryFactory->make();
-        $now = CarbonImmutable::now('UTC')->toISOString();
+        $now = app(DomainClock::class)->now()->toISOString();
 
         $repository->transaction(function () use ($repository, $command, $now): void {
             $current = $repository->listByPlanId($command->planId);

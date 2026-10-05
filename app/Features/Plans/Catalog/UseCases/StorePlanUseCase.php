@@ -12,7 +12,7 @@ use App\Features\Plans\Catalog\Exceptions\DuplicatePlanCodeException;
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Http\V1\Commands\StorePlanCommand;
 use App\Features\Plans\Catalog\Models\Plan;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StorePlanUseCase
@@ -34,7 +34,7 @@ final class StorePlanUseCase
             description: $command->description,
             moduleIds: $command->moduleIds,
             generateId: static fn (): string => (string) Str::uuid7(),
-            now: CarbonImmutable::now('UTC')->toISOString(),
+            now: app(DomainClock::class)->now()->toISOString(),
             progressionPeriod: $command->progressionPeriod,
             requiresApproval: $command->requiresApproval,
         );

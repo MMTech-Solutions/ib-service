@@ -9,7 +9,7 @@ use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Services\ModuleDefinitionRegistry;
 use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class SyncModulesUseCase
@@ -41,7 +41,7 @@ final class SyncModulesUseCase
 
             foreach ($this->registry->definitions() as $definition) {
                 $module = $storedByCode[$definition->code] ?? null;
-                $now = CarbonImmutable::now('UTC')->toISOString();
+                $now = app(DomainClock::class)->now()->toISOString();
 
                 if ($module === null) {
                     $module = Module::fromDefinition(
@@ -83,7 +83,7 @@ final class SyncModulesUseCase
                 }
 
                 $expectedLockVersion = $module->lockVersion;
-                $now = CarbonImmutable::now('UTC')->toISOString();
+                $now = app(DomainClock::class)->now()->toISOString();
                 if ($module->deactivate($now)) {
                     $repository->update($module, $expectedLockVersion);
                     $updated++;

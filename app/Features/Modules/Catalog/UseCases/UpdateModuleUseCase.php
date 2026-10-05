@@ -9,7 +9,7 @@ use App\Features\Modules\Catalog\Exceptions\ModuleConcurrencyException;
 use App\Features\Modules\Catalog\Exceptions\ModuleNotFoundException;
 use App\Features\Modules\Catalog\Factories\ModuleRepositoryFactory;
 use App\Features\Modules\Catalog\Http\V1\Commands\UpdateModuleCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class UpdateModuleUseCase
 {
@@ -29,7 +29,7 @@ final class UpdateModuleUseCase
                 throw ModuleConcurrencyException::forModule($command->moduleId);
             }
 
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $nextName = $command->hasName ? (string) $command->name : $module->name;
             $nextDescription = $command->hasDescription ? $command->description : $module->description;
             if (! $module->updateAdministrativeFields($nextName, $nextDescription, $now)) {

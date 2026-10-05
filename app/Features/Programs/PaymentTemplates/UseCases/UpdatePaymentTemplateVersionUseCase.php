@@ -12,7 +12,7 @@ use App\Features\Programs\PaymentTemplates\DTOs\PaymentTemplateData;
 use App\Features\Programs\PaymentTemplates\Exceptions\PaymentTemplateException;
 use App\Features\Programs\PaymentTemplates\Factories\PaymentTemplateRepositoryFactory;
 use App\Features\Programs\PaymentTemplates\Http\V1\Commands\ManagePaymentTemplateCommand;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class UpdatePaymentTemplateVersionUseCase
 {
@@ -35,7 +35,7 @@ final class UpdatePaymentTemplateVersionUseCase
                 throw PaymentTemplateException::immutable($versionId);
             }
 
-            $version->replaceLevels($this->buildLevels->execute($command->levels ?? []), CarbonImmutable::now('UTC')->toISOString());
+            $version->replaceLevels($this->buildLevels->execute($command->levels ?? []), app(DomainClock::class)->now()->toISOString());
             $repository->saveVersion($version, false, $command->lockVersion);
 
             return $this->transform->execute($template);

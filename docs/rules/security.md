@@ -67,6 +67,12 @@
 
 ## Desarrollo
 
+- Los controles de reloj y fallo Lab requieren perfil explícito y entorno
+  `local`. El archivo, lock y estado aceptado viven en un volumen privado y
+  exclusivo, fuera del directorio público, con ACL del usuario del servicio.
+  No se exponen mediante HTTP ni admiten ejecución de SQL o scripts. Véase
+  [domain-clock.md](domain-clock.md).
+
 - No registrar `.env` ni credenciales en Git.
 - Mantener dependencias actualizadas y revisar advisories.
 - No interpolar entrada en SQL, comandos del sistema o nombres de clases.

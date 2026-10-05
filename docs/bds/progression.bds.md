@@ -1,6 +1,6 @@
 # Progresión multi-módulo por puntos — BDS
 
-- **Versión:** 0.9
+- **Versión:** 0.10
 - **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, distribución inmutable y catálogo inicial de motivos de exclusión para PG1/PG2
 
 **Propósito:** normalizar actividades heterogéneas para que todos los módulos habilitados puedan contribuir al crecimiento del IB.
@@ -82,7 +82,7 @@ flowchart LR
 | BR-POINTS-012 | El procesamiento pausado de un módulo impide calcular nuevas contribuciones suyas aunque las selecciones y umbrales del programa permanezcan vigentes. |
 | BR-POINTS-013 | La actividad del módulo consultada durante una pausa se conserva. Al reanudar se procesa solo si su ventana original sigue abierta; si la ventana ya cerró, permanece en evaluación sin puntos. |
 | BR-POINTS-014 | Un módulo inactivo no consulta actividad y no genera contribuciones nuevas. |
-| BR-POINTS-015 | Suscripción, placement, símbolo, plantilla, asignación y versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. Los umbrales del ladder se leen vigentes al ejecutar el run. La red y el nivel provienen de la distribución resuelta y congelada para esa actividad. |
+| BR-POINTS-015 | Suscripción, placement, símbolo, plantilla, asignación y versión de regla aplicables a una actividad son los vigentes en el instante de ocurrencia. El ladder de programas, posiciones y umbrales se captura vigente al iniciar el run y se conserva para todos sus resultados y reintentos. La red y el nivel provienen de la distribución resuelta y congelada para esa actividad. |
 | BR-POINTS-016 | Existe como máximo una asignación activa de estrategia `points_per_quantity_unit` por combinación de programa, módulo y métrica o unidad. El mismo tipo de estrategia puede repetirse en el módulo solo para métricas o unidades distintas. |
 | BR-POINTS-017 | Una misma actividad puede contribuir a distintos IB beneficiarios de la red, pero recibe como máximo una ponderación por combinación de beneficiario, nivel, símbolo y métrica. El total de la ventana suma contribuciones válidas de métricas y módulos distintos. |
 | BR-POINTS-018 | Cada plan declara un período de progresión obligatorio: `daily`, `weekly` o `monthly`, alineado en UTC. No existe plan sin período. |
@@ -107,6 +107,10 @@ flowchart LR
 | BR-POINTS-037 | La progresión por red no realiza backfill: solo procesa actividad ocurrida desde su activación. |
 | BR-POINTS-038 | La cadena ascendente de un referido es única e inmutable. Las altas nuevas amplían downlines, pero no modifican la distribución ya resuelta de actividades existentes. |
 | BR-POINTS-039 | Una respuesta satisfactoria que no encuentre IB beneficiarios congela una distribución vacía. Un error al resolver la red no congela distribución ni produce contribuciones y permanece reintentable. |
+| BR-POINTS-040 | El run conserva conjuntamente sus participantes, su elegibilidad y las contribuciones incluidas en el cierre. Una contribución posterior a ese corte no modifica sus puntos. |
+| BR-POINTS-041 | Cada resultado conserva los puntos exactos y el programa objetivo decididos con el contexto del run antes de completarse. Preparar una decisión no equivale a completarla ni a aplicar placement. |
+| BR-POINTS-042 | Recuperar conserva las identidades del run y sus resultados. Reutiliza la decisión preparada; si todavía no existe, la construye con los participantes, contribuciones y ladder conservados. Un cambio posterior de umbrales no altera ese run. |
+| BR-POINTS-043 | La aplicación de placement conserva su vínculo al resultado, outcome e instante. Los fallos de aplicación son auditables y recuperables sin repetir una aplicación terminal ni reabrir un run completado. |
 
 ## Ejemplos de conversión
 

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\UseCases;
 
-use App\Features\Programs\Contracts\Data\V1\ResolveProgressionTargetProgramQueryData;
+use App\Features\Progression\Contracts\Ports\Output\ProgressionFailurePort;
 use App\Features\Progression\DTOs\CloseProgressionWindowsResultData;
 use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Services\ApplyPendingProgressionPlacementsService;
+use App\Features\Progression\Services\PrepareProgressionRunService;
+use App\Features\Progression\Services\ProgressionExecutionEvidence;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
 use App\Features\Progression\Support\DeriveProgressionWindowFromPeriod;
+use App\Features\Progression\ValueObjects\ExactDecimal;
 use App\Features\Progression\ValueObjects\ProgressionWindow;
-use App\Features\Subscriptions\Contracts\Data\V1\ListProgressionWindowSubscriptionsQueryData;
+use App\SharedFeatures\Clock\DomainClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 
@@ -22,11 +25,14 @@ final class CloseProgressionWindowsUseCase
         private readonly ProgressionInterFeatureGateways $gateways,
         private readonly DeriveProgressionWindowFromPeriod $windows,
         private readonly ApplyPendingProgressionPlacementsService $placements,
+        private readonly PrepareProgressionRunService $preparation,
+        private readonly ProgressionFailurePort $failures,
+        private readonly ProgressionExecutionEvidence $evidence,
     ) {}
 
     public function execute(?CarbonImmutable $now = null): CloseProgressionWindowsResultData
     {
-        $clock = ($now ?? CarbonImmutable::now('UTC'))->utc();
+        $clock = ($now ?? app(DomainClock::class)->now())->utc();
         $eligibleAt = $clock->subHour();
         $counts = ['runs_created' => 0, 'runs_completed' => 0, 'runs_with_errors' => 0, 'results_completed' => 0, 'results_skipped' => 0, 'results_failed' => 0];
         $repository = $this->repositoryFactory->make();
@@ -37,14 +43,26 @@ final class CloseProgressionWindowsUseCase
                 ? $this->latestDueWindow($plan->progression_period, $eligibleAt)
                 : $this->nextWindow($plan->progression_period, $lastEnd);
 
-            while ($window->endsAt->lessThanOrEqualTo($eligibleAt)) {
+            $pendingWindows = array_map(static fn ($run): ProgressionWindow => $run->window,
+                array_values(array_filter($repository->incompleteRuns(), static fn ($run): bool => $run->planId === $plan->plan_id && $run->window->endsAt->lessThanOrEqualTo($eligibleAt))));
+            $dueWindow = $window;
+
+            while ($pendingWindows !== [] || $dueWindow->endsAt->lessThanOrEqualTo($eligibleAt)) {
+                $isPending = $pendingWindows !== [];
+                $window = $isPending ? array_shift($pendingWindows) : $dueWindow;
                 $run = $repository->findOrCreateRun($plan->plan_id, $window, $clock);
+                $this->evidence->id('run_ids', $run->id);
                 if ($run->isCompleted()) {
-                    $window = $this->nextWindow($plan->progression_period, $window->endsAt);
+                    if (! $isPending) {
+                        $dueWindow = $this->nextWindow($plan->progression_period, $window->endsAt);
+                    }
 
                     continue;
                 }
-                $counts['runs_created']++;
+                if (! $isPending) {
+                    $counts['runs_created']++;
+                    $this->evidence->count('runs_created');
+                }
                 Log::info('progression.run.processing', [
                     'run_id' => $run->id,
                     'plan_id' => $plan->plan_id,
@@ -52,14 +70,17 @@ final class CloseProgressionWindowsUseCase
                     'window_ends_at' => $window->endsAt->toISOString(),
                 ]);
 
-                foreach ($this->gateways->windowSubscriptions()->list(new ListProgressionWindowSubscriptionsQueryData($plan->plan_id, $window->startsAtIso(), $window->endsAtIso())) as $subscription) {
-                    $result = $repository->findOrCreateResult($run->id, $subscription->subscription_id, $clock);
+                $snapshot = $this->preparation->execute($repository, $run, $clock);
+                foreach ($snapshot->participants as $subscription) {
+                    $result = $repository->findOrCreateResult($run->id, $subscription['subscription_id'], $clock);
+                    $this->evidence->id('result_ids', $result->id);
                     if ($result->isFinal()) {
                         continue;
                     }
-                    if (! $subscription->is_evaluable) {
+                    if (! $subscription['is_evaluable']) {
                         $repository->markSkipped($result, $clock);
                         $counts['results_skipped']++;
+                        $this->evidence->count('results_skipped');
                         Log::info('progression.result.skipped', [
                             'run_id' => $run->id,
                             'run_result_id' => $result->id,
@@ -68,10 +89,13 @@ final class CloseProgressionWindowsUseCase
                         continue;
                     }
                     try {
-                        $points = $repository->sumAcceptedContributionPoints($plan->plan_id, $subscription->subscription_id, $window);
-                        $target = $this->gateways->targetProgram()->resolve(new ResolveProgressionTargetProgramQueryData($plan->plan_id, $points->value()));
-                        $repository->markCompleted($result, $points, $target->program_id, $clock);
+                        $points = $result->totalPoints ?? ExactDecimal::fromString($subscription['total_points']);
+                        $target = $result->targetProgramId ?? $this->preparation->target($snapshot, $points->value());
+                        $repository->prepareDecision($result, $points, $target, $clock);
+                        $this->failures->check('close', 'before_result_finalize', $result->subscriptionId, $result->id);
+                        $repository->markCompleted($result, $points, $target, $clock);
                         $counts['results_completed']++;
+                        $this->evidence->count('results_completed');
                         Log::info('progression.result.completed', [
                             'run_id' => $run->id,
                             'run_result_id' => $result->id,
@@ -85,16 +109,20 @@ final class CloseProgressionWindowsUseCase
                             'exception_class' => $throwable::class,
                         ]);
                         $counts['results_failed']++;
+                        $this->evidence->count('results_failed');
                     }
                 }
 
                 $finished = $repository->finishRun($run, $clock);
                 $counts[$finished->isCompleted() ? 'runs_completed' : 'runs_with_errors']++;
-                $window = $this->nextWindow($plan->progression_period, $window->endsAt);
+                $this->evidence->count($finished->isCompleted() ? 'runs_completed' : 'runs_with_errors');
+                if (! $isPending) {
+                    $dueWindow = $this->nextWindow($plan->progression_period, $window->endsAt);
+                }
             }
         }
 
-        $placementCounts = $this->placements->execute($repository, $clock);
+        $placementCounts = $this->placements->execute($repository, $clock, operation: 'close');
         Log::info('progression.close_windows.completed', [
             ...$counts,
             'placements_applied' => $placementCounts['applied'],
@@ -104,7 +132,10 @@ final class CloseProgressionWindowsUseCase
             'placements_failed' => $placementCounts['failed'],
         ]);
 
-        return new CloseProgressionWindowsResultData(...$counts);
+        return new CloseProgressionWindowsResultData(...[...$counts,
+            'placements_applied' => $placementCounts['applied'], 'placements_unchanged' => $placementCounts['unchanged'],
+            'placements_fixed' => $placementCounts['fixed'], 'placements_not_active' => $placementCounts['not_active'], 'placements_failed' => $placementCounts['failed'],
+        ]);
     }
 
     private function nextWindow(string $period, CarbonImmutable $startsAt): ProgressionWindow

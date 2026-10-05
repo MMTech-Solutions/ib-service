@@ -15,7 +15,7 @@ use App\Features\Rules\Catalog\Exceptions\DuplicateRuleSlugException;
 use App\Features\Rules\Catalog\Factories\RuleRepositoryFactory;
 use App\Features\Rules\Catalog\Http\V1\Commands\StoreRuleCommand;
 use App\Features\Rules\Catalog\Models\Rule;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StoreRuleUseCase
@@ -40,7 +40,7 @@ final class StoreRuleUseCase
                 name: $command->name,
                 description: $command->description,
                 strategyType: $command->strategyType,
-                now: CarbonImmutable::now('UTC')->toISOString(),
+                now: app(DomainClock::class)->now()->toISOString(),
             );
 
             try {

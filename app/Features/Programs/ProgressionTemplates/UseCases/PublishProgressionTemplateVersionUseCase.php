@@ -10,7 +10,7 @@ use App\Features\Programs\ProgressionTemplates\Actions\TransformProgressionTempl
 use App\Features\Programs\ProgressionTemplates\DTOs\ProgressionTemplateData;
 use App\Features\Programs\ProgressionTemplates\Exceptions\ProgressionTemplateException;
 use App\Features\Programs\ProgressionTemplates\Factories\ProgressionTemplateRepositoryFactory;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 
 final class PublishProgressionTemplateVersionUseCase
 {
@@ -32,7 +32,7 @@ final class PublishProgressionTemplateVersionUseCase
                 throw ProgressionTemplateException::immutable($versionId);
             }
 
-            $version->publish(CarbonImmutable::now('UTC')->toISOString());
+            $version->publish(app(DomainClock::class)->now()->toISOString());
             $repository->saveVersion($version, false, $lockVersion);
 
             return $this->transform->execute($template);

@@ -4,51 +4,17 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Console;
 
-use App\Features\Progression\Services\ProgressionExecutionMutex;
 use App\Features\Progression\UseCases\CloseProgressionWindowsUseCase;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
-#[Signature('progression:close-windows')]
-#[Description('Close due Progression windows and retry failed run results')]
 final class CloseProgressionWindowsCommand extends Command
 {
-    public function __construct(
-        private readonly CloseProgressionWindowsUseCase $useCase,
-        private readonly ProgressionExecutionMutex $mutex,
-    ) {
-        parent::__construct();
-    }
+    protected $signature = 'progression:close-windows {--json}';
 
-    public function handle(): int
+    protected $description = 'Close due Progression windows and apply pending placements';
+
+    public function handle(ProgressionCommandRunner $runner, CloseProgressionWindowsUseCase $useCase): int
     {
-        $acquired = false;
-
-        try {
-            $acquired = $this->mutex->acquire();
-            if (! $acquired) {
-                Log::info('progression.close_windows.skipped_locked');
-                $this->info('Progression close skipped because another execution owns the lock.');
-
-                return self::SUCCESS;
-            }
-
-            $result = $this->useCase->execute();
-        } catch (Throwable $throwable) {
-            Log::error('progression.close_windows.failed', ['exception_class' => $throwable::class]);
-            $this->error('Progression close failed. Inspect the structured logs.');
-
-            return self::FAILURE;
-        } finally {
-            if ($acquired) {
-                $this->mutex->release();
-            }
-        }
-        $this->table(['Metric', 'Count'], collect($result->toArray())->map(fn (mixed $count, string $metric): array => [$metric, $count])->values()->all());
-
-        return self::SUCCESS;
+        return $runner->execute($this, 'close', static function (): void {}, static fn (): array => ['outcome' => 'processed', 'counts' => $useCase->execute()->toArray()]);
     }
 }

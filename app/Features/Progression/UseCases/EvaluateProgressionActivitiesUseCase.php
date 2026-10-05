@@ -17,7 +17,10 @@ use App\Features\Progression\DTOs\RetryableProgressionFailureData;
 use App\Features\Progression\Factories\ActivityDistributionRepositoryFactory;
 use App\Features\Progression\Factories\ActivityEvaluationRepositoryFactory;
 use App\Features\Progression\Models\ActivityDistribution;
+use App\Features\Progression\Models\ActivityEvaluation;
 use App\Features\Progression\Models\DistributionBeneficiary;
+use App\Features\Progression\Services\ProgressionExecutionEvidence;
+use App\SharedFeatures\Clock\DomainClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -35,11 +38,12 @@ final class EvaluateProgressionActivitiesUseCase
         private readonly ActivityEvaluationRepositoryFactory $evaluationRepositoryFactory,
         private readonly ActivityDistributionRepositoryFactory $distributionRepositoryFactory,
         private readonly ResolveReferralUplinePort $referralUpline,
+        private readonly ProgressionExecutionEvidence $evidence,
     ) {}
 
     public function execute(EvaluateProgressionActivitiesData $input): EvaluateProgressionActivitiesResult
     {
-        $evaluatedAt = CarbonImmutable::now('UTC');
+        $evaluatedAt = app(DomainClock::class)->now();
 
         $planNow = $this->planProgression->resolve(new ResolvePlanProgressionContextQueryData(
             plan_id: $input->plan_id,
@@ -65,11 +69,11 @@ final class EvaluateProgressionActivitiesUseCase
             ));
 
             if ($page->isRejected() || $page->module_condition === 'inactive') {
-                return EvaluateProgressionActivitiesResult::rejectedModuleInactive();
+                return new EvaluateProgressionActivitiesResult(EvaluateProgressionActivitiesResult::OUTCOME_REJECTED_MODULE_INACTIVE, $evaluations, $retryableFailures);
             }
 
             if ($page->module_condition === 'paused') {
-                return EvaluateProgressionActivitiesResult::deferredModulePaused();
+                return new EvaluateProgressionActivitiesResult(EvaluateProgressionActivitiesResult::OUTCOME_DEFERRED_MODULE_PAUSED, $evaluations, $retryableFailures);
             }
 
             foreach ($page->activities as $activity) {
@@ -80,6 +84,7 @@ final class EvaluateProgressionActivitiesUseCase
                     if (! $resolved->isResolved() || $resolved->resolved_at === null) {
                         $failure = RetryableProgressionFailureData::activity($activity, $resolved->failure_code ?? 'invalid_response');
                         $retryableFailures[] = $failure;
+                        $this->evidence->count('retryable_failures');
                         Log::warning('progression.activity_distribution_retryable', $failure->toArray());
 
                         continue;
@@ -101,10 +106,12 @@ final class EvaluateProgressionActivitiesUseCase
                     ));
                 }
 
+                $this->evidence->id('distribution_ids', $distribution->id);
                 foreach ($distribution->beneficiaries as $beneficiary) {
                     $existing = $repository->findByIdempotencyKey($activity->module_id, $activity->source_activity_id, $beneficiary->beneficiaryExternalUserId, $beneficiary->distributionLevel);
                     if ($existing !== null) {
                         $evaluations[] = $existing;
+                        $this->recordEvidence($existing);
 
                         continue;
                     }
@@ -120,10 +127,13 @@ final class EvaluateProgressionActivitiesUseCase
                             distributionLevel: $beneficiary->distributionLevel,
                             distributionResolvedAt: $distribution->resolvedAt,
                         );
-                        $evaluations[] = $repository->record($decision);
+                        $evaluation = $repository->record($decision);
+                        $evaluations[] = $evaluation;
+                        $this->recordEvidence($evaluation);
                     } catch (Throwable) {
                         $failure = new RetryableProgressionFailureData($activity->module_id, $activity->source_activity_id, 'beneficiary_evaluation_failed', $beneficiary->beneficiaryExternalUserId, $beneficiary->distributionLevel);
                         $retryableFailures[] = $failure;
+                        $this->evidence->count('retryable_failures');
                         Log::warning('progression.beneficiary_evaluation_retryable', $failure->toArray());
                     }
                 }
@@ -133,5 +143,12 @@ final class EvaluateProgressionActivitiesUseCase
         } while ($cursor !== null);
 
         return EvaluateProgressionActivitiesResult::evaluated($evaluations, $retryableFailures);
+    }
+
+    private function recordEvidence(ActivityEvaluation $evaluation): void
+    {
+        $this->evidence->id('evaluation_ids', $evaluation->id);
+        $this->evidence->count('evaluations');
+        $this->evidence->count($evaluation->status->value === 'accepted' ? 'accepted' : 'excluded');
     }
 }

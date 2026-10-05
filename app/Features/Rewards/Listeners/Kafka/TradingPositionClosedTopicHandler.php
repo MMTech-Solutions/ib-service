@@ -6,6 +6,7 @@ namespace App\Features\Rewards\Listeners\Kafka;
 
 use App\Features\Rewards\DTOs\RecordVolumeRewardEventData;
 use App\Features\Rewards\UseCases\RecordVolumeRewardEventUseCase;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Log;
 use Junges\Kafka\Contracts\ConsumerMessage;
@@ -21,6 +22,18 @@ final class TradingPositionClosedTopicHandler implements TopicMessageHandlerInte
     }
 
     public function handle(ConsumerMessage $message): void
+    {
+        $clock = app(DomainClock::class);
+        $clock->end();
+        try {
+            $clock->begin();
+            $this->handleMessage($message);
+        } finally {
+            $clock->end();
+        }
+    }
+
+    private function handleMessage(ConsumerMessage $message): void
     {
         $headers = $message->getHeaders() ?? [];
         $eventName = $this->header($headers, 'event_name');

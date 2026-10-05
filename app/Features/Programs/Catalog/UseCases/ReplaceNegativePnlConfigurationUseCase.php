@@ -19,6 +19,7 @@ use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateRatesPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Rules\Contracts\Data\V1\ResolveNegativePnlRuleContextQueryData;
 use App\Features\Rules\Contracts\Ports\Input\ResolveNegativePnlRuleContextPort;
+use App\SharedFeatures\Clock\DomainClock;
 use App\SharedFeatures\User\Context\UserContext;
 
 final class ReplaceNegativePnlConfigurationUseCase
@@ -31,7 +32,7 @@ final class ReplaceNegativePnlConfigurationUseCase
         $repository = $this->repositories->make();
 
         return $repository->transactionForProgram($command->program_id, function () use ($command, $repository): ?NegativePnlProgramConfigurationData {
-            $at = now('UTC')->toISOString();
+            $at = app(DomainClock::class)->now()->toISOString();
             $moduleIds = array_values(array_unique(array_column($command->groups, 'module_id')));
             $this->plans->assertEnabledModuleIds(new AssertEnabledModuleIdsQueryData($command->plan_id, $moduleIds));
             $modules = $this->modules->findByIds($moduleIds);

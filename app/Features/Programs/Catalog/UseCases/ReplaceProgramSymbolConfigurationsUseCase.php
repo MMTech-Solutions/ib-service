@@ -8,6 +8,7 @@ use App\Features\Modules\Contracts\Data\V1\ListInstrumentCatalogQueryData;
 use App\Features\Modules\Contracts\Ports\Input\ListInstrumentCatalogPort;
 use App\Features\Programs\Contracts\Data\V1\AssertSelectedModuleQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 
@@ -25,7 +26,7 @@ final class ReplaceProgramSymbolConfigurationsUseCase
         $resolved = array_map(fn (array $symbol): array => $this->resolveSymbol($planId, $programId, $symbol), $symbols);
 
         return $this->connection->transaction(function () use ($programId, $resolved): array {
-            $now = now('UTC');
+            $now = app(DomainClock::class)->now();
             $active = $this->connection->table('program_symbol_configurations')->where('program_id', $programId)->whereNull('ends_at')->lockForUpdate()->get()->keyBy(fn ($row): string => $row->module_id.'|'.$row->server_group_reference.'|'.$row->symbol_reference);
             $keys = [];
             foreach ($resolved as $symbol) {

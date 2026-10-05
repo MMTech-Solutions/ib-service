@@ -7,7 +7,7 @@ namespace App\Features\Rewards\Listeners\Kafka;
 use App\Features\Rewards\Contracts\Ports\Input\CaptureCpaContextPort;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
 use App\Features\Rewards\Exceptions\CpaCaptureNotApplicableException;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Log;
 use Junges\Kafka\Contracts\ConsumerMessage;
@@ -26,6 +26,18 @@ final class AuthAccountRegisteredTopicHandler implements TopicMessageHandlerInte
     }
 
     public function handle(ConsumerMessage $message): void
+    {
+        $clock = app(DomainClock::class);
+        $clock->end();
+        try {
+            $clock->begin();
+            $this->handleMessage($message);
+        } finally {
+            $clock->end();
+        }
+    }
+
+    private function handleMessage(ConsumerMessage $message): void
     {
         $body = $message->getBody();
         if (! is_array($body) || ($body['event_name'] ?? null) !== 'auth.account.registered' || ($body['schema_version'] ?? null) !== '1.0') {
@@ -63,7 +75,7 @@ final class AuthAccountRegisteredTopicHandler implements TopicMessageHandlerInte
             $this->capture->execute(new CaptureCpaContextData(
                 referred_user_id: $referredUserId,
                 ib_user_id: $ibUserId,
-                captured_at: CarbonImmutable::now('UTC')->toISOString(),
+                captured_at: app(DomainClock::class)->now()->toISOString(),
             ));
         } catch (CpaCaptureNotApplicableException $exception) {
             Log::info('Auth account is not CPA applicable.', ['reason' => $exception->getMessage()]);

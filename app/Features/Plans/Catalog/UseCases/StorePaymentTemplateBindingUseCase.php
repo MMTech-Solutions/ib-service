@@ -12,7 +12,7 @@ use App\Features\Plans\Catalog\Factories\PaymentTemplateBindingRepositoryFactory
 use App\Features\Plans\Catalog\Factories\PlanRepositoryFactory;
 use App\Features\Plans\Catalog\Http\V1\Commands\StorePaymentTemplateBindingCommand;
 use App\Features\Programs\Contracts\Ports\Input\ResolvePaymentTemplateVersionPort;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StorePaymentTemplateBindingUseCase
@@ -40,7 +40,7 @@ final class StorePaymentTemplateBindingUseCase
                 throw TemplateBindingException::unpublished($command->templateVersionId);
             }
 
-            return $this->bindings->make()->createOrFind(new PaymentTemplateBindingData((string) Str::uuid7(), $command->planId, $version->id, CarbonImmutable::now('UTC')->toISOString()));
+            return $this->bindings->make()->createOrFind(new PaymentTemplateBindingData((string) Str::uuid7(), $command->planId, $version->id, app(DomainClock::class)->now()->toISOString()));
         });
     }
 }

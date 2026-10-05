@@ -11,7 +11,7 @@ use App\Features\Programs\PaymentTemplates\DTOs\PaymentTemplateData;
 use App\Features\Programs\PaymentTemplates\Factories\PaymentTemplateRepositoryFactory;
 use App\Features\Programs\PaymentTemplates\Http\V1\Commands\ManagePaymentTemplateCommand;
 use App\Features\Programs\PaymentTemplates\Models\PaymentTemplateVersion;
-use Carbon\CarbonImmutable;
+use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
 
 final class StorePaymentTemplateVersionUseCase
@@ -29,7 +29,7 @@ final class StorePaymentTemplateVersionUseCase
 
         return $repository->transaction(function () use ($repository, $id, $command): PaymentTemplateData {
             $template = $this->resolveTemplate->execute($id);
-            $now = CarbonImmutable::now('UTC')->toISOString();
+            $now = app(DomainClock::class)->now()->toISOString();
             $version = new PaymentTemplateVersion(
                 (string) Str::uuid7(),
                 $template->id,

@@ -18,6 +18,7 @@ use App\Features\Programs\Contracts\Ports\Input\ResolveProgramProgressionConfigu
 use App\Features\Progression\Contracts\Data\V1\NormalizedActivityData;
 use App\Features\Progression\Enums\ExclusionReason;
 use App\Features\Progression\Exceptions\InvalidExactDecimalException;
+use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Models\ActivityEvaluation;
 use App\Features\Progression\Models\Contribution;
 use App\Features\Progression\Support\DeriveProgressionWindowFromPeriod;
@@ -45,6 +46,7 @@ final class BuildActivityEvaluationDecisionAction
         private readonly ResolveModulesPort $modules,
         private readonly ResolvePointsContributionContextPort $rules,
         private readonly DeriveProgressionWindowFromPeriod $deriveWindow,
+        private readonly ProgressionRunRepositoryFactory $runs,
     ) {}
 
     public function build(
@@ -163,6 +165,14 @@ final class BuildActivityEvaluationDecisionAction
                 planId: $subscription->plan_id,
                 programId: $subscription->program_id,
                 window: $window,
+            );
+        }
+
+        if ($this->runs->make()->hasCapturedWindow($planId, $window)) {
+            return $this->excluded(
+                evaluationId: $evaluationId, activity: $activity, occurredAt: $occurredAt, evaluatedAt: $evaluatedAt,
+                reason: ExclusionReason::LateActivity, quantity: $quantity, subscriptionId: $subscription->subscription_id,
+                planId: $subscription->plan_id, programId: $subscription->program_id, window: $window,
             );
         }
 

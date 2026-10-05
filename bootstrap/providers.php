@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Providers\ClockServiceProvider;
 use App\Providers\ModulesServiceProvider;
 use App\Providers\PlansServiceProvider;
 use App\Providers\ProgramsServiceProvider;
@@ -12,12 +13,13 @@ use App\SharedFeatures\User\UserServiceProvider;
 
 return [
     AppServiceProvider::class,
+    ClockServiceProvider::class,
     ModulesServiceProvider::class,
     PlansServiceProvider::class,
     ProgramsServiceProvider::class,
     ProgressionServiceProvider::class,
-    RulesServiceProvider::class,
     RewardsServiceProvider::class,
+    RulesServiceProvider::class,
     SubscriptionsServiceProvider::class,
     UserServiceProvider::class,
 ];

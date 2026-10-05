@@ -1,0 +1,671 @@
+{
+    "progression:evaluate-activities-executed-0": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000001",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-10T13:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 1,
+        "outcome": "evaluated",
+        "counts": {
+            "evaluations": 2,
+            "accepted": 2,
+            "excluded": 0,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [
+                "00000000-0000-4000-8000-000000000003",
+                "00000000-0000-4000-8000-000000000004"
+            ],
+            "distribution_ids": [
+                "00000000-0000-4000-8000-000000000005"
+            ],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:evaluate-activities-executed-1": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000006",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-10T13:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 1,
+        "outcome": "evaluated",
+        "counts": {
+            "evaluations": 2,
+            "accepted": 2,
+            "excluded": 0,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [
+                "00000000-0000-4000-8000-000000000003",
+                "00000000-0000-4000-8000-000000000004"
+            ],
+            "distribution_ids": [
+                "00000000-0000-4000-8000-000000000005"
+            ],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:evaluate-activities-failed-2": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000007",
+        "status": "failed",
+        "observed_domain_time_utc": "2026-09-10T13:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 1,
+        "outcome": null,
+        "counts": {
+            "evaluations": 2,
+            "accepted": 2,
+            "excluded": 0,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [
+                "00000000-0000-4000-8000-000000000003",
+                "00000000-0000-4000-8000-000000000004"
+            ],
+            "distribution_ids": [
+                "00000000-0000-4000-8000-000000000005"
+            ],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:close-windows-locked-3": {
+        "version": 1,
+        "operation": "close",
+        "execution_id": "00000000-0000-4000-8000-000000000008",
+        "status": "locked",
+        "observed_domain_time_utc": "2026-09-10T13:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 1,
+        "outcome": null,
+        "counts": {
+            "runs_created": 0,
+            "runs_completed": 0,
+            "runs_with_errors": 0,
+            "results_completed": 0,
+            "results_skipped": 0,
+            "results_failed": 0,
+            "placements_applied": 0,
+            "placements_unchanged": 0,
+            "placements_fixed": 0,
+            "placements_not_active": 0,
+            "placements_failed": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:close-windows-executed-4": {
+        "version": 1,
+        "operation": "close",
+        "execution_id": "00000000-0000-4000-8000-000000000009",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T00:59:59.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 2,
+        "outcome": "processed",
+        "counts": {
+            "runs_created": 1,
+            "runs_completed": 1,
+            "runs_with_errors": 0,
+            "results_completed": 0,
+            "results_skipped": 0,
+            "results_failed": 0,
+            "placements_applied": 0,
+            "placements_unchanged": 0,
+            "placements_fixed": 0,
+            "placements_not_active": 0,
+            "placements_failed": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [
+                "00000000-0000-4000-8000-000000000010"
+            ],
+            "result_ids": []
+        }
+    },
+    "progression:close-windows-failed-5": {
+        "version": 1,
+        "operation": "close",
+        "execution_id": "00000000-0000-4000-8000-000000000011",
+        "status": "failed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "processed",
+        "counts": {
+            "runs_created": 1,
+            "runs_completed": 0,
+            "runs_with_errors": 1,
+            "results_completed": 1,
+            "results_skipped": 0,
+            "results_failed": 1,
+            "placements_applied": 0,
+            "placements_unchanged": 0,
+            "placements_fixed": 0,
+            "placements_not_active": 0,
+            "placements_failed": 1
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [
+                "00000000-0000-4000-8000-000000000012"
+            ],
+            "result_ids": [
+                "00000000-0000-4000-8000-000000000013",
+                "00000000-0000-4000-8000-000000000014"
+            ]
+        }
+    },
+    "progression:recover-runs-executed-6": {
+        "version": 1,
+        "operation": "recover",
+        "execution_id": "00000000-0000-4000-8000-000000000015",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "processed",
+        "counts": {
+            "results_recovered": 1,
+            "results_failed": 0,
+            "runs_completed": 1,
+            "placements_applied": 2,
+            "placements_unchanged": 0,
+            "placements_fixed": 0,
+            "placements_not_active": 0,
+            "placements_failed": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [
+                "00000000-0000-4000-8000-000000000012"
+            ],
+            "result_ids": [
+                "00000000-0000-4000-8000-000000000013",
+                "00000000-0000-4000-8000-000000000014"
+            ]
+        }
+    },
+    "progression-distributions-list": {
+        "success": true,
+        "data": [
+            {
+                "id": "00000000-0000-4000-8000-000000000005",
+                "module_id": "00000000-0000-4000-8000-000000000016",
+                "source_activity_id": "lab5-deposit",
+                "source_external_user_id": "00000000-0000-4000-8000-000000000017",
+                "resolved_at": "2026-09-10T13:00:00.000000Z",
+                "beneficiaries": [
+                    {
+                        "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000018",
+                        "distribution_level": 0
+                    },
+                    {
+                        "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000019",
+                        "distribution_level": 1
+                    }
+                ]
+            }
+        ],
+        "meta": {
+            "filters": [],
+            "message": "Progression artifacts retrieved.",
+            "pagination": {
+                "current_page": 1,
+                "per_page": 100,
+                "total": 1,
+                "last_page": 1
+            }
+        }
+    },
+    "progression-runs-list": {
+        "success": true,
+        "data": [
+            {
+                "id": "00000000-0000-4000-8000-000000000010",
+                "plan_id": "00000000-0000-4000-8000-000000000020",
+                "window_starts_at": "2026-09-09T00:00:00.000000Z",
+                "window_ends_at": "2026-09-10T00:00:00.000000Z",
+                "status": "completed",
+                "started_at": "2026-09-11T00:59:59.000000Z",
+                "completed_at": "2026-09-11T00:59:59.000000Z",
+                "snapshot": {
+                    "ladder": {
+                        "programs": [
+                            {
+                                "position": 1,
+                                "program_id": "00000000-0000-4000-8000-000000000021",
+                                "entry_threshold": "0"
+                            },
+                            {
+                                "position": 2,
+                                "program_id": "00000000-0000-4000-8000-000000000022",
+                                "entry_threshold": "100"
+                            }
+                        ]
+                    },
+                    "participants": [],
+                    "captured_at": "2026-09-11T00:59:59.000000Z",
+                    "legacy": false
+                }
+            },
+            {
+                "id": "00000000-0000-4000-8000-000000000012",
+                "plan_id": "00000000-0000-4000-8000-000000000020",
+                "window_starts_at": "2026-09-10T00:00:00.000000Z",
+                "window_ends_at": "2026-09-11T00:00:00.000000Z",
+                "status": "completed",
+                "started_at": "2026-09-11T01:00:00.000000Z",
+                "completed_at": "2026-09-11T01:00:00.000000Z",
+                "snapshot": {
+                    "ladder": {
+                        "programs": [
+                            {
+                                "position": 1,
+                                "program_id": "00000000-0000-4000-8000-000000000021",
+                                "entry_threshold": "0"
+                            },
+                            {
+                                "position": 2,
+                                "program_id": "00000000-0000-4000-8000-000000000022",
+                                "entry_threshold": "100"
+                            }
+                        ]
+                    },
+                    "participants": [
+                        {
+                            "is_evaluable": true,
+                            "total_points": "120",
+                            "subscription_id": "00000000-0000-4000-8000-000000000023",
+                            "contribution_ids": [
+                                "00000000-0000-4000-8000-000000000024"
+                            ]
+                        },
+                        {
+                            "is_evaluable": true,
+                            "total_points": "120",
+                            "subscription_id": "00000000-0000-4000-8000-000000000025",
+                            "contribution_ids": [
+                                "00000000-0000-4000-8000-000000000026"
+                            ]
+                        }
+                    ],
+                    "captured_at": "2026-09-11T01:00:00.000000Z",
+                    "legacy": false
+                }
+            }
+        ],
+        "meta": {
+            "filters": [],
+            "message": "Progression artifacts retrieved.",
+            "pagination": {
+                "current_page": 1,
+                "per_page": 100,
+                "total": 2,
+                "last_page": 1
+            }
+        }
+    },
+    "distribution-show": {
+        "success": true,
+        "data": {
+            "id": "00000000-0000-4000-8000-000000000005",
+            "module_id": "00000000-0000-4000-8000-000000000016",
+            "source_activity_id": "lab5-deposit",
+            "source_external_user_id": "00000000-0000-4000-8000-000000000017",
+            "resolved_at": "2026-09-10T13:00:00.000000Z",
+            "beneficiaries": [
+                {
+                    "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000018",
+                    "distribution_level": 0
+                },
+                {
+                    "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000019",
+                    "distribution_level": 1
+                }
+            ]
+        },
+        "meta": {
+            "message": "Progression artifact retrieved."
+        }
+    },
+    "run-show": {
+        "success": true,
+        "data": {
+            "id": "00000000-0000-4000-8000-000000000012",
+            "plan_id": "00000000-0000-4000-8000-000000000020",
+            "window_starts_at": "2026-09-10T00:00:00.000000Z",
+            "window_ends_at": "2026-09-11T00:00:00.000000Z",
+            "status": "completed",
+            "started_at": "2026-09-11T01:00:00.000000Z",
+            "completed_at": "2026-09-11T01:00:00.000000Z",
+            "snapshot": {
+                "ladder": {
+                    "programs": [
+                        {
+                            "position": 1,
+                            "program_id": "00000000-0000-4000-8000-000000000021",
+                            "entry_threshold": "0"
+                        },
+                        {
+                            "position": 2,
+                            "program_id": "00000000-0000-4000-8000-000000000022",
+                            "entry_threshold": "100"
+                        }
+                    ]
+                },
+                "participants": [
+                    {
+                        "is_evaluable": true,
+                        "total_points": "120",
+                        "subscription_id": "00000000-0000-4000-8000-000000000023",
+                        "contribution_ids": [
+                            "00000000-0000-4000-8000-000000000024"
+                        ]
+                    },
+                    {
+                        "is_evaluable": true,
+                        "total_points": "120",
+                        "subscription_id": "00000000-0000-4000-8000-000000000025",
+                        "contribution_ids": [
+                            "00000000-0000-4000-8000-000000000026"
+                        ]
+                    }
+                ],
+                "captured_at": "2026-09-11T01:00:00.000000Z",
+                "legacy": false
+            }
+        },
+        "meta": {
+            "message": "Progression artifact retrieved."
+        }
+    },
+    "results-list": {
+        "success": true,
+        "data": [
+            {
+                "id": "00000000-0000-4000-8000-000000000013",
+                "run_id": "00000000-0000-4000-8000-000000000012",
+                "subscription_id": "00000000-0000-4000-8000-000000000023",
+                "status": "completed",
+                "total_points": "120.00000000",
+                "target_program_id": "00000000-0000-4000-8000-000000000022",
+                "attempt_count": 2,
+                "failure_code": null,
+                "decision_at": "2026-09-11T01:00:00.000000Z",
+                "completed_at": "2026-09-11T01:00:00.000000Z",
+                "is_evaluable": true,
+                "omission_reason": null,
+                "placement": {
+                    "status": "completed",
+                    "outcome": "applied",
+                    "failure_code": null,
+                    "attempt_count": 1,
+                    "last_attempt_at": "2026-09-11T01:00:00.000000Z",
+                    "applied_at": "2026-09-11T01:00:00.000000Z"
+                }
+            },
+            {
+                "id": "00000000-0000-4000-8000-000000000014",
+                "run_id": "00000000-0000-4000-8000-000000000012",
+                "subscription_id": "00000000-0000-4000-8000-000000000025",
+                "status": "completed",
+                "total_points": "120.00000000",
+                "target_program_id": "00000000-0000-4000-8000-000000000022",
+                "attempt_count": 1,
+                "failure_code": null,
+                "decision_at": "2026-09-11T01:00:00.000000Z",
+                "completed_at": "2026-09-11T01:00:00.000000Z",
+                "is_evaluable": true,
+                "omission_reason": null,
+                "placement": {
+                    "status": "completed",
+                    "outcome": "applied",
+                    "failure_code": null,
+                    "attempt_count": 2,
+                    "last_attempt_at": "2026-09-11T01:00:00.000000Z",
+                    "applied_at": "2026-09-11T01:00:00.000000Z"
+                }
+            }
+        ],
+        "meta": {
+            "filters": [],
+            "message": "Progression artifacts retrieved.",
+            "pagination": {
+                "current_page": 1,
+                "per_page": 100,
+                "total": 2,
+                "last_page": 1
+            }
+        }
+    },
+    "result-show": {
+        "success": true,
+        "data": {
+            "id": "00000000-0000-4000-8000-000000000013",
+            "run_id": "00000000-0000-4000-8000-000000000012",
+            "subscription_id": "00000000-0000-4000-8000-000000000023",
+            "status": "completed",
+            "total_points": "120.00000000",
+            "target_program_id": "00000000-0000-4000-8000-000000000022",
+            "attempt_count": 2,
+            "failure_code": null,
+            "decision_at": "2026-09-11T01:00:00.000000Z",
+            "completed_at": "2026-09-11T01:00:00.000000Z",
+            "is_evaluable": true,
+            "omission_reason": null,
+            "placement": {
+                "status": "completed",
+                "outcome": "applied",
+                "failure_code": null,
+                "attempt_count": 1,
+                "last_attempt_at": "2026-09-11T01:00:00.000000Z",
+                "applied_at": "2026-09-11T01:00:00.000000Z"
+            }
+        },
+        "meta": {
+            "message": "Progression artifact retrieved."
+        }
+    },
+    "evaluations-list": {
+        "success": true,
+        "data": [
+            {
+                "id": "00000000-0000-4000-8000-000000000004",
+                "module_id": "00000000-0000-4000-8000-000000000016",
+                "source_activity_id": "lab5-deposit",
+                "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000019",
+                "subscription_id": "00000000-0000-4000-8000-000000000025",
+                "plan_id": "00000000-0000-4000-8000-000000000020",
+                "program_id": "00000000-0000-4000-8000-000000000021",
+                "occurred_at": "2026-09-10T12:00:00+00:00",
+                "window_starts_at": "2026-09-10T00:00:00+00:00",
+                "window_ends_at": "2026-09-11T00:00:00+00:00",
+                "metric_code": "confirmed_deposit",
+                "unit_code": "usd",
+                "instrument_reference": null,
+                "quantity": "1200",
+                "status": "accepted",
+                "exclusion_reason": null,
+                "exclusion_explanation": null,
+                "evaluated_at": "2026-09-10T13:00:00+00:00",
+                "created_at": "2026-09-10T13:00:00+00:00",
+                "updated_at": "2026-09-10T13:00:00+00:00",
+                "contribution": {
+                    "id": "00000000-0000-4000-8000-000000000026",
+                    "evaluation_id": "00000000-0000-4000-8000-000000000004",
+                    "rule_id": "00000000-0000-4000-8000-000000000027",
+                    "rule_version_id": "00000000-0000-4000-8000-000000000028",
+                    "rule_assignment_id": "00000000-0000-4000-8000-000000000029",
+                    "strategy_type": "points_per_quantity_unit",
+                    "scope_type": "all",
+                    "weight": "0.1",
+                    "points": "120",
+                    "created_at": "2026-09-10T13:00:00+00:00",
+                    "updated_at": "2026-09-10T13:00:00+00:00"
+                }
+            },
+            {
+                "id": "00000000-0000-4000-8000-000000000003",
+                "module_id": "00000000-0000-4000-8000-000000000016",
+                "source_activity_id": "lab5-deposit",
+                "beneficiary_external_user_id": "00000000-0000-4000-8000-000000000018",
+                "subscription_id": "00000000-0000-4000-8000-000000000023",
+                "plan_id": "00000000-0000-4000-8000-000000000020",
+                "program_id": "00000000-0000-4000-8000-000000000021",
+                "occurred_at": "2026-09-10T12:00:00+00:00",
+                "window_starts_at": "2026-09-10T00:00:00+00:00",
+                "window_ends_at": "2026-09-11T00:00:00+00:00",
+                "metric_code": "confirmed_deposit",
+                "unit_code": "usd",
+                "instrument_reference": null,
+                "quantity": "1200",
+                "status": "accepted",
+                "exclusion_reason": null,
+                "exclusion_explanation": null,
+                "evaluated_at": "2026-09-10T13:00:00+00:00",
+                "created_at": "2026-09-10T13:00:00+00:00",
+                "updated_at": "2026-09-10T13:00:00+00:00",
+                "contribution": {
+                    "id": "00000000-0000-4000-8000-000000000024",
+                    "evaluation_id": "00000000-0000-4000-8000-000000000003",
+                    "rule_id": "00000000-0000-4000-8000-000000000027",
+                    "rule_version_id": "00000000-0000-4000-8000-000000000028",
+                    "rule_assignment_id": "00000000-0000-4000-8000-000000000029",
+                    "strategy_type": "points_per_quantity_unit",
+                    "scope_type": "all",
+                    "weight": "0.1",
+                    "points": "120",
+                    "created_at": "2026-09-10T13:00:00+00:00",
+                    "updated_at": "2026-09-10T13:00:00+00:00"
+                }
+            }
+        ],
+        "meta": {
+            "filters": [],
+            "message": "Activity evaluations retrieved successfully.",
+            "pagination": {
+                "current_page": 1,
+                "per_page": 100,
+                "total": 2,
+                "last_page": 1
+            }
+        }
+    },
+    "progression:recover-runs-executed-14": {
+        "version": 1,
+        "operation": "recover",
+        "execution_id": "00000000-0000-4000-8000-000000000030",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "processed",
+        "counts": {
+            "results_recovered": 0,
+            "results_failed": 0,
+            "runs_completed": 0,
+            "placements_applied": 0,
+            "placements_unchanged": 0,
+            "placements_fixed": 0,
+            "placements_not_active": 0,
+            "placements_failed": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:evaluate-activities-executed-15": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000031",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "evaluated",
+        "counts": {
+            "evaluations": 2,
+            "accepted": 0,
+            "excluded": 2,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [
+                "00000000-0000-4000-8000-000000000032",
+                "00000000-0000-4000-8000-000000000033"
+            ],
+            "distribution_ids": [
+                "00000000-0000-4000-8000-000000000034"
+            ],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:evaluate-activities-executed-16": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000035",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "deferred_module_paused",
+        "counts": {
+            "evaluations": 0,
+            "accepted": 0,
+            "excluded": 0,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [],
+            "result_ids": []
+        }
+    },
+    "progression:evaluate-activities-executed-17": {
+        "version": 1,
+        "operation": "evaluate",
+        "execution_id": "00000000-0000-4000-8000-000000000036",
+        "status": "executed",
+        "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
+        "context_id": "00000000-0000-4000-8000-000000000002",
+        "sequence": 3,
+        "outcome": "rejected_module_inactive",
+        "counts": {
+            "evaluations": 0,
+            "accepted": 0,
+            "excluded": 0,
+            "retryable_failures": 0
+        },
+        "ids": {
+            "evaluation_ids": [],
+            "distribution_ids": [],
+            "run_ids": [],
+            "result_ids": []
+        }
+    }
+}
