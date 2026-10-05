@@ -14,6 +14,5 @@ final class ProgressionRunSnapshotData extends Data
         public readonly ProgressionLadderData $ladder,
         public readonly array $participants,
         public readonly string $captured_at,
-        public readonly bool $legacy,
     ) {}
 }

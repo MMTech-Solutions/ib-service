@@ -187,8 +187,8 @@
             "results_recovered": 1,
             "results_failed": 0,
             "runs_completed": 1,
-            "placements_applied": 2,
-            "placements_unchanged": 0,
+            "placements_applied": 0,
+            "placements_unchanged": 2,
             "placements_fixed": 0,
             "placements_not_active": 0,
             "placements_failed": 0
@@ -264,8 +264,7 @@
                         ]
                     },
                     "participants": [],
-                    "captured_at": "2026-09-11T00:59:59.000000Z",
-                    "legacy": false
+                    "captured_at": "2026-09-11T00:59:59.000000Z"
                 }
             },
             {
@@ -309,8 +308,7 @@
                             ]
                         }
                     ],
-                    "captured_at": "2026-09-11T01:00:00.000000Z",
-                    "legacy": false
+                    "captured_at": "2026-09-11T01:00:00.000000Z"
                 }
             }
         ],
@@ -391,8 +389,7 @@
                         ]
                     }
                 ],
-                "captured_at": "2026-09-11T01:00:00.000000Z",
-                "legacy": false
+                "captured_at": "2026-09-11T01:00:00.000000Z"
             }
         },
         "meta": {
@@ -408,7 +405,7 @@
                 "subscription_id": "00000000-0000-4000-8000-000000000023",
                 "status": "completed",
                 "total_points": "120.00000000",
-                "target_program_id": "00000000-0000-4000-8000-000000000022",
+                "target_program_id": "00000000-0000-4000-8000-000000000021",
                 "attempt_count": 2,
                 "failure_code": null,
                 "decision_at": "2026-09-11T01:00:00.000000Z",
@@ -417,12 +414,42 @@
                 "omission_reason": null,
                 "placement": {
                     "status": "completed",
-                    "outcome": "applied",
+                    "outcome": "unchanged",
                     "failure_code": null,
                     "attempt_count": 1,
                     "last_attempt_at": "2026-09-11T01:00:00.000000Z",
                     "applied_at": "2026-09-11T01:00:00.000000Z"
-                }
+                },
+                "original_decision": {
+                    "decision_at": "2026-09-11T01:00:00.000000Z",
+                    "total_points": "120",
+                    "target_program_id": "00000000-0000-4000-8000-000000000022"
+                },
+                "recovery_attempts": [
+                    {
+                        "id": "00000000-0000-4000-8000-000000000027",
+                        "stage": "placement",
+                        "ladder": {
+                            "programs": [
+                                {
+                                    "position": 1,
+                                    "program_id": "00000000-0000-4000-8000-000000000021",
+                                    "entry_threshold": "0"
+                                },
+                                {
+                                    "position": 2,
+                                    "program_id": "00000000-0000-4000-8000-000000000022",
+                                    "entry_threshold": "150"
+                                }
+                            ]
+                        },
+                        "outcome": "unchanged",
+                        "attempted_at": "2026-09-11T01:00:00.000000Z",
+                        "failure_code": null,
+                        "total_points": "120",
+                        "target_program_id": "00000000-0000-4000-8000-000000000021"
+                    }
+                ]
             },
             {
                 "id": "00000000-0000-4000-8000-000000000014",
@@ -430,7 +457,7 @@
                 "subscription_id": "00000000-0000-4000-8000-000000000025",
                 "status": "completed",
                 "total_points": "120.00000000",
-                "target_program_id": "00000000-0000-4000-8000-000000000022",
+                "target_program_id": "00000000-0000-4000-8000-000000000021",
                 "attempt_count": 1,
                 "failure_code": null,
                 "decision_at": "2026-09-11T01:00:00.000000Z",
@@ -439,12 +466,42 @@
                 "omission_reason": null,
                 "placement": {
                     "status": "completed",
-                    "outcome": "applied",
+                    "outcome": "unchanged",
                     "failure_code": null,
                     "attempt_count": 2,
                     "last_attempt_at": "2026-09-11T01:00:00.000000Z",
                     "applied_at": "2026-09-11T01:00:00.000000Z"
-                }
+                },
+                "original_decision": {
+                    "decision_at": "2026-09-11T01:00:00.000000Z",
+                    "total_points": "120",
+                    "target_program_id": "00000000-0000-4000-8000-000000000022"
+                },
+                "recovery_attempts": [
+                    {
+                        "id": "00000000-0000-4000-8000-000000000028",
+                        "stage": "placement",
+                        "ladder": {
+                            "programs": [
+                                {
+                                    "position": 1,
+                                    "program_id": "00000000-0000-4000-8000-000000000021",
+                                    "entry_threshold": "0"
+                                },
+                                {
+                                    "position": 2,
+                                    "program_id": "00000000-0000-4000-8000-000000000022",
+                                    "entry_threshold": "150"
+                                }
+                            ]
+                        },
+                        "outcome": "unchanged",
+                        "attempted_at": "2026-09-11T01:00:00.000000Z",
+                        "failure_code": null,
+                        "total_points": "120",
+                        "target_program_id": "00000000-0000-4000-8000-000000000021"
+                    }
+                ]
             }
         ],
         "meta": {
@@ -466,7 +523,7 @@
             "subscription_id": "00000000-0000-4000-8000-000000000023",
             "status": "completed",
             "total_points": "120.00000000",
-            "target_program_id": "00000000-0000-4000-8000-000000000022",
+            "target_program_id": "00000000-0000-4000-8000-000000000021",
             "attempt_count": 2,
             "failure_code": null,
             "decision_at": "2026-09-11T01:00:00.000000Z",
@@ -475,12 +532,42 @@
             "omission_reason": null,
             "placement": {
                 "status": "completed",
-                "outcome": "applied",
+                "outcome": "unchanged",
                 "failure_code": null,
                 "attempt_count": 1,
                 "last_attempt_at": "2026-09-11T01:00:00.000000Z",
                 "applied_at": "2026-09-11T01:00:00.000000Z"
-            }
+            },
+            "original_decision": {
+                "decision_at": "2026-09-11T01:00:00.000000Z",
+                "total_points": "120",
+                "target_program_id": "00000000-0000-4000-8000-000000000022"
+            },
+            "recovery_attempts": [
+                {
+                    "id": "00000000-0000-4000-8000-000000000027",
+                    "stage": "placement",
+                    "ladder": {
+                        "programs": [
+                            {
+                                "position": 1,
+                                "program_id": "00000000-0000-4000-8000-000000000021",
+                                "entry_threshold": "0"
+                            },
+                            {
+                                "position": 2,
+                                "program_id": "00000000-0000-4000-8000-000000000022",
+                                "entry_threshold": "150"
+                            }
+                        ]
+                    },
+                    "outcome": "unchanged",
+                    "attempted_at": "2026-09-11T01:00:00.000000Z",
+                    "failure_code": null,
+                    "total_points": "120",
+                    "target_program_id": "00000000-0000-4000-8000-000000000021"
+                }
+            ]
         },
         "meta": {
             "message": "Progression artifact retrieved."
@@ -513,9 +600,9 @@
                 "contribution": {
                     "id": "00000000-0000-4000-8000-000000000026",
                     "evaluation_id": "00000000-0000-4000-8000-000000000004",
-                    "rule_id": "00000000-0000-4000-8000-000000000027",
-                    "rule_version_id": "00000000-0000-4000-8000-000000000028",
-                    "rule_assignment_id": "00000000-0000-4000-8000-000000000029",
+                    "rule_id": "00000000-0000-4000-8000-000000000029",
+                    "rule_version_id": "00000000-0000-4000-8000-000000000030",
+                    "rule_assignment_id": "00000000-0000-4000-8000-000000000031",
                     "strategy_type": "points_per_quantity_unit",
                     "scope_type": "all",
                     "weight": "0.1",
@@ -548,9 +635,9 @@
                 "contribution": {
                     "id": "00000000-0000-4000-8000-000000000024",
                     "evaluation_id": "00000000-0000-4000-8000-000000000003",
-                    "rule_id": "00000000-0000-4000-8000-000000000027",
-                    "rule_version_id": "00000000-0000-4000-8000-000000000028",
-                    "rule_assignment_id": "00000000-0000-4000-8000-000000000029",
+                    "rule_id": "00000000-0000-4000-8000-000000000029",
+                    "rule_version_id": "00000000-0000-4000-8000-000000000030",
+                    "rule_assignment_id": "00000000-0000-4000-8000-000000000031",
                     "strategy_type": "points_per_quantity_unit",
                     "scope_type": "all",
                     "weight": "0.1",
@@ -574,7 +661,7 @@
     "progression:recover-runs-executed-14": {
         "version": 1,
         "operation": "recover",
-        "execution_id": "00000000-0000-4000-8000-000000000030",
+        "execution_id": "00000000-0000-4000-8000-000000000032",
         "status": "executed",
         "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
         "context_id": "00000000-0000-4000-8000-000000000002",
@@ -600,7 +687,7 @@
     "progression:evaluate-activities-executed-15": {
         "version": 1,
         "operation": "evaluate",
-        "execution_id": "00000000-0000-4000-8000-000000000031",
+        "execution_id": "00000000-0000-4000-8000-000000000033",
         "status": "executed",
         "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
         "context_id": "00000000-0000-4000-8000-000000000002",
@@ -614,11 +701,11 @@
         },
         "ids": {
             "evaluation_ids": [
-                "00000000-0000-4000-8000-000000000032",
-                "00000000-0000-4000-8000-000000000033"
+                "00000000-0000-4000-8000-000000000034",
+                "00000000-0000-4000-8000-000000000035"
             ],
             "distribution_ids": [
-                "00000000-0000-4000-8000-000000000034"
+                "00000000-0000-4000-8000-000000000036"
             ],
             "run_ids": [],
             "result_ids": []
@@ -627,7 +714,7 @@
     "progression:evaluate-activities-executed-16": {
         "version": 1,
         "operation": "evaluate",
-        "execution_id": "00000000-0000-4000-8000-000000000035",
+        "execution_id": "00000000-0000-4000-8000-000000000037",
         "status": "executed",
         "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
         "context_id": "00000000-0000-4000-8000-000000000002",
@@ -649,7 +736,7 @@
     "progression:evaluate-activities-executed-17": {
         "version": 1,
         "operation": "evaluate",
-        "execution_id": "00000000-0000-4000-8000-000000000036",
+        "execution_id": "00000000-0000-4000-8000-000000000038",
         "status": "executed",
         "observed_domain_time_utc": "2026-09-11T01:00:00.000000Z",
         "context_id": "00000000-0000-4000-8000-000000000002",

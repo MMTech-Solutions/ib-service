@@ -17,7 +17,6 @@ final class ProgressionRun
         public readonly ProgressionRunStatus $status,
         public readonly ?CarbonImmutable $startedAt,
         public readonly ?CarbonImmutable $completedAt,
-        public readonly bool $legacy = false,
     ) {}
 
     public function isCompleted(): bool

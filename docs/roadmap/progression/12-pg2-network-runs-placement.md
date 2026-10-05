@@ -1,7 +1,7 @@
 # PG2: runs y placement sobre contribuciones congeladas
 
 Estado: **PG2.4 y PG2.5 implementados**
-Última revisión: 2026-09-29
+Última revisión: 2026-10-05
 
 ## Responsabilidad
 
@@ -9,7 +9,7 @@ Un run cierra una ventana de un plan después del margen técnico, suma las
 contribuciones válidas ya persistidas para cada suscripción y determina el
 programa objetivo con el ladder capturado al iniciar el run. La entrega
 [LAB5](15-lab5-contract.md) conserva también participantes, contribuciones,
-puntos y decisiones para recuperación reproducible.
+puntos y decisiones originales como evidencia. La recuperación conserva esos puntos y decide el objetivo con el ladder vigente; registra todos los intentos sin modificar aplicaciones terminales.
 
 ## Reglas operativas
 

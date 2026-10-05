@@ -176,7 +176,7 @@ final class Lab5ContractTest extends TestCase
         }
     }
 
-    public function test_http_cli_partial_recovery_keeps_frozen_points_ladder_and_placement(): void
+    public function test_http_cli_partial_recovery_preserves_points_and_uses_current_ladder(): void
     {
         $this->seedAuthorizedAdmin();
         $firstUser = $this->seedAuthorizedCustomer();
@@ -295,7 +295,12 @@ final class Lab5ContractTest extends TestCase
         $final = $this->gatewayJson('GET', "/api/ib/v1/admin/progression-runs/{$run->id}/results/{$result->id}")->assertOk()->json('data');
         self::assertSame($result->id, $final['id']);
         self::assertSame('120.00000000', $final['total_points']);
-        self::assertSame($gold['id'], $final['target_program_id']);
+        self::assertSame($base['id'], $final['target_program_id']);
+        self::assertSame($gold['id'], $final['original_decision']['target_program_id']);
+        self::assertCount(1, $final['recovery_attempts']);
+        self::assertSame('150', $final['recovery_attempts'][0]['ladder']['programs'][1]['entry_threshold']);
+        self::assertSame($base['id'], $final['recovery_attempts'][0]['target_program_id']);
+        self::assertArrayNotHasKey('legacy', $this->gatewayJson('GET', "/api/ib/v1/admin/progression-runs/{$run->id}")->assertOk()->json('data.snapshot'));
         self::assertSame('completed', $final['placement']['status']);
         foreach (['progression-distributions', 'progression-runs'] as $resource) {
             $this->fixtures[$resource.'-list'] = $this->gatewayJson('GET', '/api/ib/v1/admin/'.$resource)->assertOk()->json();

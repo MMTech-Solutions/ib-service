@@ -83,7 +83,9 @@ final class PostgreSqlProgressionReadRepository implements ProgressionReadReposi
             $row->status === 'skipped' ? 'subscription_not_evaluable' : null,
             ['status' => $application !== null ? 'completed' : ($row->placement_failure_code !== null ? 'failed' : ($row->status === 'completed' ? 'pending' : 'not_ready')),
                 'outcome' => $application?->outcome, 'failure_code' => $row->placement_failure_code, 'attempt_count' => (int) $row->placement_attempt_count,
-                'last_attempt_at' => $this->iso($row->placement_last_attempt_at), 'applied_at' => $this->iso($application?->applied_at)]);
+                'last_attempt_at' => $this->iso($row->placement_last_attempt_at), 'applied_at' => $this->iso($application?->applied_at)],
+            $row->original_decision === null ? null : json_decode($row->original_decision, true, flags: JSON_THROW_ON_ERROR),
+            json_decode($row->recovery_attempts ?? '[]', true, flags: JSON_THROW_ON_ERROR));
     }
 
     private function iso(?string $value): ?string

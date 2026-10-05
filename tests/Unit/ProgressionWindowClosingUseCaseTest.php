@@ -18,6 +18,7 @@ use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPo
 use App\Features\Progression\Contracts\Ports\Output\ProgressionFailurePort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
+use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
@@ -25,6 +26,7 @@ use App\Features\Progression\Factories\ProgressionRunRepositoryFactory;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
 use App\Features\Progression\Services\ApplyPendingProgressionPlacementsService;
+use App\Features\Progression\Services\PrepareProgressionRecoveryService;
 use App\Features\Progression\Services\PrepareProgressionRunService;
 use App\Features\Progression\Services\ProgressionExecutionEvidence;
 use App\Features\Progression\Services\ProgressionInterFeatureGateways;
@@ -90,6 +92,10 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
             }
 
             public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void {}
+
+            public function saveRecoveryAttempt(ProgressionRunResult $result, ProgressionRecoveryAttemptData $attempt, CarbonImmutable $now): void {}
+
+            public function finishRecoveryAttempt(string $resultId, string $attemptId, string $stage, string $outcome, ?string $failureCode): void {}
 
             public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void {}
 
@@ -179,7 +185,7 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
             new ProgressionRunRepositoryFactory($container),
             $gateways,
             new DeriveProgressionWindowFromPeriod,
-            new ApplyPendingProgressionPlacementsService($gateways, $failures, $evidence),
+            new ApplyPendingProgressionPlacementsService($gateways, $failures, $evidence, app(PrepareProgressionRecoveryService::class)),
             new PrepareProgressionRunService($ladder, $gateways),
             $failures,
             $evidence,

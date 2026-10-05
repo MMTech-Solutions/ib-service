@@ -92,7 +92,7 @@ distribución resultante; no depende de una consulta histórica de red.
 - Ventanas fijas con reinicio de puntos; margen técnico global de una hora
   (`BR-POINTS-019`, `BR-POINTS-020`).
 - Contexto de suscripción, placement y regla por instante de ocurrencia;
-  distribución de red congelada por actividad y ladder capturado al inicio del run y reutilizado en recuperación
+  distribución de red congelada por actividad y ladder original conservado como evidencia; recuperación con umbrales vigentes y puntos conservados
   (`BR-POINTS-015`, `BR-POINTS-036`–`039`).
 - Actividad tardía: evaluación durable sin puntos (`BR-POINTS-021`).
 - Catálogo inicial de motivos de exclusión cerrado (BDS v0.6).
@@ -145,6 +145,10 @@ configuración y suscripción locales, conservación del programa histórico y
 idempotencia de evaluación, run y aplicación. No requiere refactor de PG1/PG2.
 La evidencia conjunta está en el [plan E2E](../rewards/11-e2e-historical-pnl.md#entrega-de-cierre-local-e2e).
 Broker/IAM reales y scheduler compartido se validarán después con ib-labs.
+
+## Refactor de recuperación (2026-10-05)
+
+Implementación local: recuperación con ladder vigente, puntos conservados y auditoría por intento. LAB5 V1 retira `legacy`; ib-labs debe adaptar sus assertions y repetir el gate integrado antes de aceptar la entrega. La validación local no acredita cambios en ese consumidor externo.
 
 ## Próximo paso
 

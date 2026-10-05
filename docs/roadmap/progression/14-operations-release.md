@@ -12,7 +12,7 @@ Estado: **Implementado; pendiente de evidencia de despliegue**
   distribuciones o contribuciones.
 - `progression:recover-runs` recupera resultados `failed` y applications de
   placement pendientes sin abrir ventanas nuevas. `--run=<uuid>` limita la
-  operación a un run concreto.
+  operación a un run concreto. Conserva puntos y captura el ladder vigente una vez por plan y ejecución; no reconstruye datos históricos ausentes.
 
 ## Procedimiento de recuperación
 
@@ -24,7 +24,7 @@ Estado: **Implementado; pendiente de evidencia de despliegue**
 3. Ejecutar `php artisan progression:recover-runs --run=<uuid> --json`; para una
    reconciliación global usar `php artisan progression:recover-runs`.
 4. Verificar que no quedan fallos recuperables ni placements pendientes. Los
-   outcomes `applied`, `unchanged`, `fixed` y `not_active` son terminales.
+   outcomes `applied`, `unchanged`, `fixed` y `not_active` son terminales. Comparar `original_decision` y `recovery_attempts` en las lecturas administrativas. `missing_points_evidence` requiere evidencia histórica; `ladder_unavailable` requiere restaurar un ladder válido y reintentar. Ninguno aplica el objetivo original como fallback.
 
 El contrato CLI versionado y el contexto conservado para reintentos están en
 [LAB5](15-lab5-contract.md). Exit 0 incluye `locked` y omisiones de negocio;

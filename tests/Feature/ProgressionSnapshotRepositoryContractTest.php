@@ -43,12 +43,11 @@ final class ProgressionSnapshotRepositoryContractTest extends TestCase
         $repository = app(ProgressionRunRepositoryFactory::class)->make($driver);
         $window = ProgressionWindow::of($now->subDay()->startOfDay(), $now->startOfDay());
         $run = $repository->findOrCreateRun($plan->id, $window, $now);
-        self::assertFalse($repository->findRun($run->id)->legacy);
         $result = $repository->findOrCreateResult($run->id, $subscriptionId, $now);
         $snapshot = new ProgressionRunSnapshotData(new ProgressionLadderData([['program_id' => $program->id, 'position' => 1, 'entry_threshold' => '0']]),
-            [['subscription_id' => $subscriptionId, 'is_evaluable' => true, 'contribution_ids' => [], 'total_points' => '120']], $now->toISOString(), false);
+            [['subscription_id' => $subscriptionId, 'is_evaluable' => true, 'contribution_ids' => [], 'total_points' => '120']], $now->toISOString());
         $repository->saveSnapshot($run->id, $snapshot);
-        $repository->saveSnapshot($run->id, new ProgressionRunSnapshotData(new ProgressionLadderData([]), [], $now->addDay()->toISOString(), true));
+        $repository->saveSnapshot($run->id, new ProgressionRunSnapshotData(new ProgressionLadderData([]), [], $now->addDay()->toISOString()));
         self::assertEquals($snapshot->toArray(), $repository->snapshot($run->id)->toArray());
         self::assertTrue($repository->hasCapturedWindow($plan->id, $window));
         $repository->prepareDecision($result, ExactDecimal::fromString('120'), $program->id, $now);
@@ -79,7 +78,7 @@ final class ProgressionSnapshotRepositoryContractTest extends TestCase
         $run = $repository->findOrCreateRun($plan->id, ProgressionWindow::of($now->subDay(), $now), $now);
         try {
             $repository->consistentRead(function () use ($repository, $run, $now): void {
-                $repository->saveSnapshot($run->id, new ProgressionRunSnapshotData(new ProgressionLadderData([]), [], $now->toISOString(), false));
+                $repository->saveSnapshot($run->id, new ProgressionRunSnapshotData(new ProgressionLadderData([]), [], $now->toISOString()));
                 throw new \RuntimeException('Rollback.');
             });
             self::fail('Failure must propagate.');

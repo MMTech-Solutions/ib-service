@@ -18,9 +18,8 @@ final class PrepareProgressionRunService
 
     public function execute(ProgressionRunRepositoryInterface $repository, ProgressionRun $run, CarbonImmutable $now): ProgressionRunSnapshotData
     {
-        $legacy = $run->legacy;
 
-        return $repository->snapshot($run->id) ?? $repository->consistentRead(function () use ($repository, $run, $now, $legacy): ProgressionRunSnapshotData {
+        return $repository->snapshot($run->id) ?? $repository->consistentRead(function () use ($repository, $run, $now): ProgressionRunSnapshotData {
             $existing = $repository->snapshot($run->id);
             if ($existing !== null) {
                 return $existing;
@@ -36,18 +35,7 @@ final class PrepareProgressionRunService
                 ];
                 $repository->findOrCreateResult($run->id, $subscription->subscription_id, $now);
             }
-            $snapshot = new ProgressionRunSnapshotData($ladder, $participants, $now->toISOString(), $legacy);
-            if ($legacy) {
-                $known = array_column($participants, 'subscription_id');
-                foreach ($repository->failedResults($run->id) as $retry) {
-                    if (! in_array($retry->result->subscriptionId, $known, true)) {
-                        $participants[] = ['subscription_id' => $retry->result->subscriptionId, 'is_evaluable' => true,
-                            'contribution_ids' => $repository->contributionIds($run->planId, $retry->result->subscriptionId, $run->window),
-                            'total_points' => $repository->sumAcceptedContributionPoints($run->planId, $retry->result->subscriptionId, $run->window)->value()];
-                    }
-                }
-                $snapshot = new ProgressionRunSnapshotData($ladder, $participants, $now->toISOString(), true);
-            }
+            $snapshot = new ProgressionRunSnapshotData($ladder, $participants, $now->toISOString());
             $repository->saveSnapshot($run->id, $snapshot);
 
             return $snapshot;

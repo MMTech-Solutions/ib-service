@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Progression\Repositories\InMemory;
 
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
+use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
@@ -67,6 +68,33 @@ final class InMemoryProgressionRunRepository implements ProgressionRunRepository
         }
     }
 
+    /** @var array<string, list<array<string, mixed>>> */
+    private array $recoveryAttempts = [];
+
+    public function saveRecoveryAttempt(ProgressionRunResult $result, ProgressionRecoveryAttemptData $attempt, CarbonImmutable $now): void
+    {
+        $current = $this->results[$result->runId.'|'.$result->subscriptionId];
+        if ($current->status === ProgressionRunResultStatus::Skipped || isset($this->placementApplications[$result->id])) {
+            throw new \LogicException('Result is terminal.');
+        }
+        $this->recoveryAttempts[$result->id][] = $attempt->toArray();
+        if ($attempt->total_points !== null) {
+            $this->results[$result->runId.'|'.$result->subscriptionId] = new ProgressionRunResult($current->id, $current->runId, $current->subscriptionId, $current->status, $current->totalPoints ?? ExactDecimal::fromString($attempt->total_points), $attempt->target_program_id ?? $current->targetProgramId, $current->attemptCount);
+        }
+    }
+
+    public function finishRecoveryAttempt(string $resultId, string $attemptId, string $stage, string $outcome, ?string $failureCode): void
+    {
+        foreach ($this->recoveryAttempts[$resultId] as &$attempt) {
+            if ($attempt['id'] === $attemptId) {
+                $attempt['stage'] = $stage;
+                $attempt['outcome'] = $outcome;
+                $attempt['failure_code'] = $failureCode;
+            }
+        }
+        unset($attempt);
+    }
+
     public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void {}
 
     /** @var array<string, ProgressionRun> */
@@ -80,11 +108,11 @@ final class InMemoryProgressionRunRepository implements ProgressionRunRepository
 
     public function transaction(Closure $callback): mixed
     {
-        $before = [$this->runs, $this->results, $this->placementApplications, $this->snapshots];
+        $before = [$this->runs, $this->results, $this->placementApplications, $this->snapshots, $this->recoveryAttempts];
         try {
             return $callback();
         } catch (\Throwable $error) {
-            [$this->runs, $this->results, $this->placementApplications, $this->snapshots] = $before;
+            [$this->runs, $this->results, $this->placementApplications, $this->snapshots, $this->recoveryAttempts] = $before;
             throw $error;
         }
     }
@@ -132,7 +160,8 @@ final class InMemoryProgressionRunRepository implements ProgressionRunRepository
 
     public function markSkipped(ProgressionRunResult $result, CarbonImmutable $now): void
     {
-        $this->replaceResult($result, ProgressionRunResultStatus::Skipped, ExactDecimal::fromString('0'), null, $result->attemptCount + 1);
+        $current = $this->results[$result->runId.'|'.$result->subscriptionId] ?? $result;
+        $this->replaceResult($current, ProgressionRunResultStatus::Skipped, $current->totalPoints ?? ExactDecimal::fromString('0'), null, $current->attemptCount + 1);
     }
 
     public function markCompleted(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void

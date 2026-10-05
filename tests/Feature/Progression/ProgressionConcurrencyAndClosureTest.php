@@ -330,11 +330,11 @@ final class ProgressionConcurrencyAndClosureTest extends TestCase
         ]);
         $repository->markFailed($result, 'retryable_failure', $now);
 
-        DB::table('progression_runs')->where('id', $run->id)->update(['snapshot_generation' => 0]);
+        $repository->prepareDecision($result, ExactDecimal::fromString('0'), $this->programId, $now);
         $recovered = app(RecoverProgressionRunsUseCase::class)->execute($run->id, $now->addMinute());
 
         self::assertSame(1, $recovered->results_recovered);
-        self::assertTrue($repository->snapshot($run->id)->legacy);
+        self::assertNull($repository->snapshot($run->id));
         self::assertSame(0, $recovered->results_failed);
         self::assertSame('completed', DB::table('progression_runs')->where('id', $run->id)->value('status'));
         self::assertSame('completed', DB::table('progression_run_results')->where('id', $result->id)->value('status'));

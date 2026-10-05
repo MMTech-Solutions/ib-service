@@ -6,6 +6,7 @@ namespace App\Features\Progression\Repositories\PostgreSql;
 
 use App\Features\Programs\Contracts\Data\V1\ProgressionLadderData;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
+use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Enums\ProgressionRunResultStatus;
 use App\Features\Progression\Enums\ProgressionRunStatus;
@@ -44,7 +45,7 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
         }
         $data = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
 
-        return new ProgressionRunSnapshotData(new ProgressionLadderData($data['ladder']['programs']), $data['participants'], $data['captured_at'], $data['legacy']);
+        return new ProgressionRunSnapshotData(new ProgressionLadderData($data['ladder']['programs']), $data['participants'], $data['captured_at']);
     }
 
     public function saveSnapshot(string $runId, ProgressionRunSnapshotData $snapshot): void
@@ -75,9 +76,47 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
     public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void
     {
         $this->connection->table('progression_run_results')->where('id', $result->id)->where('status', 'failed')->whereNull('decision_at')->update([
+            'original_decision' => json_encode(['total_points' => $points->value(), 'target_program_id' => $targetProgramId, 'decision_at' => $now->toISOString()], JSON_THROW_ON_ERROR),
             'total_points' => $points->value(), 'target_program_id' => $targetProgramId, 'decision_at' => $now,
             'updated_at' => $now,
         ]);
+    }
+
+    public function saveRecoveryAttempt(ProgressionRunResult $result, ProgressionRecoveryAttemptData $attempt, CarbonImmutable $now): void
+    {
+        $this->transaction(function () use ($result, $attempt, $now): void {
+            $row = $this->connection->table('progression_run_results')->where('id', $result->id)->lockForUpdate()->first();
+            if ($row === null || $row->status === 'skipped' || $this->connection->table('progression_placement_applications')->where('run_result_id', $result->id)->exists()) {
+                throw new \LogicException('Result is terminal.');
+            }
+            $attempts = $row->recovery_attempts === null ? [] : json_decode($row->recovery_attempts, true, flags: JSON_THROW_ON_ERROR);
+            $attempts[] = $attempt->toArray();
+            $changes = ['recovery_attempts' => json_encode($attempts, JSON_THROW_ON_ERROR), 'updated_at' => $now];
+            if ($row->total_points === null && $attempt->total_points !== null) {
+                $changes['total_points'] = $attempt->total_points;
+            }
+            if ($attempt->target_program_id !== null) {
+                $changes += ['total_points' => $row->total_points ?? $attempt->total_points, 'target_program_id' => $attempt->target_program_id, 'decision_at' => $now];
+            }
+            $this->connection->table('progression_run_results')->where('id', $result->id)->update($changes);
+        });
+    }
+
+    public function finishRecoveryAttempt(string $resultId, string $attemptId, string $stage, string $outcome, ?string $failureCode): void
+    {
+        $this->transaction(function () use ($resultId, $attemptId, $stage, $outcome, $failureCode): void {
+            $row = $this->connection->table('progression_run_results')->where('id', $resultId)->lockForUpdate()->first();
+            $attempts = json_decode($row->recovery_attempts ?? '[]', true, flags: JSON_THROW_ON_ERROR);
+            foreach ($attempts as &$attempt) {
+                if ($attempt['id'] === $attemptId) {
+                    $attempt['stage'] = $stage;
+                    $attempt['outcome'] = $outcome;
+                    $attempt['failure_code'] = $failureCode;
+                }
+            }
+            unset($attempt);
+            $this->connection->table('progression_run_results')->where('id', $resultId)->update(['recovery_attempts' => json_encode($attempts, JSON_THROW_ON_ERROR)]);
+        });
     }
 
     public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void
@@ -254,8 +293,10 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
             if ($stored === null) {
                 return;
             }
-            if ($stored->decision_at !== null && $status === ProgressionRunResultStatus::Completed) {
+            if ($stored->total_points !== null) {
                 $points = ExactDecimal::fromString((string) $stored->total_points);
+            }
+            if ($stored->decision_at !== null && $status === ProgressionRunResultStatus::Completed) {
                 $targetProgramId = (string) $stored->target_program_id;
             }
             $stored->update([
@@ -268,7 +309,7 @@ final class PostgreSqlProgressionRunRepository implements ProgressionRunReposito
 
     private function run(ProgressionRunRecord $record): ProgressionRun
     {
-        return new ProgressionRun((string) $record->id, (string) $record->plan_id, ProgressionWindow::of($record->window_starts_at, $record->window_ends_at), ProgressionRunStatus::from((string) $record->status), $record->started_at, $record->completed_at, (int) $record->snapshot_generation === 0);
+        return new ProgressionRun((string) $record->id, (string) $record->plan_id, ProgressionWindow::of($record->window_starts_at, $record->window_ends_at), ProgressionRunStatus::from((string) $record->status), $record->started_at, $record->completed_at);
     }
 
     private function result(ProgressionRunResultRecord $record): ProgressionRunResult

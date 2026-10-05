@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Contracts\Repositories;
 
+use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Models\ProgressionRun;
 use App\Features\Progression\Models\ProgressionRunResult;
@@ -31,6 +32,10 @@ interface ProgressionRunRepositoryInterface
     public function consistentRead(Closure $callback): mixed;
 
     public function prepareDecision(ProgressionRunResult $result, ExactDecimal $points, string $targetProgramId, CarbonImmutable $now): void;
+
+    public function saveRecoveryAttempt(ProgressionRunResult $result, ProgressionRecoveryAttemptData $attempt, CarbonImmutable $now): void;
+
+    public function finishRecoveryAttempt(string $resultId, string $attemptId, string $stage, string $outcome, ?string $failureCode): void;
 
     public function recordPlacementFailure(string $resultId, CarbonImmutable $now): void;
 

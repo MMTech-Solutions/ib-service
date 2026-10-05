@@ -4151,7 +4151,7 @@
                                         "{{PROGRESSION_RUN_ID}}"
                                     ]
                                 },
-                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. snapshot preserves the original ladder and participants; the retired legacy property is not returned. No customer surface."
                             },
                             "response": []
                         },
@@ -4216,9 +4216,20 @@
                                         }
                                     ]
                                 },
-                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. Includes original_decision and recovery_attempts. Recovery preserves points and uses current thresholds; all attempts remain auditable. No customer surface."
                             },
-                            "response": []
+                            "response": [{
+  "name": "Recovery audit",
+  "code": 200,
+  "header": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "body": "{\r\n  \"success\": true,\r\n  \"data\": [\r\n    {\r\n      \"id\": \"00000000-0000-4000-8000-000000000013\",\r\n      \"run_id\": \"00000000-0000-4000-8000-000000000012\",\r\n      \"subscription_id\": \"00000000-0000-4000-8000-000000000023\",\r\n      \"status\": \"completed\",\r\n      \"total_points\": \"120.00000000\",\r\n      \"target_program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n      \"attempt_count\": 2,\r\n      \"failure_code\": null,\r\n      \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n      \"completed_at\": \"2026-09-11T01:00:00Z\",\r\n      \"is_evaluable\": true,\r\n      \"omission_reason\": null,\r\n      \"placement\": {\r\n        \"status\": \"completed\",\r\n        \"outcome\": \"unchanged\",\r\n        \"failure_code\": null,\r\n        \"attempt_count\": 1,\r\n        \"last_attempt_at\": \"2026-09-11T01:00:00Z\",\r\n        \"applied_at\": \"2026-09-11T01:00:00Z\"\r\n      },\r\n      \"original_decision\": {\r\n        \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n        \"total_points\": \"120\",\r\n        \"target_program_id\": \"00000000-0000-4000-8000-000000000022\"\r\n      },\r\n      \"recovery_attempts\": [\r\n        {\r\n          \"id\": \"00000000-0000-4000-8000-000000000027\",\r\n          \"stage\": \"placement\",\r\n          \"ladder\": {\r\n            \"programs\": [\r\n              {\r\n                \"position\": 1,\r\n                \"program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n                \"entry_threshold\": \"0\"\r\n              },\r\n              {\r\n                \"position\": 2,\r\n                \"program_id\": \"00000000-0000-4000-8000-000000000022\",\r\n                \"entry_threshold\": \"150\"\r\n              }\r\n            ]\r\n          },\r\n          \"outcome\": \"unchanged\",\r\n          \"attempted_at\": \"2026-09-11T01:00:00Z\",\r\n          \"failure_code\": null,\r\n          \"total_points\": \"120\",\r\n          \"target_program_id\": \"00000000-0000-4000-8000-000000000021\"\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"id\": \"00000000-0000-4000-8000-000000000014\",\r\n      \"run_id\": \"00000000-0000-4000-8000-000000000012\",\r\n      \"subscription_id\": \"00000000-0000-4000-8000-000000000025\",\r\n      \"status\": \"completed\",\r\n      \"total_points\": \"120.00000000\",\r\n      \"target_program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n      \"attempt_count\": 1,\r\n      \"failure_code\": null,\r\n      \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n      \"completed_at\": \"2026-09-11T01:00:00Z\",\r\n      \"is_evaluable\": true,\r\n      \"omission_reason\": null,\r\n      \"placement\": {\r\n        \"status\": \"completed\",\r\n        \"outcome\": \"unchanged\",\r\n        \"failure_code\": null,\r\n        \"attempt_count\": 2,\r\n        \"last_attempt_at\": \"2026-09-11T01:00:00Z\",\r\n        \"applied_at\": \"2026-09-11T01:00:00Z\"\r\n      },\r\n      \"original_decision\": {\r\n        \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n        \"total_points\": \"120\",\r\n        \"target_program_id\": \"00000000-0000-4000-8000-000000000022\"\r\n      },\r\n      \"recovery_attempts\": [\r\n        {\r\n          \"id\": \"00000000-0000-4000-8000-000000000028\",\r\n          \"stage\": \"placement\",\r\n          \"ladder\": {\r\n            \"programs\": [\r\n              {\r\n                \"position\": 1,\r\n                \"program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n                \"entry_threshold\": \"0\"\r\n              },\r\n              {\r\n                \"position\": 2,\r\n                \"program_id\": \"00000000-0000-4000-8000-000000000022\",\r\n                \"entry_threshold\": \"150\"\r\n              }\r\n            ]\r\n          },\r\n          \"outcome\": \"unchanged\",\r\n          \"attempted_at\": \"2026-09-11T01:00:00Z\",\r\n          \"failure_code\": null,\r\n          \"total_points\": \"120\",\r\n          \"target_program_id\": \"00000000-0000-4000-8000-000000000021\"\r\n        }\r\n      ]\r\n    }\r\n  ],\r\n  \"meta\": {\r\n    \"filters\": [],\r\n    \"message\": \"Progression artifacts retrieved.\",\r\n    \"pagination\": {\r\n      \"current_page\": 1,\r\n      \"per_page\": 100,\r\n      \"total\": 2,\r\n      \"last_page\": 1\r\n    }\r\n  }\r\n}",
+  "status": "OK"
+}]
                         },
                         {
                             "name": "Show progression result",
@@ -4256,9 +4267,20 @@
                                         "{{PROGRESSION_RESULT_ID}}"
                                     ]
                                 },
-                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. No customer surface."
+                                "description": "Requires ib.progression.read on admin_panel via gateway headers. data is the direct resource or item array; pagination and filters are in meta. Decimal points are strings. Includes original_decision and recovery_attempts. Recovery preserves points and uses current thresholds; all attempts remain auditable. No customer surface."
                             },
-                            "response": []
+                            "response": [{
+  "name": "Recovery audit",
+  "code": 200,
+  "header": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "body": "{\r\n  \"success\": true,\r\n  \"data\": {\r\n    \"id\": \"00000000-0000-4000-8000-000000000013\",\r\n    \"run_id\": \"00000000-0000-4000-8000-000000000012\",\r\n    \"subscription_id\": \"00000000-0000-4000-8000-000000000023\",\r\n    \"status\": \"completed\",\r\n    \"total_points\": \"120.00000000\",\r\n    \"target_program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n    \"attempt_count\": 2,\r\n    \"failure_code\": null,\r\n    \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n    \"completed_at\": \"2026-09-11T01:00:00Z\",\r\n    \"is_evaluable\": true,\r\n    \"omission_reason\": null,\r\n    \"placement\": {\r\n      \"status\": \"completed\",\r\n      \"outcome\": \"unchanged\",\r\n      \"failure_code\": null,\r\n      \"attempt_count\": 1,\r\n      \"last_attempt_at\": \"2026-09-11T01:00:00Z\",\r\n      \"applied_at\": \"2026-09-11T01:00:00Z\"\r\n    },\r\n    \"original_decision\": {\r\n      \"decision_at\": \"2026-09-11T01:00:00Z\",\r\n      \"total_points\": \"120\",\r\n      \"target_program_id\": \"00000000-0000-4000-8000-000000000022\"\r\n    },\r\n    \"recovery_attempts\": [\r\n      {\r\n        \"id\": \"00000000-0000-4000-8000-000000000027\",\r\n        \"stage\": \"placement\",\r\n        \"ladder\": {\r\n          \"programs\": [\r\n            {\r\n              \"position\": 1,\r\n              \"program_id\": \"00000000-0000-4000-8000-000000000021\",\r\n              \"entry_threshold\": \"0\"\r\n            },\r\n            {\r\n              \"position\": 2,\r\n              \"program_id\": \"00000000-0000-4000-8000-000000000022\",\r\n              \"entry_threshold\": \"150\"\r\n            }\r\n          ]\r\n        },\r\n        \"outcome\": \"unchanged\",\r\n        \"attempted_at\": \"2026-09-11T01:00:00Z\",\r\n        \"failure_code\": null,\r\n        \"total_points\": \"120\",\r\n        \"target_program_id\": \"00000000-0000-4000-8000-000000000021\"\r\n      }\r\n    ]\r\n  },\r\n  \"meta\": {\r\n    \"message\": \"Progression artifact retrieved.\"\r\n  }\r\n}",
+  "status": "OK"
+}]
                         }
                     ]
                 },
