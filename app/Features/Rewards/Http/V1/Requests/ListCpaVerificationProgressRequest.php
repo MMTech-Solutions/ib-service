@@ -27,7 +27,7 @@ final class ListCpaVerificationProgressRequest extends FormRequest
         return [
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
-            'status' => ['sometimes', 'string', Rule::in(['pending', 'qualified', 'error'])],
+            'status' => ['sometimes', 'string', Rule::in(['pending', 'qualified', 'error', 'expired'])],
             'ib_user_id' => $administrative ? ['sometimes', 'uuid'] : ['prohibited'],
             'referred_user_id' => $administrative ? ['sometimes', 'uuid'] : ['prohibited'],
             'program_id' => $administrative ? ['sometimes', 'uuid'] : ['prohibited'],

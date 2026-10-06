@@ -20,6 +20,7 @@ final class CpaVerificationProgressData extends Data
         public readonly string $program_id, public readonly string $cpa_assignment_id,
         public readonly string $rule_id, public readonly string $rule_version_id,
         public readonly ?string $reward_id, public readonly ?string $last_error_code,
+        public readonly ?string $expiration_reason,
         public readonly ?string $reward_financial_status, public readonly ?string $reward_reconciliation_hold_code,
     ) {}
 }

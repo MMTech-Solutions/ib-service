@@ -149,7 +149,14 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function listCpaContextsWithoutReward(int $limit): array
     {
-        return $this->connection->table('cpa_contexts')->whereNull('reward_id')->orderBy('captured_at')->limit($limit)->get()->all();
+        return $this->connection->table('cpa_contexts')
+            ->join('cpa_verification_progress', 'cpa_verification_progress.cpa_context_id', '=', 'cpa_contexts.id')
+            ->whereNull('cpa_contexts.reward_id')
+            ->where('cpa_verification_progress.status', '!=', 'expired')
+            ->orderBy('cpa_contexts.captured_at')
+            ->limit($limit)
+            ->get(['cpa_contexts.*'])
+            ->all();
     }
 
     public function listCpaSources(string $contextId): array
@@ -198,12 +205,38 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             ->update(['status' => $status, 'last_error_code' => $errorCode, 'last_evaluated_at' => $at]);
     }
 
+    public function expireCpaContext(object $context, string $reason, CarbonImmutable $at): bool
+    {
+        return $this->connection->transaction(function () use ($context, $reason, $at): bool {
+            $locked = $this->connection->table('cpa_contexts')->where('id', $context->id)->lockForUpdate()->first();
+            if ($locked === null || $locked->reward_id !== null) {
+                return false;
+            }
+            $progress = $this->connection->table('cpa_verification_progress')->where('cpa_context_id', $context->id)->lockForUpdate()->first();
+            if ($progress === null || in_array($progress->status, ['expired', 'qualified'], true)) {
+                return false;
+            }
+            $this->connection->table('cpa_verification_progress')->where('cpa_context_id', $context->id)->update([
+                'status' => 'expired',
+                'expiration_reason' => $reason,
+                'last_evaluated_at' => $at,
+                'updated_at' => $at,
+            ]);
+
+            return true;
+        });
+    }
+
     public function completeCpaVerification(object $context, CarbonImmutable $at): string
     {
         return $this->connection->transaction(function () use ($context, $at): string {
             $locked = $this->connection->table('cpa_contexts')->where('id', $context->id)->lockForUpdate()->first();
             if ($locked->reward_id !== null) {
                 return 'already_qualified';
+            }
+            $progress = $this->connection->table('cpa_verification_progress')->where('cpa_context_id', $context->id)->lockForUpdate()->first();
+            if ($progress !== null && $progress->status === 'expired') {
+                return 'expired';
             }
             $configuration = json_decode($locked->requirements_snapshot, true, 512, JSON_THROW_ON_ERROR);
             $totals = [];

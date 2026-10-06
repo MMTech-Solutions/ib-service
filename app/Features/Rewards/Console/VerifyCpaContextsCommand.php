@@ -10,7 +10,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('rewards:verify-cpa {--limit= : Maximum CPA contexts to evaluate}')]
-#[Description('Verify pending CPA contexts and create qualified pending rewards')]
+#[Description('Verify pending CPA contexts, expire overdue ones, and create qualified pending rewards')]
 final class VerifyCpaContextsCommand extends Command
 {
     public function __construct(private readonly VerifyCpaContextsUseCase $useCase)

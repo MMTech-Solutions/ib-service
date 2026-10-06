@@ -25,6 +25,10 @@ return [
     'cpa' => [
         'batch_size' => (int) env('REWARDS_CPA_BATCH_SIZE', 100),
     ],
+    'events' => [
+        'topic' => env('REWARDS_EVENTS_TOPIC', 'ib-service.events.v1'),
+        'source' => env('REWARDS_EVENTS_SOURCE', env('APP_NAME', 'ib-service')),
+    ],
     'settlement' => [
         'batch_size' => (int) env('REWARDS_SETTLEMENT_BATCH_SIZE', 100),
         'retry_delay_seconds' => (int) env('REWARDS_SETTLEMENT_RETRY_DELAY_SECONDS', 300),

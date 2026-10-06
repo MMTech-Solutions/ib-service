@@ -27,7 +27,7 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
             ->when($query->module_id !== null, fn ($q) => $q->whereExists(fn ($s) => $s->selectRaw('1')->from('cpa_sources')->whereColumn('cpa_sources.cpa_context_id', 'contexts.id')->where('cpa_sources.module_id', $query->module_id)))
             ->when($query->status !== null, fn ($q) => $q->where('progress.status', $query->status))
             ->orderByDesc('contexts.captured_at')->orderByDesc('contexts.id')
-            ->paginate($query->per_page, ['contexts.*', 'progress.status', 'progress.observed_volume_points', 'progress.observed_deposit_points', 'progress.observed_deposit_minor', 'progress.volume_satisfied', 'progress.deposit_satisfied', 'progress.observed_from', 'progress.last_evaluated_at', 'progress.last_error_code', 'rewards.status as reward_financial_status', 'rewards.reconciliation_hold_code as reward_reconciliation_hold_code'], 'page', $query->page);
+            ->paginate($query->per_page, ['contexts.*', 'progress.status', 'progress.observed_volume_points', 'progress.observed_deposit_points', 'progress.observed_deposit_minor', 'progress.volume_satisfied', 'progress.deposit_satisfied', 'progress.observed_from', 'progress.last_evaluated_at', 'progress.last_error_code', 'progress.expiration_reason', 'rewards.status as reward_financial_status', 'rewards.reconciliation_hold_code as reward_reconciliation_hold_code'], 'page', $query->page);
         $ids = array_map(static fn (object $row): string => $row->id, $paginator->items());
         $sources = $this->connection->table('cpa_sources')->whereIn('cpa_context_id', $ids)->orderBy('source_key')->get();
         $totals = $this->connection->table('cpa_contributions')->whereIn('cpa_context_id', $ids)->groupBy('cpa_source_id')->selectRaw('cpa_source_id, SUM(quantity) as quantity, SUM(points) as points')->get()->keyBy('cpa_source_id');
@@ -44,7 +44,7 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
                 $row->observed_deposit_points, $configuration['required_deposit_points'], (int) $row->observed_deposit_minor, $configuration['deposit_currency'], $configuration['deposit_currency_precision'],
                 (bool) $row->volume_satisfied, (bool) $row->deposit_satisfied, $this->timestamp($row->observed_from), $this->timestamp($row->last_evaluated_at),
                 $sourceData, $row->ib_user_id, $row->plan_id, $row->program_id, $row->cpa_assignment_id, $row->rule_id, $row->rule_version_id,
-                $row->reward_id, $row->last_error_code, $row->reward_financial_status, $row->reward_reconciliation_hold_code,
+                $row->reward_id, $row->last_error_code, $row->expiration_reason, $row->reward_financial_status, $row->reward_reconciliation_hold_code,
             );
         }
 

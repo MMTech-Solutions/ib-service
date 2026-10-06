@@ -6,7 +6,8 @@ Estado: implementación local completada; aceptación S2S pendiente.
 ## Decisiones confirmadas
 
 - Sustituir el modelo de requisitos en cantidades por dos umbrales de puntos independientes, ambos obligatorios.
-- Política versionada cpa_fixed_amount: importe/moneda/precisión de pago, moneda/precisión de depósito independientes, tasa común de depósito y tasas por módulo para lotes.
+- Política versionada cpa_fixed_amount: importe/moneda/precisión de pago, moneda/precisión de depósito independientes, tasa común de depósito, tasas por módulo para lotes y `expiration_days` (≥ 1).
+- El contexto CPA expira cuando los días de calendario desde la captura superan `expiration_days`; el progreso pasa a `expired` con razón `waiting_period_exceeded` y `rewards:verify-cpa` aplica esa regla antes de calificar.
 - El IB beneficiario determina el programa al capturar; referido + IB sigue siendo la identidad única.
 - La asociación histórica CPA pertenece al programa y se configura por HTTP sin asignación genérica a un módulo único.
 - Los puntos se calculan al aceptar cada entrada; actividad real, tasa, puntos, proveedor e intervalo verificado permanecen auditables antes de calificar.

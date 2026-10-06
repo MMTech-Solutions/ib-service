@@ -39,4 +39,20 @@ final class CpaFixedAmountStrategyTest extends TestCase
         $this->expectException(InvalidRuleConfigurationException::class);
         (new CpaFixedAmountStrategy)->validate(1, $configuration);
     }
+
+    public function test_rejects_expiration_days_below_one(): void
+    {
+        $configuration = $this->cpaConfiguration(['00000000-0000-4000-8000-000000000001']);
+        $configuration['expiration_days'] = 0;
+        $this->expectException(InvalidRuleConfigurationException::class);
+        (new CpaFixedAmountStrategy)->validate(1, $configuration);
+    }
+
+    public function test_rejects_missing_expiration_days(): void
+    {
+        $configuration = $this->cpaConfiguration(['00000000-0000-4000-8000-000000000001']);
+        unset($configuration['expiration_days']);
+        $this->expectException(InvalidRuleConfigurationException::class);
+        (new CpaFixedAmountStrategy)->validate(1, $configuration);
+    }
 }

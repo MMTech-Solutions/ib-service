@@ -24,6 +24,7 @@ trait CpaFixtures
         return ['amount' => '25.00', 'currency' => 'EUR', 'currency_precision' => 2,
             'required_volume_points' => '100', 'required_deposit_points' => '100',
             'deposit_currency' => 'USD', 'deposit_currency_precision' => 2, 'deposit_points_per_unit' => '0.2',
+            'expiration_days' => 365,
             'volume_modules' => array_map(static fn (string $id, int $index): array => ['module_id' => $id, 'unit' => 'lot', 'points_per_unit' => $index === 0 ? '20' : '60'], $ids, array_keys($ids))];
     }
 

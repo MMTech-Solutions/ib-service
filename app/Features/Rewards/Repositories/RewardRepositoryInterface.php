@@ -37,6 +37,8 @@ interface RewardRepositoryInterface
 
     public function completeCpaVerification(object $context, CarbonImmutable $at): string;
 
+    public function expireCpaContext(object $context, string $reason, CarbonImmutable $at): bool;
+
     /** @param list<string> $excludedIds */
     public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt, array $excludedIds = []): ?object;
 

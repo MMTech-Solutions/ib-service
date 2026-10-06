@@ -11,26 +11,57 @@ use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryExc
 use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
+use App\Features\Rewards\Contracts\Events\V1\CpaContextExpired;
 use App\Features\Rewards\DTOs\CpaRewardCalculationInputData;
 use App\Features\Rewards\Exceptions\CpaEvidenceContractException;
 use App\Features\Rewards\Factories\CpaRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\SharedFeatures\Clock\DomainClock;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 use Throwable;
 
 final class VerifyCpaContextsUseCase
 {
+    public const EXPIRATION_REASON = 'waiting_period_exceeded';
+
     public function __construct(private readonly RewardRepositoryFactory $repositoryFactory, private readonly ResolveModulesPort $modules, private readonly ListCpaEvidencePort $evidence, private readonly ListCertifiedDepositsPort $deposits, private readonly CpaRewardCalculationStrategyFactory $calculations) {}
 
-    /** @return array{evaluated:int,qualified:int,errored:int,skipped:int} */
+    /** @return array{evaluated:int,qualified:int,errored:int,skipped:int,expired:int} */
     public function execute(int $limit): array
     {
         $cutoff = app(DomainClock::class)->now();
         $repository = $this->repositoryFactory->make();
-        $result = ['evaluated' => 0, 'qualified' => 0, 'errored' => 0, 'skipped' => 0];
+        $result = ['evaluated' => 0, 'qualified' => 0, 'errored' => 0, 'skipped' => 0, 'expired' => 0];
         foreach ($repository->listCpaContextsWithoutReward($limit) as $context) {
             $configuration = json_decode($context->requirements_snapshot, true, 512, JSON_THROW_ON_ERROR);
+            $expirationDays = (int) ($configuration['expiration_days'] ?? 0);
+            $capturedAt = CarbonImmutable::parse($context->captured_at)->utc();
+            $daysElapsed = $this->calendarDaysElapsed($capturedAt, $cutoff);
+            if ($expirationDays >= 1 && $daysElapsed > $expirationDays) {
+                if ($repository->expireCpaContext($context, self::EXPIRATION_REASON, $cutoff)) {
+                    event(new CpaContextExpired(
+                        (string) Str::uuid7(),
+                        $context->id,
+                        $context->referred_user_id,
+                        $context->ib_user_id,
+                        $context->plan_id,
+                        $context->program_id,
+                        $context->rule_id,
+                        $context->rule_version_id,
+                        $capturedAt->toIso8601String(),
+                        $expirationDays,
+                        $daysElapsed,
+                        self::EXPIRATION_REASON,
+                        $cutoff->toIso8601String(),
+                    ));
+                    $result['expired']++;
+                } else {
+                    $result['skipped']++;
+                }
+
+                continue;
+            }
             foreach ($repository->listCpaSources($context->id) as $source) {
                 try {
                     if (($source->last_error_code ?? null) === 'evidence_contract_invalid') {
@@ -86,7 +117,7 @@ final class VerifyCpaContextsUseCase
             try {
                 $status = $repository->completeCpaVerification($context, $cutoff);
                 $result[match ($status) {
-                    'qualified' => 'qualified', 'already_qualified' => 'skipped', 'error' => 'errored', default => 'evaluated'
+                    'qualified' => 'qualified', 'already_qualified' => 'skipped', 'error' => 'errored', 'expired' => 'expired', default => 'evaluated'
                 }]++;
             } catch (Throwable) {
                 $result['errored']++;
@@ -94,5 +125,10 @@ final class VerifyCpaContextsUseCase
         }
 
         return $result;
+    }
+
+    private function calendarDaysElapsed(CarbonImmutable $capturedAt, CarbonImmutable $now): int
+    {
+        return (int) $capturedAt->utc()->startOfDay()->diffInDays($now->utc()->startOfDay());
     }
 }

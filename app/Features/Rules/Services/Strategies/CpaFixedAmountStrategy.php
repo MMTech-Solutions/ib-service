@@ -32,6 +32,7 @@ final class CpaFixedAmountStrategy implements RuleStrategyDefinitionInterface
             'required_volume_points' => $decimal, 'required_deposit_points' => $decimal,
             'deposit_currency' => $currency, 'deposit_currency_precision' => $precision,
             'deposit_points_per_unit' => $decimal,
+            'expiration_days' => ['type' => 'integer', 'minimum' => 1],
             'volume_modules' => ['type' => 'array', 'minItems' => 1, 'maxItems' => 100, 'items' => [
                 'type' => 'object', 'additionalProperties' => false,
                 'required' => ['module_id', 'unit', 'points_per_unit'],
@@ -51,6 +52,9 @@ final class CpaFixedAmountStrategy implements RuleStrategyDefinitionInterface
         sort($expected);
         if ($schemaVersion !== 1 || $keys !== $expected) {
             $this->invalid('Payment, independent point thresholds and conversions are required.');
+        }
+        if (! is_int($configuration['expiration_days']) || $configuration['expiration_days'] < 1) {
+            $this->invalid('Expiration days must be an integer of at least one.');
         }
         foreach (['amount', 'required_volume_points', 'required_deposit_points', 'deposit_points_per_unit'] as $field) {
             $this->positiveDecimal($configuration[$field]);

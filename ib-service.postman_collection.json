@@ -4615,7 +4615,7 @@
                                         {
                                             "key": "status",
                                             "value": "pending",
-                                            "description": "Filter by pending, qualified or error.",
+                                            "description": "Filter by pending, qualified, error or expired.",
                                             "disabled": true
                                         }
                                     ]
@@ -5556,7 +5556,7 @@
                                         {
                                             "key": "status",
                                             "value": "pending",
-                                            "description": "Filter by pending, qualified or error.",
+                                            "description": "Filter by pending, qualified, error or expired.",
                                             "disabled": true
                                         }
                                     ]

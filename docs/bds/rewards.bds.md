@@ -127,7 +127,7 @@ erDiagram
 | BR-CPA-008 | Los depósitos certificados de Finance se miden desde la captura en una única moneda y precisión configuradas, independientes de la moneda del pago. Una tasa común convierte cada unidad monetaria mayor a puntos de depósito; no existe conversión de moneda ni atribución del mismo depósito a varios módulos. |
 | BR-CPA-009 | Cada módulo configura una tasa positiva de puntos por lote. Solo su volumen cerrado desde la captura, dentro del snapshot de símbolos y grupos, aporta puntos de volumen. Se conservan cantidades reales y unidades. |
 | BR-CPA-010 | Los puntos CPA pertenecen a la adquisición y son independientes de Progression: no mueven placement, no consumen sus puntos ni aplican sus ponderaciones, ventanas o profundidad de red. |
-| BR-CPA-011 | Un contexto CPA tiene un único progreso observable: pending, qualified o error. Un fallo técnico por fuente conserva sus aportes y no bloquea las restantes. Si los dos umbrales se cumplen con aportes verificados, el contexto califica aunque alguna fuente no esté disponible. |
+| BR-CPA-011 | Un contexto CPA tiene un único progreso observable: pending, qualified, error o expired. Un fallo técnico por fuente conserva sus aportes y no bloquea las restantes. Si los dos umbrales se cumplen con aportes verificados y el contexto no ha expirado, el contexto califica aunque alguna fuente no esté disponible. Un contexto `expired` es terminal y no puede originar una Reward. |
 | BR-CPA-012 | Cada fuente conserva su último corte confirmado y su estado. Solo una consulta completa y persistida permite avanzar ese corte. La verificación conserva todas las entradas nuevas aceptadas, sin exigir un snapshot del total por ejecución. |
 | BR-CPA-013 | Cuando todos los requisitos acumulativos se satisfacen, el contexto puede originar una única recompensa `pending`; la relación a esa recompensa pertenece al contexto CPA, no al progreso de verificación. |
 | BR-CPA-014 | El proveedor de actividad entrega evidencia normalizada y Finance certifica depósitos; ninguno decide elegibilidad CPA, importe, beneficiario, recompensa ni settlement. |
@@ -147,15 +147,17 @@ erDiagram
 
 | BR-CPA-024 | Una obligación CPA ya calculada se paga independientemente de la pausa o inactividad de módulos participantes, respetando los controles del plan y financieros aplicables. |
 
+| BR-CPA-025 | La versión CPA declara un plazo de espera `expiration_days` entero de al menos un día. El contexto congela ese umbral al capturar. La vigencia se mide en días de calendario desde la captura; si los días transcurridos superan el umbral, el contexto expira con razón estable `waiting_period_exceeded` y no puede calificar. Si en la misma evaluación se cumplen umbrales de puntos y el plazo ya se superó, prevalece la expiración. |
+
 ## Cálculo CPA por puntos
 
 Para cada adquisición:
 
 - Puntos de volumen = suma de lotes elegibles de cada módulo × tasa congelada de ese módulo.
 - Puntos de depósito = suma de depósitos certificados en unidades monetarias mayores × tasa común congelada.
-- Califica cuando puntos de volumen ≥ umbral de volumen Y puntos de depósito ≥ umbral de depósito.
+- Califica cuando puntos de volumen ≥ umbral de volumen Y puntos de depósito ≥ umbral de depósito y el contexto no ha expirado.
 
-Los acumulados no vencen ni se reinician por ventanas de Progression.
+Los acumulados no vencen ni se reinician por ventanas de Progression; ello no anula el plazo de espera de la adquisición.
 Un corte describe la fuente consultada, no un historial obligatorio de snapshots por run.
 Una respuesta satisfactoria sin hechos confirma el intervalo vacío.
 Una evidencia inválida o una contradicción conocida del contrato impide calificar hasta su resolución.
@@ -180,6 +182,7 @@ Las tres asociaciones comparten importe, umbrales de puntos y conversiones por m
 - Contexto CPA capturado.
 - Progreso CPA actualizado.
 - Contexto CPA calificado.
+- Contexto CPA expirado.
 - Actividad aceptada para evaluación.
 - Recompensa calculada.
 - Pago solicitado.
