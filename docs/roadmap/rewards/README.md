@@ -3,7 +3,7 @@
 Estado: **Cierre de código E2E completado localmente; RWD-A1/A2 completadas; validación integrada con ib-labs pendiente**
 Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
-Última revisión: 2026-10-04
+Última revisión: 2026-10-06
 
 ## Objetivo
 
@@ -133,3 +133,5 @@ paso es validar los flujos integrados con ib-labs cuando esté listo, incluyendo
 contratos Broker/IAM/Finance, scheduler, fallos de transporte y datos controlados.
 Esa evidencia no bloquea habilitación del código; sigue requerida para declarar
 completo el E2E y no equivale a validación con datos reales.
+
+N-PnL por nivel y moneda (2026-10-06): [entrega y evidencia](13-negative-pnl-level-currency.md).

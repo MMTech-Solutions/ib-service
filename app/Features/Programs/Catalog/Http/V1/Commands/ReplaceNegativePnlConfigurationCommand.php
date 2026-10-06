@@ -9,13 +9,13 @@ use Spatie\LaravelData\Data;
 
 final class ReplaceNegativePnlConfigurationCommand extends Data
 {
-    /** @param list<array{module_id:string,server_group_id:string,rule_version_id:string}> $groups */
-    public function __construct(public readonly string $plan_id, public readonly string $program_id, public readonly string $cadence, public readonly array $groups) {}
+    /** @param list<array{module_id:string,rule_version_id:string}> $modules */
+    public function __construct(public readonly string $plan_id, public readonly string $program_id, public readonly string $cadence, public readonly array $modules) {}
 
     public static function fromRequest(ReplaceNegativePnlConfigurationRequest $request): self
     {
         $data = $request->validated();
 
-        return new self($data['plan'], $data['program'], $data['cadence'], $data['groups']);
+        return new self($data['plan'], $data['program'], $data['cadence'], $data['modules']);
     }
 }

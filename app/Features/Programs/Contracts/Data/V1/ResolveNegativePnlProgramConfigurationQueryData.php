@@ -8,5 +8,5 @@ use Spatie\LaravelData\Data;
 
 final class ResolveNegativePnlProgramConfigurationQueryData extends Data
 {
-    public function __construct(public readonly string $program_id, public readonly ?string $module_id = null, public readonly ?string $server_group_id = null, public readonly ?string $occurred_at = null) {}
+    public function __construct(public readonly string $program_id, public readonly ?string $module_id = null, public readonly ?string $occurred_at = null) {}
 }

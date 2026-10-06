@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Features\Rewards\Contracts\Data\V1\NegativePnlSubjectData;
 use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\DTOs\CaptureNegativePnlCutData;
 use App\Features\Rewards\UseCases\CaptureNegativePnlCutUseCase;
@@ -23,10 +24,10 @@ final class NegativePnlCutSnapshotTest extends TestCase
         $row = $fixture['data'][0];
         $row['balance_read_id'] = '123';
         $row['balance_read_at'] = '2026-10-02T09:58:00Z';
-        Http::fake(['*' => Http::response(['data' => [$row]])]);
+        Http::fake(['*' => Http::response(['data' => [$row], 'meta' => ['completed_subjects' => [$row['external_user_id']]]])]);
         $input = new CaptureNegativePnlCutData(
             (string) Str::uuid7(), (string) Str::uuid7(), $row['account_id'], $row['server_group_id'], 'monthly',
-            new ResolveNegativePnlPeriodsQueryData($row['external_user_id'], [], '2026-10-02T10:00:00Z'),
+            new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData($row['external_user_id'])], '2026-10-02T10:00:00Z'),
         );
         $useCase = app(CaptureNegativePnlCutUseCase::class);
         $first = $useCase->execute($input);

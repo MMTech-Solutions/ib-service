@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Features\Programs\Contracts\Data\V1\NegativePnlGroupConfigurationData;
+use App\Features\Programs\Contracts\Data\V1\NegativePnlModuleConfigurationData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlPaymentLevelData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
 use App\Features\Rewards\DTOs\NegativePnlFrozenInputsData;
@@ -30,7 +30,7 @@ final class NegativePnlProcessingConcurrencyTest extends TestCase
     public function test_competing_workers_skip_locked_work_and_old_token_cannot_confirm_after_expiry(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-03T00:00:00Z'));
-        $group = new NegativePnlGroupConfigurationData((string) Str::uuid7(), 'group', (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), [new NegativePnlPaymentLevelData(0, '0.1')]);
+        $group = new NegativePnlModuleConfigurationData((string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), [new NegativePnlPaymentLevelData(0, '0.1')]);
         $sub = new NegativePnlSubscriptionData((string) Str::uuid7(), (string) Str::uuid7(), (string) Str::uuid7(), now('UTC')->subDay()->toISOString(), null, null, null);
         $configuration = new NegativePnlProgramConfigurationData((string) Str::uuid7(), (string) Str::uuid7(), 'daily', (string) Str::uuid7(), $sub->activated_at, null, null, [$group]);
         $repo = new PostgreSqlNegativePnlProcessingRepository(DB::connection());

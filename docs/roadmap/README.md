@@ -137,3 +137,5 @@ Además de su evidencia funcional, toda entrega que modifique `app/Features/` de
 
 CPA por puntos: [entrega vigente](rewards/12-cpa-points-refactor.md), revisión
 2026-10-06. El schema de cantidades anterior se sustituye sin compatibilidad.
+
+N-PnL por nivel y moneda (2026-10-06): [entrega y evidencia](rewards/13-negative-pnl-level-currency.md).

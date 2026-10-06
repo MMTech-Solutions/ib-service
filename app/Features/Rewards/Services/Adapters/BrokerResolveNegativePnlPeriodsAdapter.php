@@ -26,49 +26,57 @@ final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnl
 
     public function resolve(ResolveNegativePnlPeriodsQueryData $query): ResolveNegativePnlPeriodsResultData
     {
-        $payload = [
-            'external_user_id' => $query->external_user_id,
-            'baselines' => array_map(static fn ($baseline): array => [
-                'account_id' => $baseline->account_id,
-                'balance_after' => $baseline->balance_after,
-                'occurred_until' => $baseline->occurred_until,
-            ], $query->baselines),
-        ];
-        if ($query->occurred_until !== null) {
-            $payload['occurred_until'] = $query->occurred_until;
+        if ($query->subjects === [] || count($query->subjects) > max(1, (int) config('rewards.negative_pnl.subject_batch_size', 100))) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
         }
-        $rows = $this->client->resolve($payload);
-
-        $periods = array_map(
-            fn (array $row): NegativePnlPeriodData => $this->mapPeriod($row),
-            $rows,
-        );
-        if ($query->occurred_until !== null) {
-            $seen = [];
-            foreach ($periods as $period) {
-                if ($period->external_user_id !== $query->external_user_id
-                    || isset($seen[$period->account_id])
-                    || $period->balance_read_id === null || $period->balance_read_at === null
-                    || ! CarbonImmutable::parse($period->occurred_until)->equalTo(CarbonImmutable::parse($query->occurred_until))) {
-                    throw InvalidNegativePnlPeriodsResponseException::create();
-                }
-                $seen[$period->account_id] = true;
-                $baseline = collect($query->baselines)->firstWhere('account_id', $period->account_id);
-                if (($baseline === null && ! $period->establishesBaseline())
-                    || ($baseline !== null && ($period->establishesBaseline()
-                        || ! CarbonImmutable::parse($period->occurred_from)->equalTo(CarbonImmutable::parse($baseline->occurred_until))
-                        || bccomp($period->balance_before, $baseline->balance_after, $period->currency_precision) !== 0))) {
+        $subjects = [];
+        foreach ($query->subjects as $subject) {
+            if (isset($subjects[$subject->external_user_id])) {
+                throw InvalidNegativePnlPeriodsResponseException::create();
+            }
+            $subjects[$subject->external_user_id] = $subject;
+        }
+        $response = $this->client->resolve([
+            'subjects' => array_map(static fn ($subject): array => $subject->toArray(), $query->subjects),
+            'occurred_until' => $query->occurred_until,
+        ]);
+        $completed = $response['meta']['completed_subjects'];
+        $expected = array_keys($subjects);
+        if (array_filter($completed, static fn ($id): bool => ! is_string($id)) !== []) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
+        }
+        sort($completed);
+        sort($expected);
+        if ($completed !== $expected) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
+        }
+        $periods = array_map(fn (array $row): NegativePnlPeriodData => $this->mapPeriod($row), $response['data']);
+        $seen = [];
+        foreach ($periods as $period) {
+            $subject = $subjects[$period->external_user_id] ?? null;
+            if ($subject === null || isset($seen[$period->account_id])
+                || $period->balance_read_id === null || $period->balance_read_at === null
+                || ! CarbonImmutable::parse($period->occurred_until)->equalTo(CarbonImmutable::parse($query->occurred_until))) {
+                throw InvalidNegativePnlPeriodsResponseException::create();
+            }
+            $seen[$period->account_id] = $period->external_user_id;
+            $baseline = collect($subject->baselines)->firstWhere('account_id', $period->account_id);
+            if (($baseline === null && ! $period->establishesBaseline())
+                || ($baseline !== null && ($period->establishesBaseline()
+                    || ! CarbonImmutable::parse($period->occurred_from)->equalTo(CarbonImmutable::parse($baseline->occurred_until))
+                    || bccomp($period->balance_before, $baseline->balance_after, $period->currency_precision) !== 0))) {
+                throw InvalidNegativePnlPeriodsResponseException::create();
+            }
+        }
+        foreach ($query->subjects as $subject) {
+            foreach ($subject->baselines as $baseline) {
+                if (($seen[$baseline->account_id] ?? null) !== $subject->external_user_id) {
                     throw InvalidNegativePnlPeriodsResponseException::create();
                 }
             }
-            foreach ($query->baselines as $baseline) {
-                if (! isset($seen[$baseline->account_id])) {
-                    throw InvalidNegativePnlPeriodsResponseException::create();
-                }
-            }
         }
 
-        return new ResolveNegativePnlPeriodsResultData($periods);
+        return new ResolveNegativePnlPeriodsResultData($periods, $completed);
     }
 
     /** @param array<string, mixed> $row */

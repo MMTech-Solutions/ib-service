@@ -2081,7 +2081,7 @@
                                         "negative-pnl-configuration"
                                     ]
                                 },
-                                "description": "Requires ib.programs.manage on admin_panel. data is the configuration or [] when absent/retired. PUT fully replaces cadence/groups; groups=[] retires. Effective time and actor are set by IB. Requires explicitly assigned published negative_pnl_share version; opaque group validated remotely later."
+                                "description": "Requires ib.programs.manage on admin_panel. PUT replaces cadence/modules; modules=[] retires. One explicitly assigned published PnL rule per module with a common payment template. Signed PnL aggregates by network level and currency."
                             },
                             "response": []
                         },
@@ -2109,7 +2109,7 @@
                                 ],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n  \"cadence\": \"monthly\",\n  \"groups\": [\n    {\n      \"module_id\": \"{{MODULE_ID}}\",\n      \"server_group_id\": \"{{SERVER_GROUP_ID}}\",\n      \"rule_version_id\": \"{{RULE_VERSION_ID}}\"\n    }\n  ]\n}"
+                                    "raw": "{\n  \"cadence\": \"monthly\",\n  \"modules\": [\n    {\n      \"module_id\": \"{{MODULE_ID}}\",\n      \"rule_version_id\": \"{{RULE_VERSION_ID}}\"\n    }\n  ]\n}"
                                 },
                                 "url": {
                                     "raw": "{{BASE_URL}}/api/ib/v1/admin/plans/{{PLAN_ID}}/programs/{{PROGRAM_ID}}/negative-pnl-configuration",
@@ -2128,7 +2128,7 @@
                                         "negative-pnl-configuration"
                                     ]
                                 },
-                                "description": "Requires ib.programs.manage on admin_panel. data is the configuration or [] when absent/retired. PUT fully replaces cadence/groups; groups=[] retires. Effective time and actor are set by IB. Requires explicitly assigned published negative_pnl_share version; opaque group validated remotely later."
+                                "description": "Requires ib.programs.manage on admin_panel. PUT replaces cadence/modules; modules=[] retires. One explicitly assigned published PnL rule per module with a common payment template. Signed PnL aggregates by network level and currency."
                             },
                             "response": []
                         },
@@ -5090,12 +5090,6 @@
                                             "disabled": true
                                         },
                                         {
-                                            "key": "server_group_id",
-                                            "value": "{{SERVER_GROUP_ID}}",
-                                            "description": "Opaque Broker group.",
-                                            "disabled": true
-                                        },
-                                        {
                                             "key": "beneficiary_id",
                                             "value": "{{IB_USER_ID}}",
                                             "description": "Beneficiary UUID; administration only.",
@@ -5183,12 +5177,6 @@
                                             "key": "subscription_id",
                                             "value": "{{SUBSCRIPTION_ID}}",
                                             "description": "Beneficiary subscription UUID.",
-                                            "disabled": true
-                                        },
-                                        {
-                                            "key": "server_group_id",
-                                            "value": "{{SERVER_GROUP_ID}}",
-                                            "description": "Opaque Broker group.",
                                             "disabled": true
                                         },
                                         {
@@ -5300,12 +5288,6 @@
                                             "disabled": true
                                         },
                                         {
-                                            "key": "server_group_id",
-                                            "value": "{{SERVER_GROUP_ID}}",
-                                            "description": "Opaque Broker group.",
-                                            "disabled": true
-                                        },
-                                        {
                                             "key": "job_id",
                                             "value": "{{PNL_JOB_ID}}",
                                             "description": "PnL job UUID.",
@@ -5399,12 +5381,6 @@
                                             "key": "subscription_id",
                                             "value": "{{SUBSCRIPTION_ID}}",
                                             "description": "Beneficiary subscription UUID.",
-                                            "disabled": true
-                                        },
-                                        {
-                                            "key": "server_group_id",
-                                            "value": "{{SERVER_GROUP_ID}}",
-                                            "description": "Opaque Broker group.",
                                             "disabled": true
                                         },
                                         {

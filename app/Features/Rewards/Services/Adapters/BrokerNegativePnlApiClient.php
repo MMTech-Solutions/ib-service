@@ -14,7 +14,7 @@ final class BrokerNegativePnlApiClient
 {
     /**
      * @param  array<string, mixed>  $payload
-     * @return list<array<string, mixed>>
+     * @return array{data: list<array<string, mixed>>, meta: array{completed_subjects: list<string>}}
      */
     public function resolve(array $payload): array
     {
@@ -46,6 +46,10 @@ final class BrokerNegativePnlApiClient
             throw InvalidNegativePnlPeriodsResponseException::create();
         }
 
-        return array_values($body['data']);
+        if (! is_array($body['meta']['completed_subjects'] ?? null)) {
+            throw InvalidNegativePnlPeriodsResponseException::create();
+        }
+
+        return ['data' => array_values($body['data']), 'meta' => $body['meta']];
     }
 }

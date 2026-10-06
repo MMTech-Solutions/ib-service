@@ -1,5 +1,14 @@
 # RWD4 — volumen tradeado y PnL negativo
 
+## Actualización N-PnL (2026-10-06)
+
+La entrega vigente agrega por nivel y moneda y usa selección de regla/plantilla
+común por módulo. Sustituye el cálculo por cuenta y selección por grupo descritos
+en la evidencia histórica de este documento. Contrato por lotes incompatible,
+sin fallback; [entrega y evidencia](13-negative-pnl-level-currency.md) y
+[contrato operativo](../../rules/negative-pnl-contract.md).
+
+
 Estado: **RWD4.1, RWD4.2a, RWD4.2.1 y RWD4.2.2 implementados localmente; cierre local de código completado; S2S y datos reales pendientes**
 Dependencias: Modules M5, Rules R2, Programs, Subscriptions, IAM y Broker Service
 Última revisión: 2026-10-03

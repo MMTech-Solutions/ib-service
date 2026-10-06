@@ -117,7 +117,7 @@ final class PostgreSqlRewardReadRepository implements RewardReadRepositoryInterf
             $status = $row->finished_at !== null ? 'completed' : ($row->lease_expires_at !== null && CarbonImmutable::parse($row->lease_expires_at)->greaterThan(CarbonImmutable::now('UTC')) ? 'processing' : ($row->error_code !== null ? 'failed' : 'pending'));
             $closure = $this->connection->table('negative_pnl_pending_closures')->where('subscription_id', $row->subscription_id)->first(['incoming_subscription_id', 'operation_id', 'closed_at', 'discovered_at', 'completed_at']);
 
-            return new NegativePnlJobReadData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->server_group_id, $row->cadence, $status, $this->timestamp($row->next_cut_at), $this->timestamp($row->cursor_at), $this->timestamp($row->closed_at), $this->timestamp($row->finished_at), $row->error_code, $this->timestamp($row->retry_at), $closure === null ? null : (array) $closure);
+            return new NegativePnlJobReadData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->cadence, $status, $this->timestamp($row->next_cut_at), $this->timestamp($row->cursor_at), $this->timestamp($row->closed_at), $this->timestamp($row->finished_at), $row->error_code, $this->timestamp($row->retry_at), $closure === null ? null : (array) $closure);
         }
         $ids = $this->connection->table('rewards')->where('summary_snapshot->period_id', $row->id)->orderBy('id')->pluck('id')->all();
 

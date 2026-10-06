@@ -8,10 +8,6 @@ use Spatie\LaravelData\Data;
 
 final class ResolveNegativePnlPeriodsQueryData extends Data
 {
-    /** @param list<NegativePnlBaselineData> $baselines */
-    public function __construct(
-        public readonly string $external_user_id,
-        public readonly array $baselines = [],
-        public readonly ?string $occurred_until = null,
-    ) {}
+    /** @param list<NegativePnlSubjectData> $subjects */
+    public function __construct(public readonly array $subjects, public readonly string $occurred_until) {}
 }

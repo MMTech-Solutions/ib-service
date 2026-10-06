@@ -1,5 +1,14 @@
 # Próxima entrega: E2E Broker, Progression y Rewards con cortes PnL históricos
 
+## Actualización N-PnL (2026-10-06)
+
+La entrega vigente agrega por nivel y moneda y usa selección de regla/plantilla
+común por módulo. Sustituye el cálculo por cuenta y selección por grupo descritos
+en la evidencia histórica de este documento. Contrato por lotes incompatible,
+sin fallback; [entrega y evidencia](13-negative-pnl-level-currency.md) y
+[contrato operativo](../../rules/negative-pnl-contract.md).
+
+
 Estado: **Cierre de código completado localmente; operatividad, S2S y datos reales pendientes de validación con ib-labs**
 Última revisión: 2026-10-04
 

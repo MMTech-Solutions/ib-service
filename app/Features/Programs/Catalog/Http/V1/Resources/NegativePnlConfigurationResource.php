@@ -22,11 +22,10 @@ final class NegativePnlConfigurationResource extends JsonResource
             'starts_at' => $configuration->starts_at,
             'ends_at' => $configuration->ends_at,
             'closed_by_actor_id' => $configuration->closed_by_actor_id,
-            'groups' => array_map(static fn ($group): array => [
+            'modules' => array_map(static fn ($group): array => [
                 'module_id' => $group->module_id,
-                'server_group_id' => $group->server_group_id,
                 'rule_version_id' => $group->rule_version_id,
-            ], $configuration->groups),
+            ], $configuration->modules),
         ];
     }
 }

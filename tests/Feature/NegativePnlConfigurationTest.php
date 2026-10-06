@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\Support\InteractsWithAdminGateway;
 use Tests\TestCase;
@@ -46,7 +47,7 @@ final class NegativePnlConfigurationTest extends TestCase
     {
         $f = $this->fixture();
         $this->travelTo(now('UTC')->addSeconds(2));
-        $first = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->assertJsonPath('data.actor_id', $this->authorizedSub())->assertJsonPath('data.groups.0.rule_version_id', $f['version_id'])->json('data');
+        $first = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->assertJsonPath('data.actor_id', $this->authorizedSub())->assertJsonPath('data.modules.0.rule_version_id', $f['version_id'])->json('data');
         $this->gatewayJson('GET', $f['url'])->assertOk()->assertJsonPath('data.id', $first['id'])->assertJsonMissingPath('data.configuration');
         $this->travel(1)->seconds();
         $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->assertJsonPath('data.id', $first['id']);
@@ -56,10 +57,10 @@ final class NegativePnlConfigurationTest extends TestCase
         self::assertNotSame($first['id'], $second['id']);
         $this->assertDatabaseHas('program_negative_pnl_configuration_revisions', ['id' => $first['id'], 'closed_by_actor_id' => $this->authorizedSub()]);
         $this->travel(1)->seconds();
-        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'monthly', 'groups' => []])->assertOk()->assertJsonPath('data', []);
+        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'monthly', 'modules' => []])->assertOk()->assertJsonPath('data', []);
         $this->gatewayJson('GET', $f['url'])->assertOk()->assertJsonPath('data', []);
         self::assertSame(0, DB::table('program_negative_pnl_configuration_revisions')->whereNull('ends_at')->count());
-        self::assertSame(2, DB::table('program_negative_pnl_groups')->count());
+        self::assertSame(2, DB::table('program_negative_pnl_modules')->count());
     }
 
     public function test_half_open_history_and_frozen_rule_template_context(): void
@@ -68,7 +69,7 @@ final class NegativePnlConfigurationTest extends TestCase
         $this->travel(2)->seconds();
         $first = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->json('data');
         $port = app(ResolveNegativePnlProgramConfigurationPort::class);
-        $resolve = fn (string $at) => $port->execute(new ResolveNegativePnlProgramConfigurationQueryData($f['program_id'], $f['module_id'], 'external-group', $at));
+        $resolve = fn (string $at) => $port->execute(new ResolveNegativePnlProgramConfigurationQueryData($f['program_id'], $f['module_id'], $at));
         self::assertNull($resolve(now('UTC')->subSecond()->toISOString()));
         self::assertSame($first['id'], $resolve($first['starts_at'])->id);
         $this->travel(2)->seconds();
@@ -76,17 +77,17 @@ final class NegativePnlConfigurationTest extends TestCase
         $version = $this->version($f['plan_id'], $f['rule_id'], $f['binding_id']);
         $assignment = $this->assign($f['plan_id'], $f['rule_id'], $f['program_id'], $f['module_id'], $version);
         $payload = $f['payload'];
-        $payload['groups'][0]['rule_version_id'] = $version;
+        $payload['modules'][0]['rule_version_id'] = $version;
         $second = $this->gatewayJson('PUT', $f['url'], $payload)->assertOk()->json('data');
         self::assertSame($second['id'], $resolve($second['starts_at'])->id);
         $old = $resolve(CarbonImmutable::parse($second['starts_at'])->subMicrosecond()->toISOString());
-        self::assertSame($f['version_id'], $old->groups[0]->rule_version_id);
-        self::assertSame($f['assignment_id'], $old->groups[0]->assignment_id);
-        self::assertSame('0.10000000', $old->groups[0]->levels[0]->rate);
-        self::assertSame($assignment, $resolve($second['starts_at'])->groups[0]->assignment_id);
-        self::assertNull($port->execute(new ResolveNegativePnlProgramConfigurationQueryData($f['program_id'], $f['module_id'], 'missing', $first['starts_at'])));
+        self::assertSame($f['version_id'], $old->modules[0]->rule_version_id);
+        self::assertSame($f['assignment_id'], $old->modules[0]->assignment_id);
+        self::assertSame('0.10000000', $old->modules[0]->levels[0]->rate);
+        self::assertSame($assignment, $resolve($second['starts_at'])->modules[0]->assignment_id);
+        self::assertNull($port->execute(new ResolveNegativePnlProgramConfigurationQueryData($f['program_id'], (string) Str::uuid7(), $first['starts_at'])));
         $this->travel(1)->seconds();
-        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'daily', 'groups' => []])->assertOk();
+        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'daily', 'modules' => []])->assertOk();
         self::assertNull($resolve(now('UTC')->toISOString()));
         self::assertSame($first['id'], $resolve($first['starts_at'])->id);
     }
@@ -94,7 +95,7 @@ final class NegativePnlConfigurationTest extends TestCase
     public function test_duplicate_groups_and_retroactive_inputs_are_rejected(): void
     {
         $f = $this->fixture();
-        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'daily', 'groups' => [$f['payload']['groups'][0], $f['payload']['groups'][0]]])->assertUnprocessable()->assertJsonPath('error.code', 'INVALID_NEGATIVE_PNL_CONFIGURATION');
+        $this->gatewayJson('PUT', $f['url'], ['cadence' => 'daily', 'modules' => [$f['payload']['modules'][0], $f['payload']['modules'][0]]])->assertUnprocessable()->assertJsonPath('error.code', 'INVALID_NEGATIVE_PNL_CONFIGURATION');
         $this->gatewayJson('PUT', $f['url'], [...$f['payload'], 'starts_at' => '2020-01-01'])->assertUnprocessable();
         $this->gatewayJson('PUT', $f['url'], [...$f['payload'], 'cadence' => 'hourly'])->assertUnprocessable();
         self::assertSame(0, DB::table('program_negative_pnl_configuration_revisions')->count());
@@ -106,7 +107,7 @@ final class NegativePnlConfigurationTest extends TestCase
         $other = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', ['code' => 'other', 'name' => 'Other', 'module_ids' => [], 'progression_period' => 'monthly'])->assertCreated()->json('data.id');
         $this->gatewayJson('PUT', str_replace($f['plan_id'], $other, $f['url']), $f['payload'])->assertNotFound();
         $payload = $f['payload'];
-        $payload['groups'][0]['module_id'] = (string) Str::uuid7();
+        $payload['modules'][0]['module_id'] = (string) Str::uuid7();
         $this->gatewayJson('PUT', $f['url'], $payload)->assertUnprocessable();
     }
 
@@ -162,6 +163,64 @@ final class NegativePnlConfigurationTest extends TestCase
         app(ResolveNegativePnlRuleContextPort::class)->execute(new ResolveNegativePnlRuleContextQueryData($f['plan_id'], $f['program_id'], $f['module_id'], $f['version_id'], now('UTC')->toISOString()));
     }
 
+    public function test_upgrade_consolidates_matching_selections_and_preserves_cursor_and_baselines(): void
+    {
+        $f = $this->fixture();
+        $configuration = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->json('data.id');
+        $module = DB::table('program_negative_pnl_modules')->where('configuration_id', $configuration)->first();
+        $subscription = (string) Str::uuid7();
+        $beneficiary = (string) Str::uuid7();
+        foreach (['g1', 'g2'] as $group) {
+            $context = json_decode($module->economic_context, true);
+            $context['server_group_id'] = $group;
+            DB::table('program_negative_pnl_groups')->insert(['id' => (string) Str::uuid7(), 'configuration_id' => $configuration, 'module_id' => $f['module_id'], 'server_group_id' => $group, 'rule_version_id' => $f['version_id'], 'economic_context' => json_encode($context)]);
+            $job = (string) Str::uuid7();
+            DB::table('negative_pnl_jobs')->insert(['id' => $job, 'identity_key' => hash('sha256', $job), 'subscription_id' => $subscription, 'beneficiary_id' => $beneficiary, 'plan_id' => $f['plan_id'], 'module_id' => $f['module_id'], 'server_group_id' => $group, 'cadence' => 'daily', 'cursor_at' => '2026-10-05T00:00:00Z', 'next_cut_at' => '2026-10-06T00:00:00Z']);
+            DB::table('negative_pnl_baselines')->insert(['id' => (string) Str::uuid7(), 'job_id' => $job, 'referral_id' => (string) Str::uuid7(), 'account_id' => 'account-'.$group, 'currency_code' => 'USD', 'currency_precision' => 2, 'balance_after' => '900.00', 'occurred_until' => '2026-10-05T00:00:00Z']);
+        }
+        Schema::drop('program_negative_pnl_modules');
+        $migration = require database_path('migrations/2026_10_06_055706_replace_negative_pnl_group_configuration_with_modules.php');
+        $migration->up();
+        self::assertSame(1, DB::table('program_negative_pnl_modules')->count());
+        $merged = DB::table('negative_pnl_jobs')->whereNull('server_group_id')->first();
+        self::assertNotNull($merged);
+        self::assertSame('2026-10-05', CarbonImmutable::parse($merged->cursor_at)->toDateString());
+        self::assertSame('2026-10-06', CarbonImmutable::parse($merged->next_cut_at)->toDateString());
+        self::assertSame(2, DB::table('negative_pnl_baselines')->where('job_id', $merged->id)->count());
+        self::assertSame(2, DB::table('negative_pnl_jobs')->whereNotNull('server_group_id')->whereNotNull('finished_at')->count());
+        self::assertArrayNotHasKey('server_group_id', json_decode(DB::table('program_negative_pnl_modules')->value('economic_context'), true));
+    }
+
+    public function test_upgrade_rejects_open_periods_before_any_conversion(): void
+    {
+        $id = (string) Str::uuid7();
+        DB::table('negative_pnl_jobs')->insert(['id' => $id, 'identity_key' => hash('sha256', $id), 'subscription_id' => (string) Str::uuid7(), 'beneficiary_id' => (string) Str::uuid7(), 'plan_id' => (string) Str::uuid7(), 'module_id' => (string) Str::uuid7(), 'server_group_id' => 'legacy', 'cadence' => 'daily', 'next_cut_at' => '2026-10-06T00:00:00Z']);
+        DB::table('negative_pnl_periods')->insert(['id' => (string) Str::uuid7(), 'job_id' => $id, 'occurred_until' => '2026-10-06T00:00:00Z', 'status' => 'preparing', 'inputs' => '{}', 'receipts' => '{}']);
+        $migration = require database_path('migrations/2026_10_06_055706_replace_negative_pnl_group_configuration_with_modules.php');
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Complete all open PnL periods');
+        $migration->up();
+    }
+
+    public function test_upgrade_rejects_divergent_selections_without_choosing_a_rule(): void
+    {
+        $f = $this->fixture();
+        $configuration = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->json('data.id');
+        $module = DB::table('program_negative_pnl_modules')->where('configuration_id', $configuration)->first();
+        foreach (['g1', 'g2'] as $group) {
+            $context = json_decode($module->economic_context, true);
+            $context['server_group_id'] = $group;
+            if ($group === 'g2') {
+                $context['levels'][0]['rate'] = '0.2';
+            }
+            DB::table('program_negative_pnl_groups')->insert(['id' => (string) Str::uuid7(), 'configuration_id' => $configuration, 'module_id' => $f['module_id'], 'server_group_id' => $group, 'rule_version_id' => $f['version_id'], 'economic_context' => json_encode($context)]);
+        }
+        $migration = require database_path('migrations/2026_10_06_055706_replace_negative_pnl_group_configuration_with_modules.php');
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Divergent PnL selections');
+        $migration->up();
+    }
+
     /** @return array<string,mixed> */
     private function fixture(): array
     {
@@ -176,7 +235,7 @@ final class NegativePnlConfigurationTest extends TestCase
         $version = $this->version($plan, $rule, $binding);
         $assignment = $this->assign($plan, $rule, $program, $module, $version);
 
-        return ['plan_id' => $plan, 'program_id' => $program, 'module_id' => $module, 'rule_id' => $rule, 'version_id' => $version, 'binding_id' => $binding, 'assignment_id' => $assignment, 'url' => "/api/ib/v1/admin/plans/{$plan}/programs/{$program}/negative-pnl-configuration", 'payload' => ['cadence' => 'monthly', 'groups' => [['module_id' => $module, 'server_group_id' => 'external-group', 'rule_version_id' => $version]]]];
+        return ['plan_id' => $plan, 'program_id' => $program, 'module_id' => $module, 'rule_id' => $rule, 'version_id' => $version, 'binding_id' => $binding, 'assignment_id' => $assignment, 'url' => "/api/ib/v1/admin/plans/{$plan}/programs/{$program}/negative-pnl-configuration", 'payload' => ['cadence' => 'monthly', 'modules' => [['module_id' => $module, 'rule_version_id' => $version]]]];
     }
 
     private function version(string $plan, string $rule, string $binding): string

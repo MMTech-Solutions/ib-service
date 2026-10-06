@@ -20,6 +20,7 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`architecture-validation.md`](rules/architecture-validation.md): guardrails PHPUnit y ratchet de deuda arquitectónica.
 - [`api-conventions.md`](rules/api-conventions.md): forma del envelope HTTP; `data` es el recurso o la colección.
 - [`integrations.md`](rules/integrations.md): Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia.
+- [`negative-pnl-contract.md`](rules/negative-pnl-contract.md): contrato PnL por lotes y agregado por nivel/moneda.
 - [`strategies.md`](rules/strategies.md): reglas configurables y patrón Strategy.
 - [`code-style.md`](rules/code-style.md): convenciones de PHP y Laravel.
 - [`technology-stack.md`](rules/technology-stack.md): stack confirmado y decisiones pendientes.
@@ -80,3 +81,5 @@ Si el código contradice un BDS vigente, la contradicción debe reportarse; no d
   `docs/roadmap/`, sin elevar hipótesis a reglas confirmadas.
 - Al crear, renombrar o retirar documentación, deben actualizarse este índice y el índice de la sección correspondiente.
 - Las decisiones pendientes deben permanecer explícitamente marcadas; no deben presentarse como invariantes confirmadas.
+
+N-PnL por nivel y moneda (2026-10-06): [entrega y evidencia](roadmap/rewards/13-negative-pnl-level-currency.md).

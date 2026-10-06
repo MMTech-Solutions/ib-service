@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
-use App\Features\Programs\Contracts\Data\V1\NegativePnlGroupConfigurationData;
+use App\Features\Programs\Contracts\Data\V1\NegativePnlModuleConfigurationData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
 use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
 use App\Features\Rewards\DTOs\NegativePnlAccountCutData;
+use App\Features\Rewards\DTOs\NegativePnlAggregateData;
 use App\Features\Rewards\DTOs\NegativePnlFrozenInputsData;
 use App\Features\Rewards\DTOs\NegativePnlProcessingPeriodData;
 use App\Features\Rewards\DTOs\NegativePnlWorkData;
@@ -56,7 +57,7 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
         $this->guarded($work, $callback);
     }
 
-    public function seed(NegativePnlSubscriptionData $subscription, NegativePnlProgramConfigurationData $configuration, NegativePnlGroupConfigurationData $group): void
+    public function seed(NegativePnlSubscriptionData $subscription, NegativePnlProgramConfigurationData $configuration, NegativePnlModuleConfigurationData $group): void
     {
         $start = CarbonImmutable::parse($subscription->activated_at)->max(CarbonImmutable::parse($configuration->starts_at))->utc();
         if ($subscription->relevant_from !== null) {
@@ -65,11 +66,11 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
         if ($subscription->closed_at !== null && $start->greaterThanOrEqualTo(CarbonImmutable::parse($subscription->closed_at))) {
             return;
         }
-        $identity = hash('sha256', json_encode([$subscription->id, $group->module_id, $group->server_group_id, $configuration->cadence], JSON_THROW_ON_ERROR));
+        $identity = hash('sha256', json_encode([$subscription->id, $group->module_id, $configuration->cadence], JSON_THROW_ON_ERROR));
         $this->connection->table('negative_pnl_jobs')->insertOrIgnore([
             'id' => (string) Str::uuid7(), 'identity_key' => $identity, 'subscription_id' => $subscription->id,
             'beneficiary_id' => $subscription->external_user_id, 'plan_id' => $subscription->plan_id,
-            'module_id' => $group->module_id, 'server_group_id' => $group->server_group_id, 'cadence' => $configuration->cadence,
+            'module_id' => $group->module_id, 'cadence' => $configuration->cadence,
             'next_cut_at' => $start, 'closed_at' => $subscription->closed_at,
         ]);
         $this->connection->table('negative_pnl_jobs')->where('identity_key', $identity)->whereNotNull('finished_at')->where('cursor_at', '<', $start)->where('next_cut_at', '<', $start)->update(['finished_at' => null, 'next_cut_at' => $start, 'reset_baseline' => true, 'retry_at' => null]);
@@ -180,28 +181,40 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
         });
     }
 
-    public function persistReward(NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period, string $referralId, int $level, NegativePnlPeriodData $cut, PositiveMoney $amount): bool
+    public function persistReward(NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period, NegativePnlAggregateData $aggregate, PositiveMoney $amount): bool
     {
-        return $this->guarded($work, function () use ($work, $period, $referralId, $level, $cut, $amount): bool {
-            $group = $period->inputs->configuration;
+        return $this->guarded($work, function () use ($work, $period, $aggregate, $amount): bool {
+            $configuration = $period->inputs->configuration;
             $subscription = $period->inputs->subscription;
-            $key = 'pnl:'.hash('sha256', json_encode([$work->module_id, $cut->account_id, $cut->occurred_from, $cut->occurred_until, $work->beneficiary_id, $level, $group->assignment_id, $group->rule_version_id], JSON_THROW_ON_ERROR));
+            $key = 'pnl:'.hash('sha256', json_encode([$work->subscription_id, $work->module_id, $period->id, $aggregate->distribution_level, $aggregate->currency_code, $configuration->assignment_id, $configuration->rule_version_id], JSON_THROW_ON_ERROR));
             $id = (string) Str::uuid7();
             $now = CarbonImmutable::now('UTC');
             $created = $this->connection->table('rewards')->insertOrIgnore([
                 'id' => $id, 'beneficiary_user_id' => $work->beneficiary_id, 'plan_id' => $work->plan_id, 'program_id' => $subscription->program_id,
-                'module_id' => $work->module_id, 'rule_assignment_id' => $group->assignment_id, 'rule_id' => $group->rule_id, 'rule_version_id' => $group->rule_version_id,
-                'amount_minor' => $amount->minorUnits, 'currency_code' => $cut->currency_code, 'currency_precision' => $cut->currency_precision,
-                'status' => 'pending', 'commission_type' => 'pnl', 'network_level' => $level,
-                'summary_snapshot' => json_encode(['period_id' => $period->id, 'inputs' => $period->inputs->toArray(), 'cut' => $cut->toArray(), 'referral_id' => $referralId, 'distribution_level' => $level], JSON_THROW_ON_ERROR),
+                'module_id' => $work->module_id, 'rule_assignment_id' => $configuration->assignment_id, 'rule_id' => $configuration->rule_id, 'rule_version_id' => $configuration->rule_version_id,
+                'amount_minor' => $amount->minorUnits, 'currency_code' => $aggregate->currency_code, 'currency_precision' => $aggregate->currency_precision,
+                'status' => 'pending', 'commission_type' => 'pnl', 'network_level' => $aggregate->distribution_level,
+                'summary_snapshot' => json_encode(['period_id' => $period->id, 'inputs' => $period->inputs->toArray(), 'aggregate' => $aggregate->toArray(), 'distribution_level' => $aggregate->distribution_level, 'amount_minor' => $amount->minorUnits, 'rounding' => 'half_up'], JSON_THROW_ON_ERROR),
                 'origin_idempotency_key' => $key, 'settlement_idempotency_key' => 'ib-service:reward:'.$id.':settlement', 'created_at' => $now, 'updated_at' => $now,
             ]);
             if ($created === 0) {
                 return false;
             }
-            $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->account_id), 'subject_external_user_id' => $referralId, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
+            foreach ($aggregate->contributions as $cut) {
+                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->account_id), 'subject_external_user_id' => $cut->external_user_id, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
+            }
 
             return true;
+        });
+    }
+
+    public function recordAggregateOutcome(NegativePnlWorkData $work, string $periodId, NegativePnlAggregateData $aggregate, string $reason): void
+    {
+        $this->guarded($work, function () use ($work, $periodId, $aggregate, $reason): void {
+            $row = $this->periodRow($work, $periodId);
+            $outcomes = json_decode($row->outcomes, true, 512, JSON_THROW_ON_ERROR);
+            $outcomes['aggregates'][$aggregate->distribution_level][$aggregate->currency_code] = ['result' => $reason, 'aggregate' => $aggregate->toArray()];
+            $this->connection->table('negative_pnl_periods')->where('id', $periodId)->update(['outcomes' => json_encode($outcomes, JSON_THROW_ON_ERROR)]);
         });
     }
 
@@ -282,6 +295,6 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
 
     private function work(object $row): NegativePnlWorkData
     {
-        return new NegativePnlWorkData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->server_group_id, $row->cadence, CarbonImmutable::parse($row->next_cut_at)->utc()->toISOString(), $row->cursor_at === null ? null : CarbonImmutable::parse($row->cursor_at)->utc()->toISOString(), $row->closed_at === null ? null : CarbonImmutable::parse($row->closed_at)->utc()->toISOString(), (bool) $row->reset_baseline, $row->lease_token);
+        return new NegativePnlWorkData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->cadence, CarbonImmutable::parse($row->next_cut_at)->utc()->toISOString(), $row->cursor_at === null ? null : CarbonImmutable::parse($row->cursor_at)->utc()->toISOString(), $row->closed_at === null ? null : CarbonImmutable::parse($row->closed_at)->utc()->toISOString(), (bool) $row->reset_baseline, $row->lease_token);
     }
 }

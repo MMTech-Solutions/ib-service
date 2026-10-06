@@ -10,6 +10,7 @@ use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use App\Features\Programs\Contracts\Data\V1\ResolveNegativePnlProgramConfigurationQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ListNegativePnlConfigurationsPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveNegativePnlProgramConfigurationPort;
+use App\Features\Rewards\Contracts\Data\V1\NegativePnlSubjectData;
 use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlReferralsPort;
@@ -27,6 +28,7 @@ use App\Features\Rewards\Exceptions\NegativePnlReferralsUnavailableException;
 use App\Features\Rewards\Factories\NegativePnlProcessingRepositoryFactory;
 use App\Features\Rewards\Factories\NegativePnlRewardCalculationStrategyFactory;
 use App\Features\Rewards\Repositories\NegativePnlProcessingRepositoryInterface;
+use App\Features\Rewards\Services\AggregateNegativePnlService;
 use App\Features\Rewards\Services\CaptureNegativePnlCutService;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListNegativePnlSubscriptionSegmentsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListNegativePnlSubscriptionsPort;
@@ -49,6 +51,7 @@ final class ProcessNegativePnlRewardsUseCase
         private readonly CaptureNegativePnlCutService $capture,
         private readonly NegativePnlRewardCalculationStrategyFactory $calculationFactory,
         private readonly ListNegativePnlSubscriptionSegmentsPort $segments,
+        private readonly AggregateNegativePnlService $aggregation,
     ) {}
 
     /** @return array{contexts: int, periods: int, closures: int, pending_closures: int, rewards: int, errors: int} */
@@ -130,7 +133,7 @@ final class ProcessNegativePnlRewardsUseCase
             }
             $subscriptions = $this->subscriptions->execute($configuration->program_id, $configuration->starts_at, $configuration->ends_at, $cursor['subscription_after'], $remaining);
             foreach ($subscriptions as $subscription) {
-                foreach ($configuration->groups as $group) {
+                foreach ($configuration->modules as $group) {
                     $repository->seed($subscription, $configuration, $group);
                 }
             }
@@ -165,11 +168,11 @@ final class ProcessNegativePnlRewardsUseCase
         if ($subscription->subscription_id !== $work->subscription_id || $subscription->plan_id !== $work->plan_id) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }
-        $configuration = $this->configuration->execute(new ResolveNegativePnlProgramConfigurationQueryData($subscription->program_id, $work->module_id, $work->server_group_id, $at->toISOString()));
+        $configuration = $this->configuration->execute(new ResolveNegativePnlProgramConfigurationQueryData($subscription->program_id, $work->module_id, $at->toISOString()));
         if ($configuration === null || $configuration->cadence !== $work->cadence) {
             return null;
         }
-        $group = $configuration->groups[0];
+        $group = $configuration->modules[0];
         $depth = max(array_map(static fn ($level): int => $level->distribution_level, $group->levels));
 
         return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) config('rewards.minimum_amount_major', '0.01'), $this->referrals->resolve($work->beneficiary_id, $depth), $work->reset_baseline);
@@ -177,61 +180,72 @@ final class ProcessNegativePnlRewardsUseCase
 
     private function evidence(NegativePnlProcessingRepositoryInterface $repository, NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period): NegativePnlProcessingPeriodData
     {
+        $subjects = [];
         foreach ($period->inputs->referrals as $referral) {
-            if (array_key_exists($referral->external_user_id, $period->receipts)) {
-                continue;
+            if (! array_key_exists($referral->external_user_id, $period->receipts)) {
+                $subjects[] = new NegativePnlSubjectData($referral->external_user_id, $period->inputs->reset_baseline ? [] : $repository->baselines($work->id, $referral->external_user_id));
             }
-            $baselines = $period->inputs->reset_baseline ? [] : $repository->baselines($work->id, $referral->external_user_id);
-            $query = new ResolveNegativePnlPeriodsQueryData($referral->external_user_id, $baselines, $period->occurred_until);
-            $cuts = [];
+        }
+        foreach (array_chunk($subjects, max(1, (int) config('rewards.negative_pnl.subject_batch_size', 100))) as $batch) {
+            $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until);
+            $response = $this->broker->resolve($query);
+            $expected = array_map(static fn ($subject): string => $subject->external_user_id, $batch);
+            $completed = $response->completed_subjects;
+            sort($expected);
+            sort($completed);
+            if ($expected !== $completed) {
+                throw InvalidNegativePnlPeriodsResponseException::create();
+            }
+            $cutsBySubject = array_fill_keys($expected, []);
             $seen = [];
-            foreach ($this->broker->resolve($query)->periods as $cut) {
-                if ($cut->server_group_id !== $work->server_group_id) {
-                    continue;
-                }
-                if ($cut->external_user_id !== $referral->external_user_id || isset($seen[$cut->account_id]) || ! CarbonImmutable::parse($cut->occurred_until)->equalTo(CarbonImmutable::parse($period->occurred_until)) || $cut->balance_read_id === null || $cut->balance_read_at === null) {
+            foreach ($response->periods as $cut) {
+                if (! array_key_exists($cut->external_user_id, $cutsBySubject) || isset($seen[$cut->account_id])
+                    || ! CarbonImmutable::parse($cut->occurred_until)->equalTo(CarbonImmutable::parse($period->occurred_until))
+                    || $cut->balance_read_id === null || $cut->balance_read_at === null) {
                     throw InvalidNegativePnlPeriodsResponseException::create();
                 }
                 $seen[$cut->account_id] = true;
-                $baseline = $repository->accountNeedsBaseline($work->id, $referral->external_user_id, $cut) || $period->inputs->reset_baseline;
-                $cuts[] = new NegativePnlAccountCutData($cut, $baseline);
+                $cutsBySubject[$cut->external_user_id][] = new NegativePnlAccountCutData($cut, $repository->accountNeedsBaseline($work->id, $cut->external_user_id, $cut) || $period->inputs->reset_baseline);
             }
-            $repository->transactionForLease($work, function () use ($repository, $work, $period, $referral, $query, $cuts): void {
-                $frozen = [];
-                foreach ($cuts as $accountCut) {
-                    $cut = $accountCut->cut;
-                    $snapshot = $this->capture->execute(new CaptureNegativePnlCutData($work->module_id, $work->subscription_id, $cut->account_id, $work->server_group_id, $work->cadence, $query), $cut);
-                    $frozen[] = new NegativePnlAccountCutData($snapshot->period, $accountCut->requires_baseline);
+            $repository->transactionForLease($work, function () use ($repository, $work, $period, $query, $cutsBySubject): void {
+                foreach ($cutsBySubject as $subjectId => $cuts) {
+                    $frozen = [];
+                    foreach ($cuts as $accountCut) {
+                        $cut = $accountCut->cut;
+                        $snapshot = $this->capture->execute(new CaptureNegativePnlCutData($work->module_id, $work->subscription_id, $cut->account_id, $cut->server_group_id, $work->cadence, $query), $cut);
+                        $frozen[] = new NegativePnlAccountCutData($snapshot->period, $accountCut->requires_baseline);
+                    }
+                    $repository->recordReceipt($work, $period->id, $subjectId, $frozen);
                 }
-                $repository->recordReceipt($work, $period->id, $referral->external_user_id, $frozen);
             });
         }
+        $period = $repository->pendingPeriod($work);
+        $this->aggregation->execute($period);
 
         return $repository->ready($work, $period->id);
     }
 
     private function calculate(NegativePnlProcessingRepositoryInterface $repository, NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period, int &$created): void
     {
+        $aggregates = $this->aggregation->execute($period);
         $strategy = $this->calculationFactory->make('negative_pnl_share');
         $subscription = $period->inputs->subscription;
-        foreach ($period->inputs->referrals as $referral) {
-            $level = collect($period->inputs->configuration->levels)->firstWhere('distribution_level', $referral->distribution_level);
-            if ($level === null) {
-                continue;
-            }
-            foreach ($period->receipts[$referral->external_user_id] as $accountCut) {
-                $cut = $accountCut->cut;
-                if ($accountCut->requires_baseline || $cut->establishesBaseline() || $cut->net_pnl === null) {
-                    $repository->recordOutcome($work, $period->id, $referral->external_user_id, $cut->account_id, 'baseline');
-
-                    continue;
+        foreach ($period->receipts as $referralId => $cuts) {
+            foreach ($cuts as $accountCut) {
+                if ($accountCut->requires_baseline || $accountCut->cut->establishesBaseline()) {
+                    $repository->recordOutcome($work, $period->id, $referralId, $accountCut->cut->account_id, 'baseline');
                 }
-                $amount = $strategy->calculate(new NegativePnlRewardCalculationData($cut->net_pnl, $level->rate, $subscription->personal_rate, $subscription->is_master, $subscription->master_rate, $cut->currency_code, $cut->currency_precision, $period->inputs->minimum_amount_major));
-                if ($amount !== null && $repository->persistReward($work, $period, $referral->external_user_id, $referral->distribution_level, $cut, $amount)) {
+            }
+        }
+        foreach ($aggregates as $aggregate) {
+            $level = collect($period->inputs->configuration->levels)->firstWhere('distribution_level', $aggregate->distribution_level);
+            $amount = $strategy->calculate(new NegativePnlRewardCalculationData($aggregate->signed_pnl, $level->rate, $subscription->personal_rate, $subscription->is_master, $subscription->master_rate, $aggregate->currency_code, $aggregate->currency_precision, $period->inputs->minimum_amount_major));
+            $repository->transactionForLease($work, function () use ($repository, $work, $period, $aggregate, $amount, &$created): void {
+                if ($amount !== null && $repository->persistReward($work, $period, $aggregate, $amount)) {
                     $created++;
                 }
-                $repository->recordOutcome($work, $period->id, $referral->external_user_id, $cut->account_id, $amount !== null ? 'reward' : (bccomp($cut->net_pnl, '0', $cut->currency_precision) >= 0 ? 'non_negative_pnl' : 'below_minimum_or_rounded_zero'));
-            }
+                $repository->recordAggregateOutcome($work, $period->id, $aggregate, $amount !== null ? 'reward' : (bccomp($aggregate->signed_pnl, '0', $aggregate->currency_precision) >= 0 ? 'non_negative_pnl' : 'below_minimum_or_rounded_zero'));
+            });
         }
     }
 
@@ -248,7 +262,7 @@ final class ProcessNegativePnlRewardsUseCase
             do {
                 $page = $this->configurations->execute($after, 1000, $segment->program_id, $from->toISOString(), $until->toISOString());
                 foreach ($page as $configuration) {
-                    if ($configuration->cadence !== $work->cadence || ! collect($configuration->groups)->contains(fn ($group): bool => $group->module_id === $work->module_id && $group->server_group_id === $work->server_group_id)) {
+                    if ($configuration->cadence !== $work->cadence || ! collect($configuration->modules)->contains(fn ($group): bool => $group->module_id === $work->module_id)) {
                         continue;
                     }
                     $start = CarbonImmutable::parse($configuration->starts_at)->max(CarbonImmutable::parse($segment->starts_at))->max($from);

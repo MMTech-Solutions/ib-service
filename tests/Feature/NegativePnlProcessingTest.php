@@ -84,6 +84,12 @@ final class NegativePnlProcessingTest extends TestCase
 
             public string $dailyLoss = '100';
 
+            public array $lossesByAccount = [];
+
+            public array $precisionsByAccount = [];
+
+            public array $groupsByAccount = [];
+
             public string $currency = 'USD';
 
             public ?int $failAt = null;
@@ -100,15 +106,18 @@ final class NegativePnlProcessingTest extends TestCase
                     throw NegativePnlPeriodsUnavailableException::create();
                 }
                 $rows = [];
-                foreach ($this->accountsByUser[$query->external_user_id] ?? $this->accounts as $account) {
-                    $baseline = collect($query->baselines)->firstWhere('account_id', $account);
-                    $days = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInDays(CarbonImmutable::parse($query->occurred_until));
-                    $seconds = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInSeconds(CarbonImmutable::parse($query->occurred_until));
-                    $balance = bcsub('10000', bcmul(bcdiv((string) $seconds, '86400', 12), $this->dailyLoss, 2), 2);
-                    $rows[] = new NegativePnlPeriodData($baseline === null ? 'baseline' : 'resolved', $account, $query->external_user_id, 'external-group', $this->currenciesByAccount[$account] ?? $this->currency, 2, $baseline?->balance_after, $balance, $baseline?->occurred_until, $query->occurred_until, '0', '0', '0', $baseline === null ? null : bcsub($balance, $baseline->balance_after, 2), new NegativePnlCashFlowEvidenceData(0, [], 0, [], 0, [], 0, []), 'read-'.$account.'-'.$days, $query->occurred_until);
+                foreach ($query->subjects as $subject) {
+                    foreach ($this->accountsByUser[$subject->external_user_id] ?? $this->accounts as $account) {
+                        $baseline = collect($subject->baselines)->firstWhere('account_id', $account);
+                        $days = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInDays(CarbonImmutable::parse($query->occurred_until));
+                        $seconds = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInSeconds(CarbonImmutable::parse($query->occurred_until));
+                        $balance = bcsub('10000', bcmul(bcdiv((string) $seconds, '86400', 12), ($this->lossesByAccount[$account] ?? $this->dailyLoss), 2), 2);
+                        $rows[] = new NegativePnlPeriodData($baseline === null ? 'baseline' : 'resolved', $account, $subject->external_user_id, $this->groupsByAccount[$account] ?? 'external-group', $this->currenciesByAccount[$account] ?? $this->currency, $this->precisionsByAccount[$account] ?? 2, $baseline?->balance_after, $balance, $baseline?->occurred_until, $query->occurred_until, '0', '0', '0', $baseline === null ? null : bcsub($balance, $baseline->balance_after, 2), new NegativePnlCashFlowEvidenceData(0, [], 0, [], 0, [], 0, []), 'read-'.$account.'-'.$days, $query->occurred_until);
+                    }
+
                 }
 
-                return new ResolveNegativePnlPeriodsResultData($rows);
+                return new ResolveNegativePnlPeriodsResultData($rows, array_map(fn ($subject) => $subject->external_user_id, $query->subjects));
             }
         };
         $this->app->instance(ResolveNegativePnlPeriodsPort::class, $this->broker);
@@ -167,6 +176,7 @@ final class NegativePnlProcessingTest extends TestCase
     {
         $f = $this->activeFixture();
         $this->broker->accounts[] = 'account-two';
+        $this->broker->currenciesByAccount['account-two'] = 'EUR';
         $this->process();
         $this->travelTo(CarbonImmutable::parse('2026-10-01T12:00:00Z'));
         $this->gatewayJson('PATCH', "/api/ib/v1/admin/subscriptions/{$f['subscription']['id']}/reward-rates", ['personal_rate' => '0.5', 'is_master' => true, 'master_rate' => '2', 'lock_version' => $f['subscription']['lock_version']])->assertOk();
@@ -284,6 +294,57 @@ final class NegativePnlProcessingTest extends TestCase
         $this->artisan('rewards:process-negative-pnl', ['--limit' => 2])->assertExitCode(0);
     }
 
+    public function test_signed_accounts_compensate_across_users_and_groups_with_auditable_reward(): void
+    {
+        $this->activeFixture();
+        $first = $this->network->items[0]->external_user_id;
+        $second = (string) Str::uuid7();
+        $this->network->items[] = new NegativePnlReferralData($second, 0);
+        $this->broker->accountsByUser = [$first => ['loss-one', 'loss-two'], $second => ['gain']];
+        $this->broker->lossesByAccount = ['loss-one' => '1000', 'loss-two' => '200', 'gain' => '-600'];
+        $this->broker->groupsByAccount = ['loss-one' => 'g1', 'loss-two' => 'g2', 'gain' => 'g3'];
+        $this->process();
+        $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
+        $metrics = $this->process();
+        self::assertSame(1, $metrics['rewards']);
+        self::assertSame(0, $metrics['errors']);
+        $reward = DB::table('rewards')->first();
+        self::assertSame(6000, (int) $reward->amount_minor);
+        self::assertSame('USD', $reward->currency_code);
+        self::assertSame('pending', $reward->status);
+        $snapshot = json_decode($reward->summary_snapshot, true);
+        self::assertSame('-600.00', $snapshot['aggregate']['signed_pnl']);
+        self::assertCount(3, $snapshot['aggregate']['contributions']);
+        self::assertSame(3, DB::table('reward_evidence')->where('reward_id', $reward->id)->count());
+        self::assertSame(0, $this->process()['rewards']);
+    }
+
+    public function test_minimum_and_rounding_apply_once_to_the_sum(): void
+    {
+        $this->activeFixture();
+        $this->broker->accounts = ['small-a', 'small-b'];
+        $this->broker->dailyLoss = '0.06';
+        $this->process();
+        $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
+        self::assertSame(1, $this->process()['rewards']);
+        self::assertSame(1, (int) DB::table('rewards')->value('amount_minor'));
+        self::assertSame('-0.12', json_decode(DB::table('rewards')->value('summary_snapshot'), true)['aggregate']['signed_pnl']);
+    }
+
+    public function test_conflicting_currency_precision_keeps_baselines_and_period_pending(): void
+    {
+        $this->activeFixture();
+        $this->broker->accounts = ['a', 'b'];
+        $this->process();
+        $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
+        $this->broker->precisionsByAccount['b'] = 3;
+        self::assertSame(1, $this->process()['errors']);
+        self::assertSame(0, DB::table('rewards')->count());
+        self::assertSame('preparing', DB::table('negative_pnl_periods')->orderByDesc('occurred_until')->value('status'));
+        self::assertSame('evidence_invalid', DB::table('negative_pnl_jobs')->value('error_code'));
+        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_baselines')->value('occurred_until'))->toDateString());
+    }
+
     private function process(): array
     {
         return app(ProcessNegativePnlRewardsUseCase::class)->execute(20, 100);
@@ -312,6 +373,7 @@ final class NegativePnlProcessingTest extends TestCase
     public function test_receipts_survive_partial_evidence_failure_for_independent_referrals_and_currencies(): void
     {
         $this->activeFixture();
+        config(['rewards.negative_pnl.subject_batch_size' => 1]);
         $first = $this->network->items[0]->external_user_id;
         $second = (string) Str::uuid7();
         $this->network->items[] = new NegativePnlReferralData($second, 1);
@@ -341,7 +403,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(0, $this->process()['rewards']);
         self::assertSame(0, DB::table('rewards')->count());
         $outcomes = json_decode(DB::table('negative_pnl_periods')->orderByDesc('occurred_until')->first()->outcomes, true);
-        self::assertSame($reason, $outcomes[$this->network->items[0]->external_user_id]['account-one']);
+        self::assertSame($reason, $outcomes['aggregates'][0]['USD']['result']);
     }
 
     public static function noRewardCases(): array
@@ -403,7 +465,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(1, $this->process()['rewards']);
         self::assertSame(500, (int) DB::table('rewards')->first()->amount_minor);
         $snapshot = json_decode(DB::table('rewards')->first()->summary_snapshot, true);
-        self::assertSame('2026-10-01T12:00:00.000000Z', $snapshot['cut']['occurred_from']);
+        self::assertSame('2026-10-01T12:00:00.000000Z', $snapshot['aggregate']['contributions'][0]['occurred_from']);
     }
 
     public function test_program_change_in_same_cadence_uses_final_program_for_complete_period(): void
@@ -543,7 +605,7 @@ final class NegativePnlProcessingTest extends TestCase
         $version = $this->version($plan, $rule, $binding);
         $assignment = $this->assign($plan, $rule, $program, $module, $version);
 
-        return ['plan_id' => $plan, 'program_id' => $program, 'module_id' => $module, 'rule_id' => $rule, 'version_id' => $version, 'binding_id' => $binding, 'assignment_id' => $assignment, 'url' => "/api/ib/v1/admin/plans/{$plan}/programs/{$program}/negative-pnl-configuration", 'payload' => ['cadence' => 'monthly', 'groups' => [['module_id' => $module, 'server_group_id' => 'external-group', 'rule_version_id' => $version]]]];
+        return ['plan_id' => $plan, 'program_id' => $program, 'module_id' => $module, 'rule_id' => $rule, 'version_id' => $version, 'binding_id' => $binding, 'assignment_id' => $assignment, 'url' => "/api/ib/v1/admin/plans/{$plan}/programs/{$program}/negative-pnl-configuration", 'payload' => ['cadence' => 'monthly', 'modules' => [['module_id' => $module, 'rule_version_id' => $version]]]];
     }
 
     private function version(string $plan, string $rule, string $binding): string

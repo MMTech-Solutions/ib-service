@@ -13,6 +13,7 @@ return [
         'claim_lease_seconds' => (int) env('REWARDS_VOLUME_CLAIM_LEASE_SECONDS', 60),
     ],
     'negative_pnl' => [
+        'subject_batch_size' => (int) env('REWARDS_NEGATIVE_PNL_SUBJECT_BATCH_SIZE', 100),
         'enabled' => filter_var(env('REWARDS_PNL_ENABLED', true), FILTER_VALIDATE_BOOL),
         'settlement_enabled' => filter_var(env('REWARDS_PNL_SETTLEMENT_ENABLED', true), FILTER_VALIDATE_BOOL),
         'batch_size' => (int) env('REWARDS_PNL_BATCH_SIZE', 100),

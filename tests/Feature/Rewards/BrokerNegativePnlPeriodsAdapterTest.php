@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Rewards;
 
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
+use App\Features\Rewards\Contracts\Data\V1\NegativePnlSubjectData;
 use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Exceptions\HistoricalPnlCoverageUnavailableException;
@@ -22,12 +23,12 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
 
         $result = $this->app->make(ResolveNegativePnlPeriodsPort::class)->resolve(
             new ResolveNegativePnlPeriodsQueryData(
-                external_user_id: '11111111-1111-4111-8111-111111111111',
-                baselines: [new NegativePnlBaselineData(
+                subjects: [new NegativePnlSubjectData('11111111-1111-4111-8111-111111111111', [new NegativePnlBaselineData(
                     account_id: '00000000-0000-7000-8000-000000000002',
                     balance_after: '100.00',
                     occurred_until: '2026-10-01T10:00:00Z',
-                )],
+                )])],
+                occurred_until: '2026-10-02T10:00:00Z',
             ),
         );
 
@@ -35,7 +36,7 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
         self::assertTrue($result->periods[0]->establishesBaseline());
         self::assertNull($result->periods[0]->net_pnl);
         self::assertSame('-40.00', $result->periods[1]->net_pnl);
-        self::assertSame('2026-10-01T10:00:00+00:00', $result->periods[1]->occurred_from);
+        self::assertSame('2026-10-01T10:00:00.000000Z', $result->periods[1]->occurred_from);
         self::assertSame(
             ['00000000-0000-7000-8000-000000000101'],
             $result->periods[1]->evidence->external_deposit_references,
@@ -44,8 +45,8 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
         Http::assertSent(static fn (Request $request): bool => $request->method() === 'POST'
             && str_ends_with($request->url(), '/api/broker/v1/internal/accounts/negative-pnl-periods/resolve')
             && $request->hasHeader('X-Internal-Source', 'mmt-ib-service')
-            && $request->data()['external_user_id'] === '11111111-1111-4111-8111-111111111111'
-            && $request->data()['baselines'][0]['balance_after'] === '100.00');
+            && $request->data()['subjects'][0]['external_user_id'] === '11111111-1111-4111-8111-111111111111'
+            && $request->data()['subjects'][0]['baselines'][0]['balance_after'] === '100.00');
     }
 
     public function test_it_classifies_conflict_and_server_errors_as_recoverable(): void
@@ -106,8 +107,7 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
         Http::fake(['*' => Http::response($fixture)]);
 
         $result = $this->app->make(ResolveNegativePnlPeriodsPort::class)->resolve(new ResolveNegativePnlPeriodsQueryData(
-            '11111111-1111-4111-8111-111111111111',
-            [new NegativePnlBaselineData('00000000-0000-7000-8000-000000000002', '100.00', '2026-10-01T10:00:00Z')],
+            [new NegativePnlSubjectData('11111111-1111-4111-8111-111111111111', [new NegativePnlBaselineData('00000000-0000-7000-8000-000000000002', '100.00', '2026-10-01T10:00:00Z')])],
             '2026-10-02T10:00:00Z',
         ));
 
@@ -133,10 +133,27 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
         $this->resolveEmpty();
     }
 
+    public function test_empty_completed_subject_is_valid_but_missing_or_duplicate_completion_is_invalid(): void
+    {
+        $id = '11111111-1111-4111-8111-111111111111';
+        Http::fake(['*' => Http::sequence()->push(['data' => [], 'meta' => ['completed_subjects' => [$id]]])->push(['data' => [], 'meta' => ['completed_subjects' => []]])->push(['data' => [], 'meta' => ['completed_subjects' => [$id, $id]]])->push(['data' => [], 'meta' => ['completed_subjects' => ['unexpected']]])]);
+        $result = app(ResolveNegativePnlPeriodsPort::class)->resolve(new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData($id)], '2026-10-02T10:00:00Z'));
+        self::assertSame([], $result->periods);
+        self::assertSame([$id], $result->completed_subjects);
+        foreach ([[], [$id, $id], ['unexpected']] as $completed) {
+            try {
+                $this->resolveEmpty();
+                self::fail('Incomplete or duplicate acknowledgement must be rejected.');
+            } catch (InvalidNegativePnlPeriodsResponseException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     private function resolveEmpty(): void
     {
         $this->app->make(ResolveNegativePnlPeriodsPort::class)->resolve(
-            new ResolveNegativePnlPeriodsQueryData('11111111-1111-4111-8111-111111111111'),
+            new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData('11111111-1111-4111-8111-111111111111')], '2026-10-02T10:00:00Z'),
         );
     }
 
@@ -146,6 +163,13 @@ final class BrokerNegativePnlPeriodsAdapterTest extends TestCase
         $contents = file_get_contents(base_path('tests/Fixtures/Rewards/broker-negative-pnl-periods-v1.json'));
         self::assertIsString($contents);
 
-        return json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+        $fixture = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+        foreach ($fixture['data'] as &$row) {
+            $row['balance_read_id'] = '123';
+            $row['balance_read_at'] = '2026-10-02T09:58:00Z';
+        }
+        $fixture['meta']['completed_subjects'] = ['11111111-1111-4111-8111-111111111111'];
+
+        return $fixture;
     }
 }

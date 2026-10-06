@@ -21,7 +21,7 @@ final class CaptureNegativePnlCutService
 
     public function execute(CaptureNegativePnlCutData $data, ?NegativePnlPeriodData $resolvedPeriod = null): NegativePnlCutSnapshotData
     {
-        if ($data->query->occurred_until === null || ! in_array($data->cadence, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
+        if (! in_array($data->cadence, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }
         $identity = hash('sha256', json_encode([
@@ -31,7 +31,7 @@ final class CaptureNegativePnlCutService
         $repository = $this->repositoryFactory->make();
         $existing = $repository->findNegativePnlCut($identity);
         if ($existing !== null) {
-            if ($existing->period->external_user_id !== $data->query->external_user_id) {
+            if ($existing->period->external_user_id !== collect($data->query->subjects)->firstWhere('external_user_id', $existing->period->external_user_id)?->external_user_id) {
                 throw InvalidNegativePnlPeriodsResponseException::create();
             }
 
@@ -39,7 +39,7 @@ final class CaptureNegativePnlCutService
         }
         $period = $resolvedPeriod ?? collect($this->provider->resolve($data->query)->periods)->firstWhere('account_id', $data->account_id);
         if ($period === null || $period->server_group_id !== $data->server_group_id
-            || $period->external_user_id !== $data->query->external_user_id
+            || ! collect($data->query->subjects)->contains('external_user_id', $period->external_user_id)
             || $period->balance_read_id === null || $period->balance_read_at === null) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }

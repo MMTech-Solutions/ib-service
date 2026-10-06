@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories;
 
-use App\Features\Programs\Contracts\Data\V1\NegativePnlGroupConfigurationData;
+use App\Features\Programs\Contracts\Data\V1\NegativePnlModuleConfigurationData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
 use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
 use App\Features\Rewards\DTOs\NegativePnlAccountCutData;
+use App\Features\Rewards\DTOs\NegativePnlAggregateData;
 use App\Features\Rewards\DTOs\NegativePnlFrozenInputsData;
 use App\Features\Rewards\DTOs\NegativePnlProcessingPeriodData;
 use App\Features\Rewards\DTOs\NegativePnlWorkData;
@@ -30,7 +31,7 @@ interface NegativePnlProcessingRepositoryInterface
 
     public function transactionForLease(NegativePnlWorkData $work, Closure $callback): void;
 
-    public function seed(NegativePnlSubscriptionData $subscription, NegativePnlProgramConfigurationData $configuration, NegativePnlGroupConfigurationData $group): void;
+    public function seed(NegativePnlSubscriptionData $subscription, NegativePnlProgramConfigurationData $configuration, NegativePnlModuleConfigurationData $group): void;
 
     public function recordClosure(RecordNegativePnlClosureData $data): void;
 
@@ -51,9 +52,11 @@ interface NegativePnlProcessingRepositoryInterface
 
     public function ready(NegativePnlWorkData $work, string $periodId): NegativePnlProcessingPeriodData;
 
-    public function persistReward(NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period, string $referralId, int $level, NegativePnlPeriodData $cut, PositiveMoney $amount): bool;
+    public function persistReward(NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period, NegativePnlAggregateData $aggregate, PositiveMoney $amount): bool;
 
     public function recordOutcome(NegativePnlWorkData $work, string $periodId, string $referralId, string $accountId, string $reason): void;
+
+    public function recordAggregateOutcome(NegativePnlWorkData $work, string $periodId, NegativePnlAggregateData $aggregate, string $reason): void;
 
     public function complete(NegativePnlWorkData $work, string $periodId): void;
 

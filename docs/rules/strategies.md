@@ -76,7 +76,7 @@ Para volumen, evento y barrido convergen en procesamiento de posición: el UseCa
 resuelve red y contexto histórico; la Strategy calcula con configuración congelada.
 Para PnL, programas con período vencido originan selección de beneficiarios,
 referidos y cuentas; el UseCase obtiene cortes Broker, congela contexto/red y
-recupera cierres históricos pendientes. La Strategy interpreta el PnL firmado.
+recupera cierres históricos pendientes. La Strategy interpreta el total firmado por nivel y moneda; la agregación pertenece a Rewards y conserva aportes positivos y negativos.
 Ninguna Strategy económica llama a IAM, Broker o Finance ni persiste Rewards.
 Los proveedores seleccionan y normalizan hechos, no deciden elegibilidad ni pagos.
 No se compensan datos económicos ausentes mediante defaults.

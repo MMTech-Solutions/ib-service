@@ -38,7 +38,7 @@ final class ReadRewardsRequest extends FormRequest
             'beneficiary_id' => $admin ? ['sometimes', 'uuid'] : ['prohibited'],
             'subscription_id' => $admin && $resource !== 'rewards' ? ['sometimes', 'uuid'] : ['prohibited'],
             'job_id' => $admin && $resource === 'periods' ? ['sometimes', 'uuid'] : ['prohibited'],
-            'server_group_id' => $admin && $resource !== 'rewards' ? ['sometimes', 'string', 'max:191'] : ['prohibited'],
+            'server_group_id' => ['prohibited'],
             'occurred_from' => ['sometimes', 'date'],
             'occurred_until' => ['sometimes', 'date', Rule::when($this->filled('occurred_from'), 'after:occurred_from')],
         ];
