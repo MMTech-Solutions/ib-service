@@ -59,6 +59,7 @@ use App\Features\Rewards\Http\V1\Controllers\CreateRewardCompensationController;
 use App\Features\Rewards\Http\V1\Controllers\ListCpaVerificationProgressController;
 use App\Features\Rewards\Http\V1\Controllers\ReadRewardsController;
 use App\Features\Rewards\Http\V1\Controllers\ReverseRewardController;
+use App\Features\Rules\Assignments\Http\V1\Controllers\CpaConfigurationController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ListRuleAssignmentsController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ReplaceRuleAssignmentController;
 use App\Features\Rules\Assignments\Http\V1\Controllers\ShowRuleAssignmentController;
@@ -96,6 +97,9 @@ Route::prefix('ib/v1')
     ->group(function (): void {
         Route::prefix('admin')
             ->group(function (): void {
+                Route::get('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.show');
+                Route::put('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.replace');
+                Route::delete('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.destroy');
                 Route::get('payment-templates', ListPaymentTemplatesController::class)->name('ib.v1.admin.payment-templates.index');
                 Route::post('plans/{plan}/payment-template-version-bindings', StorePaymentTemplateBindingController::class)->name('ib.v1.admin.plans.payment-template-version-bindings.store');
                 Route::get('plans/{plan}/payment-template-version-bindings', ListPaymentTemplateBindingsController::class)->name('ib.v1.admin.plans.payment-template-version-bindings.index');

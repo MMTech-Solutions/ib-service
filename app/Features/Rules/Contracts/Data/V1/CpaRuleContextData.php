@@ -9,21 +9,15 @@ use Spatie\LaravelData\Data;
 final class CpaRuleContextData extends Data
 {
     /** @param array<string, mixed>|null $configuration */
-    public function __construct(
-        public readonly ?string $rule_assignment_id,
-        public readonly ?string $rule_id,
-        public readonly ?string $rule_version_id,
-        public readonly ?string $module_id,
-        public readonly ?array $configuration,
-    ) {}
+    public function __construct(public readonly ?string $cpa_assignment_id, public readonly ?string $rule_id, public readonly ?string $rule_version_id, public readonly ?array $configuration) {}
 
     public function found(): bool
     {
-        return $this->rule_assignment_id !== null;
+        return $this->cpa_assignment_id !== null;
     }
 
     public static function absent(): self
     {
-        return new self(null, null, null, null, null);
+        return new self(null, null, null, null);
     }
 }

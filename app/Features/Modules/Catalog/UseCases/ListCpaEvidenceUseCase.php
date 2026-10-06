@@ -22,10 +22,6 @@ final class ListCpaEvidenceUseCase implements ListCpaEvidencePort
     public function list(ListCpaEvidenceQueryData $query): CpaEvidenceData
     {
         $module = $this->modules->findByIds([$query->module_id])[0];
-        if ($module->code !== 'broker') {
-            throw InvalidProgressionActivityQueryException::withMessage('CPA evidence is unavailable for this module.');
-        }
-
         $from = CarbonImmutable::parse($query->occurred_from)->utc();
         $until = CarbonImmutable::parse($query->occurred_until)->utc();
         if (! $from->lt($until)) {

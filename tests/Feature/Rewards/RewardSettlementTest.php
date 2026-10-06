@@ -83,7 +83,7 @@ final class RewardSettlementTest extends TestCase
         config(['finance.base_url' => 'http://finance.test']);
         $first = $this->seedReward('pending');
         $second = $this->seedReward('pending');
-        DB::table('rewards')->where('id', $first)->update(['created_at' => now('UTC')->subMinute()]);
+        DB::table('rewards')->where('id', $first)->update(['created_at' => now('UTC')->subMinute(), 'commission_type' => 'volume']);
         $actual = app(ResolveModulesPort::class);
         $calls = 0;
         $mock = \Mockery::mock(ResolveModulesPort::class);
@@ -95,6 +95,7 @@ final class RewardSettlementTest extends TestCase
             return $actual->findByIds($ids);
         });
         $this->app->instance(ResolveModulesPort::class, $mock);
+        app()->forgetInstance(SettlePendingRewardsUseCase::class);
         Http::fake(fn () => Http::response($this->financeResponse($second, 'created')));
         self::assertSame(['settled' => 1, 'failed' => 0, 'skipped' => 1], app(SettlePendingRewardsUseCase::class)->execute(1));
         self::assertNull(DB::table('rewards')->where('id', $first)->value('settlement_lock_token'));
@@ -274,10 +275,12 @@ final class RewardSettlementTest extends TestCase
             'status' => $status, 'summary_snapshot' => '{}', 'last_settlement_attempt_at' => $lastAttempt,
             'created_at' => $now, 'updated_at' => $now,
         ]);
+        $cpaAssignment = (string) Str::uuid7();
+        DB::table('program_cpa_rule_assignments')->insert(['id' => $cpaAssignment, 'program_id' => $program->id, 'rule_id' => $rule->id, 'rule_version_id' => $version->id, 'starts_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
         DB::table('cpa_contexts')->insert([
             'id' => (string) Str::uuid7(), 'referred_user_id' => (string) Str::uuid7(),
             'ib_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'plan_id' => $plan->id,
-            'program_id' => $program->id, 'module_id' => $module->id, 'rule_assignment_id' => $assignmentId,
+            'program_id' => $program->id, 'cpa_assignment_id' => $cpaAssignment,
             'rule_id' => $rule->id, 'rule_version_id' => $version->id, 'symbols_snapshot' => '[]',
             'requirements_snapshot' => '{}', 'captured_at' => $now, 'reward_id' => $rewardId,
         ]);

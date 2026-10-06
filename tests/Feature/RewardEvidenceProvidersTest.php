@@ -11,6 +11,7 @@ use App\Features\Modules\Catalog\Models\ModuleCapability;
 use App\Features\Modules\Catalog\UseCases\ListVolumeRewardActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveClosedVolumeRewardActivityUseCase;
 use App\Features\Modules\Catalog\ValueObjects\ProcessingStatus;
+use App\Features\Modules\Contracts\Data\V1\ListCertifiedDepositsQueryData;
 use App\Features\Modules\Contracts\Data\V1\ListCpaEvidenceQueryData;
 use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesQueryData;
 use App\Features\Modules\Contracts\Data\V1\ResolveClosedVolumeRewardActivityQueryData;
@@ -18,6 +19,7 @@ use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionNotReadyExcept
 use App\Features\Modules\Contracts\Exceptions\BrokerProgressionActivityUnavailableException;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
 use App\Features\Modules\Contracts\Exceptions\VolumeRewardModuleNotOperationalException;
+use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -120,22 +122,20 @@ final class RewardEvidenceProvidersTest extends TestCase
             return Http::response(['data' => [['id' => 42, 'minor_units' => 2, 'amount_minor' => 101, 'currency_code' => 'USD', 'credited_at' => '2026-10-01T12:00:00Z']], 'meta' => []]);
         });
         $evidence = app(CpaEvidenceProviderFactory::class)->make('broker')->fetch(new ListCpaEvidenceQueryData(
-            'module', 'user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', 'USD', 2,
+            'module', 'user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z',
             [['symbol_reference' => 'broker:server_group:group:symbol:symbol', 'server_group_reference' => 'broker:server_group:group', 'currency_code' => 'USD']]));
         self::assertCount(1, $evidence->volume_facts);
-        self::assertSame('finance:ledger:42', $evidence->deposit_facts[0]['source_activity_id']);
-        self::assertSame(101, $evidence->deposit_facts[0]['amount_minor']);
-        Http::assertSentCount(3);
+        self::assertSame([], $evidence->deposit_facts);
+
+        Http::assertSentCount(2);
     }
 
     public function test_cpa_provider_rejects_deposit_precision_mismatch(): void
     {
         $this->installModule();
-        Http::fake(fn ($request) => Http::response(['data' => str_contains($request->url(), 'progression-activities') ? [] :
-            [['id' => 42, 'minor_units' => 3, 'amount_minor' => 101, 'currency_code' => 'USD', 'credited_at' => '2026-10-01T12:00:00Z']], 'meta' => []]));
+        Http::fake(['*' => Http::response(['data' => [['id' => 42, 'minor_units' => 3, 'amount_minor' => 101, 'currency_code' => 'USD', 'credited_at' => '2026-10-01T12:00:00Z']], 'meta' => []])]);
         $this->expectException(InvalidProgressionActivityQueryException::class);
-        app(CpaEvidenceProviderFactory::class)->make('broker')->fetch(new ListCpaEvidenceQueryData(
-            'module', 'user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', 'USD', 2, []));
+        app(ListCertifiedDepositsPort::class)->execute(new ListCertifiedDepositsQueryData('user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', 'USD', 2));
     }
 
     public function test_cpa_remote_failure_propagates_without_querying_finance(): void
@@ -144,7 +144,7 @@ final class RewardEvidenceProvidersTest extends TestCase
         Http::fake(['*' => Http::response([], 503)]);
         try {
             app(CpaEvidenceProviderFactory::class)->make('broker')->fetch(new ListCpaEvidenceQueryData(
-                'module', 'user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', 'USD', 2, []));
+                'module', 'user', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', []));
             self::fail('Expected provider failure.');
         } catch (BrokerProgressionActivityUnavailableException) {
             Http::assertSentCount(1);

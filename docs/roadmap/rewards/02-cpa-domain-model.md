@@ -1,4 +1,10 @@
 # RWD2: modelo de dominio CPA
+> Nota de vigencia (2026-10-06): el diseño CPA anterior se conserva aquí como
+> evidencia histórica. El modelo vigente y su implementación se describen en
+> [CPA por puntos](12-cpa-points-refactor.md) y en el BDS de Rewards.
+> CPA usa dos umbrales de puntos, contribuciones persistidas y fuentes independientes;
+> no requiere una asignación genérica a un módulo único.
+
 
 Estado: **Listo**
 Última revisión: 2026-10-02

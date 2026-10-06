@@ -134,3 +134,6 @@ Además de su evidencia funcional, toda entrega que modifique `app/Features/` de
   dependencias acordados.
 - Al incorporar un feature, se crea su directorio siguiendo esta iteración y se
   añade al índice anterior.
+
+CPA por puntos: [entrega vigente](rewards/12-cpa-points-refactor.md), revisión
+2026-10-06. El schema de cantidades anterior se sustituye sin compatibilidad.

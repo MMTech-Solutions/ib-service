@@ -45,7 +45,6 @@ final class ArchitectureGuardrailsTest extends TestCase
         'Features/Programs/Catalog/UseCases/ReplaceProgramSymbolConfigurationsUseCase.php' => ['connection_import' => 1, 'db_facade' => 0, 'query_builder' => 0, 'eloquent' => 0, 'table_calls' => 7, 'reason' => 'M5 atomic replacement awaiting repository extraction.'],
         'Features/Programs/Catalog/UseCases/ResolveProgramCpaSymbolsUseCase.php' => ['connection_import' => 1, 'db_facade' => 0, 'query_builder' => 0, 'eloquent' => 0, 'table_calls' => 1, 'reason' => 'RWD2 program CPA symbols read port awaiting repository extraction.'],
         'Features/Programs/Catalog/UseCases/ResolveProgramProgressionConfigurationUseCase.php' => ['connection_import' => 1, 'db_facade' => 0, 'query_builder' => 0, 'eloquent' => 0, 'table_calls' => 3, 'reason' => 'PG configuration read port awaiting repository extraction.'],
-        'Features/Rules/Assignments/UseCases/ResolveCpaRuleContextUseCase.php' => ['connection_import' => 1, 'db_facade' => 0, 'query_builder' => 0, 'eloquent' => 0, 'table_calls' => 1, 'reason' => 'RWD2 CPA rule context read port awaiting repository extraction.'],
     ];
 
     /** @var array<string, string> */
@@ -55,6 +54,7 @@ final class ArchitectureGuardrailsTest extends TestCase
         'Features/Plans/Catalog/Exceptions/DuplicatePlanCodeException.php' => 'Historical persistence conflict translation.',
         'Features/Programs/Catalog/Exceptions/DuplicateProgramCodeException.php' => 'Historical persistence conflict translation.',
         'Features/Rewards/Exceptions/CpaCaptureNotApplicableException.php' => 'Kafka control-flow outcome; not an HTTP error.',
+        'Features/Rewards/Exceptions/CpaEvidenceContractException.php' => 'Immutable CPA provider contract violation; not an HTTP error.',
         'Features/Rewards/Exceptions/RewardSettlementException.php' => 'Retryable Finance adapter failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedCpaRewardCalculationStrategyException.php' => 'Internal calculation factory configuration failure; not an HTTP error.',
         'Features/Rewards/Exceptions/UnsupportedNegativePnlPeriodsProviderException.php' => 'Internal PnL provider configuration failure; not an HTTP error.',

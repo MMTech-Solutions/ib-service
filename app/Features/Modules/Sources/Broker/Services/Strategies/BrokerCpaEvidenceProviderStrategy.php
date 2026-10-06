@@ -10,14 +10,13 @@ use App\Features\Modules\Contracts\Data\V1\CpaVolumeEvidenceData;
 use App\Features\Modules\Contracts\Data\V1\ListCpaEvidenceQueryData;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
 use App\Features\Modules\Sources\Broker\Services\BrokerInstrumentCatalogApiClient;
-use App\Features\Modules\Sources\Broker\Services\FinanceCertifiedDepositsApiClient;
 use Carbon\CarbonImmutable;
 
 final class BrokerCpaEvidenceProviderStrategy implements CpaEvidenceProviderStrategyInterface
 {
     public function __construct(
         private readonly BrokerInstrumentCatalogApiClient $broker,
-        private readonly FinanceCertifiedDepositsApiClient $finance,
+
     ) {}
 
     public function fetch(ListCpaEvidenceQueryData $query): CpaEvidenceData
@@ -50,21 +49,7 @@ final class BrokerCpaEvidenceProviderStrategy implements CpaEvidenceProviderStra
             $cursor = is_string($next) && $next !== '' ? $next : null;
         } while ($cursor !== null);
 
-        $deposits = [];
-        foreach ($this->finance->list($query->subject_external_user_id, $from->toIso8601String(), $until->toIso8601String(), $query->currency_code) as $deposit) {
-            if ((int) ($deposit['minor_units'] ?? -1) !== $query->currency_precision || ! is_int($deposit['amount_minor'] ?? null) || ! is_int($deposit['id'] ?? null)) {
-                throw InvalidProgressionActivityQueryException::withMessage('Finance returned an invalid certified deposit.');
-            }
-            $deposits[] = [
-                'source_activity_id' => 'finance:ledger:'.$deposit['id'],
-                'subject_external_user_id' => $query->subject_external_user_id,
-                'amount_minor' => $deposit['amount_minor'],
-                'currency_code' => strtoupper((string) ($deposit['currency_code'] ?? '')),
-                'occurred_at' => (string) ($deposit['credited_at'] ?? ''),
-            ];
-        }
-
-        return new CpaEvidenceData($volumeFacts, $deposits);
+        return new CpaEvidenceData($volumeFacts, []);
     }
 
     /** @param array<string, mixed> $item */

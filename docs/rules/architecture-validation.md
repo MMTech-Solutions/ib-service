@@ -51,3 +51,11 @@ php artisan test --compact tests/Architecture
 ```
 
 Después de cambios de código se ejecutan también Pint y `graphify update .` según `AGENTS.md`.
+
+## Refactor CPA por puntos (2026-10-06)
+
+ResolveCpaRuleContextUseCase deja de acceder directamente a persistencia; se retira
+su entrada del baseline. CpaEvidenceContractException es una excepción técnica
+de contrato externo inmutable usada por el procesamiento de Rewards, sin transporte
+HTTP; su ruta exacta se añade al baseline sin ampliar exclusiones por directorio.
+Los nuevos puertos de depósitos certificados y capacidad CPA exponen execute().

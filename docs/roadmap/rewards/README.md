@@ -95,6 +95,16 @@ A2.3 completa las factories específicas de proveedores de evidencia.
 - `pending` y `failed` de CPA/volumen/PnL son seleccionables por settlement, bajo condiciones operativas y sin holds. Generación y settlement PnL están habilitados por defecto con controles independientes para desactivarlos. Finance conserva el asiento y IB su resumen operativo y solicitud congelada.
 - Cancelación, reversa y compensación son administrativas, idempotentes y auditables. La reconciliación recurrente solo trata incertidumbre u holds, nunca el histórico financiero confirmado.
 
+## CPA por puntos
+
+[Refactor CPA](12-cpa-points-refactor.md): sustituye el modelo anterior sin
+compatibilidad. Dos umbrales de puntos independientes, conversión por módulo
+para volumen y común para depósitos, contribuciones durables por entrada,
+cortes por fuente y asociación administrativa histórica por programa.
+Esta especificación sustituye los diseños CPA de RWD2 y la equivalencia CPA de A2.
+El programa se resuelve por la suscripción del IB, no por la del referido.
+Las reglas detalladas vigentes pertenecen al BDS de Rewards.
+
 ## Próximo paso
 
 [Plans P3](../plans/06-template-version-bindings.md), completada localmente, cierra la creación

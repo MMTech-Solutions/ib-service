@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
+use App\Features\Rewards\DTOs\CpaSourceProgressData;
 use App\Features\Rewards\DTOs\CpaVerificationProgressData;
 use App\Features\Rewards\DTOs\CpaVerificationProgressListQueryData;
 use App\Features\Rewards\DTOs\CpaVerificationProgressPageData;
 use App\Features\Rewards\Repositories\CpaVerificationProgressRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
-use stdClass;
 
 final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificationProgressRepositoryInterface
 {
@@ -21,74 +21,38 @@ final class PostgreSqlCpaVerificationProgressRepository implements CpaVerificati
         $paginator = $this->connection->table('cpa_contexts as contexts')
             ->join('cpa_verification_progress as progress', 'progress.cpa_context_id', '=', 'contexts.id')
             ->leftJoin('rewards', 'rewards.id', '=', 'contexts.reward_id')
-            ->when($query->ib_user_id !== null, fn ($builder) => $builder->where('contexts.ib_user_id', $query->ib_user_id))
-            ->when($query->referred_user_id !== null, fn ($builder) => $builder->where('contexts.referred_user_id', $query->referred_user_id))
-            ->when($query->program_id !== null, fn ($builder) => $builder->where('contexts.program_id', $query->program_id))
-            ->when($query->module_id !== null, fn ($builder) => $builder->where('contexts.module_id', $query->module_id))
-            ->when($query->status !== null, fn ($builder) => $builder->where('progress.status', $query->status))
-            ->orderByDesc('contexts.captured_at')
-            ->orderByDesc('contexts.id')
-            ->paginate($query->per_page, [
-                'contexts.id as context_id', 'contexts.referred_user_id', 'contexts.ib_user_id', 'contexts.plan_id',
-                'contexts.program_id', 'contexts.module_id', 'contexts.rule_assignment_id', 'contexts.rule_id',
-                'contexts.rule_version_id', 'contexts.reward_id', 'contexts.requirements_snapshot', 'progress.status',
-                'progress.observed_volume', 'progress.required_volume', 'progress.volume_unit_code',
-                'progress.observed_deposit_minor', 'progress.required_deposit_minor', 'progress.currency_code',
-                'progress.volume_satisfied', 'progress.deposit_satisfied', 'progress.observed_from',
-                'progress.observed_until', 'progress.last_evaluated_at', 'progress.last_error_code',
-                'rewards.status as reward_financial_status', 'rewards.reconciliation_hold_code as reward_reconciliation_hold_code',
-            ], 'page', $query->page);
+            ->when($query->ib_user_id !== null, fn ($q) => $q->where('contexts.ib_user_id', $query->ib_user_id))
+            ->when($query->referred_user_id !== null, fn ($q) => $q->where('contexts.referred_user_id', $query->referred_user_id))
+            ->when($query->program_id !== null, fn ($q) => $q->where('contexts.program_id', $query->program_id))
+            ->when($query->module_id !== null, fn ($q) => $q->whereExists(fn ($s) => $s->selectRaw('1')->from('cpa_sources')->whereColumn('cpa_sources.cpa_context_id', 'contexts.id')->where('cpa_sources.module_id', $query->module_id)))
+            ->when($query->status !== null, fn ($q) => $q->where('progress.status', $query->status))
+            ->orderByDesc('contexts.captured_at')->orderByDesc('contexts.id')
+            ->paginate($query->per_page, ['contexts.*', 'progress.status', 'progress.observed_volume_points', 'progress.observed_deposit_points', 'progress.observed_deposit_minor', 'progress.volume_satisfied', 'progress.deposit_satisfied', 'progress.observed_from', 'progress.last_evaluated_at', 'progress.last_error_code', 'rewards.status as reward_financial_status', 'rewards.reconciliation_hold_code as reward_reconciliation_hold_code'], 'page', $query->page);
+        $ids = array_map(static fn (object $row): string => $row->id, $paginator->items());
+        $sources = $this->connection->table('cpa_sources')->whereIn('cpa_context_id', $ids)->orderBy('source_key')->get();
+        $totals = $this->connection->table('cpa_contributions')->whereIn('cpa_context_id', $ids)->groupBy('cpa_source_id')->selectRaw('cpa_source_id, SUM(quantity) as quantity, SUM(points) as points')->get()->keyBy('cpa_source_id');
+        $items = [];
+        foreach ($paginator->items() as $row) {
+            $configuration = json_decode($row->requirements_snapshot, true, 512, JSON_THROW_ON_ERROR);
+            $sourceData = [];
+            foreach ($sources->where('cpa_context_id', $row->id) as $source) {
+                $total = $totals->get($source->id);
+                $sourceData[] = new CpaSourceProgressData($source->kind, $source->module_id, $source->status, (string) ($total->quantity ?? '0'), (string) ($total->points ?? '0'), $this->timestamp($source->observed_until), $this->timestamp($source->last_evaluated_at), $source->last_error_code);
+            }
+            $items[] = new CpaVerificationProgressData(
+                $row->id, $row->referred_user_id, $row->status, $row->observed_volume_points, $configuration['required_volume_points'],
+                $row->observed_deposit_points, $configuration['required_deposit_points'], (int) $row->observed_deposit_minor, $configuration['deposit_currency'], $configuration['deposit_currency_precision'],
+                (bool) $row->volume_satisfied, (bool) $row->deposit_satisfied, $this->timestamp($row->observed_from), $this->timestamp($row->last_evaluated_at),
+                $sourceData, $row->ib_user_id, $row->plan_id, $row->program_id, $row->cpa_assignment_id, $row->rule_id, $row->rule_version_id,
+                $row->reward_id, $row->last_error_code, $row->reward_financial_status, $row->reward_reconciliation_hold_code,
+            );
+        }
 
-        return new CpaVerificationProgressPageData(
-            items: collect($paginator->items())->map(fn (stdClass $row): CpaVerificationProgressData => $this->toData($row))->all(),
-            current_page: $paginator->currentPage(),
-            per_page: $paginator->perPage(),
-            total: $paginator->total(),
-            last_page: $paginator->lastPage(),
-        );
+        return new CpaVerificationProgressPageData($items, $paginator->currentPage(), $paginator->perPage(), $paginator->total(), $paginator->lastPage());
     }
 
-    private function toData(stdClass $row): CpaVerificationProgressData
+    private function timestamp(mixed $value): ?string
     {
-        $requirements = json_decode((string) $row->requirements_snapshot, true, 512, JSON_THROW_ON_ERROR);
-
-        return new CpaVerificationProgressData(
-            id: (string) $row->context_id,
-            referred_user_id: (string) $row->referred_user_id,
-            status: (string) $row->status,
-            observed_volume: (string) $row->observed_volume,
-            required_volume: (string) $row->required_volume,
-            volume_unit_code: (string) $row->volume_unit_code,
-            observed_deposit_minor: (int) $row->observed_deposit_minor,
-            required_deposit_minor: (int) $row->required_deposit_minor,
-            currency_code: (string) $row->currency_code,
-            currency_precision: (int) $requirements['currency_precision'],
-            volume_satisfied: (bool) $row->volume_satisfied,
-            deposit_satisfied: (bool) $row->deposit_satisfied,
-            observed_from: $this->timestamp($row->observed_from),
-            observed_until: $this->nullableTimestamp($row->observed_until),
-            last_evaluated_at: $this->nullableTimestamp($row->last_evaluated_at),
-            ib_user_id: (string) $row->ib_user_id,
-            plan_id: (string) $row->plan_id,
-            program_id: (string) $row->program_id,
-            module_id: $row->module_id === null ? null : (string) $row->module_id,
-            rule_assignment_id: $row->rule_assignment_id === null ? null : (string) $row->rule_assignment_id,
-            rule_id: (string) $row->rule_id,
-            rule_version_id: (string) $row->rule_version_id,
-            reward_id: $row->reward_id === null ? null : (string) $row->reward_id,
-            last_error_code: $row->last_error_code === null ? null : (string) $row->last_error_code,
-            reward_financial_status: $row->reward_financial_status === null ? null : (string) $row->reward_financial_status,
-            reward_reconciliation_hold_code: $row->reward_reconciliation_hold_code === null ? null : (string) $row->reward_reconciliation_hold_code,
-        );
-    }
-
-    private function timestamp(mixed $value): string
-    {
-        return CarbonImmutable::parse((string) $value)->utc()->toIso8601String();
-    }
-
-    private function nullableTimestamp(mixed $value): ?string
-    {
-        return $value === null ? null : $this->timestamp($value);
+        return $value === null ? null : CarbonImmutable::parse((string) $value)->utc()->toIso8601String();
     }
 }

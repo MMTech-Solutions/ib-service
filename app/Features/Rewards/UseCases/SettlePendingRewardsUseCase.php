@@ -36,7 +36,7 @@ final class SettlePendingRewardsUseCase
                 break;
             }
             try {
-                $module = $this->modules->findByIds([(string) $claim->module_id])[0] ?? null;
+                $module = $claim->commission_type === 'cpa' ? null : ($this->modules->findByIds([(string) $claim->module_id])[0] ?? null);
                 $plan = $this->plans->resolve(new ResolvePlanSubscriptionContextQueryData((string) $claim->plan_id));
             } catch (\Throwable) {
                 $repository->releaseSettlementClaim((string) $claim->id, (string) $claim->settlement_lock_token);
@@ -45,7 +45,7 @@ final class SettlePendingRewardsUseCase
 
                 continue;
             }
-            if ($module === null || ! $module->is_active || $module->processing_status !== 'running'
+            if ((($claim->commission_type !== 'cpa') && ($module === null || ! $module->is_active || $module->processing_status !== 'running'))
                 || ! $plan->is_active || $plan->archived) {
                 $repository->releaseSettlementClaim((string) $claim->id, (string) $claim->settlement_lock_token);
                 $excludedIds[] = (string) $claim->id;

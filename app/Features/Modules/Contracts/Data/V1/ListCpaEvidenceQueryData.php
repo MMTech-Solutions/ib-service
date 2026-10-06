@@ -14,8 +14,6 @@ final class ListCpaEvidenceQueryData extends Data
         public readonly string $subject_external_user_id,
         public readonly string $occurred_from,
         public readonly string $occurred_until,
-        public readonly string $currency_code,
-        public readonly int $currency_precision,
         public readonly array $instruments,
     ) {}
 }

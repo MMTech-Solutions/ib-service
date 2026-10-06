@@ -116,9 +116,9 @@ final class RewardFinancialOperationService
         if ($reward->commission_type === 'pnl' && ! config('rewards.negative_pnl.settlement_enabled', true)) {
             throw new RewardSettlementException('pnl_settlement_disabled');
         }
-        $module = $this->modules->findByIds([(string) $reward->module_id])[0] ?? null;
+        $module = $reward->commission_type === 'cpa' ? null : ($this->modules->findByIds([(string) $reward->module_id])[0] ?? null);
         $plan = $this->plans->resolve(new ResolvePlanSubscriptionContextQueryData((string) $reward->plan_id));
-        if ($module === null || ! $module->is_active || $module->processing_status !== 'running' || ! $plan->is_active || $plan->archived) {
+        if ((($reward->commission_type !== 'cpa') && ($module === null || ! $module->is_active || $module->processing_status !== 'running')) || ! $plan->is_active || $plan->archived) {
             throw new RewardSettlementException('financial_operation_paused');
         }
     }

@@ -10,17 +10,21 @@ use App\Features\Modules\Catalog\Repositories\InMemory\InMemoryModuleRepository;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\PostgreSqlModuleRepository;
 use App\Features\Modules\Catalog\Services\Adapters\PlanModuleReferenceGuard;
 use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
+use App\Features\Modules\Catalog\UseCases\ListCertifiedDepositsUseCase;
 use App\Features\Modules\Catalog\UseCases\ListCpaEvidenceUseCase;
 use App\Features\Modules\Catalog\UseCases\ListInstrumentCatalogUseCase;
 use App\Features\Modules\Catalog\UseCases\ListProgressionActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ListVolumeRewardActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveClosedVolumeRewardActivityUseCase;
+use App\Features\Modules\Catalog\UseCases\ResolveCpaEvidenceCapabilityUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveModulesUseCase;
+use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ListInstrumentCatalogPort;
 use App\Features\Modules\Contracts\Ports\Input\ListProgressionActivitiesPort;
 use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveClosedVolumeRewardActivityPort;
+use App\Features\Modules\Contracts\Ports\Input\ResolveCpaEvidenceCapabilityPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +37,8 @@ final class ModulesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(ResolveCpaEvidenceCapabilityPort::class, ResolveCpaEvidenceCapabilityUseCase::class);
+        $this->app->singleton(ListCertifiedDepositsPort::class, ListCertifiedDepositsUseCase::class);
         $this->app->singleton(ResolveModulesPort::class, ResolveModulesUseCase::class);
         $this->app->singleton(ListProgressionActivitiesPort::class, ListProgressionActivitiesUseCase::class);
         $this->app->singleton(ListVolumeRewardActivitiesPort::class, ListVolumeRewardActivitiesUseCase::class);

@@ -58,6 +58,10 @@ sustituir los BDS ni las reglas técnicas.
   para el cierre E2E, sin bloquear desarrollo ni habilitación del código.
   [Plan E2E y evidencia](roadmap/rewards/11-e2e-historical-pnl.md): código completado localmente.
 
+El [refactor CPA por puntos](roadmap/rewards/12-cpa-points-refactor.md) sustituye
+el modelo anterior: calificación por dos umbrales independientes, aportes
+multi-módulo de volumen y depósitos comunes certificados.
+
 ## Jerarquía de autoridad
 
 1. BDS vigente para semántica e invariantes de negocio.

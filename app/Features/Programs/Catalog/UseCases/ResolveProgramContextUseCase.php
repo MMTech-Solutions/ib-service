@@ -18,7 +18,8 @@ final class ResolveProgramContextUseCase implements ResolveProgramContextPort
 
     public function resolve(ResolveProgramContextQueryData $query): ProgramContextData
     {
-        $program = $this->repositoryFactory->make()->findByPlanAndId($query->plan_id, $query->program_id);
+        $repository = $this->repositoryFactory->make();
+        $program = $query->plan_id === null ? $repository->findById($query->program_id) : $repository->findByPlanAndId($query->plan_id, $query->program_id);
         if ($program === null) {
             throw ProgramNotFoundException::forId($query->program_id);
         }

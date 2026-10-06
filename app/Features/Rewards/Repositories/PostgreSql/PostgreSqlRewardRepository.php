@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
+use App\Features\Modules\Contracts\Data\V1\CpaEvidenceData;
 use App\Features\Rewards\Actions\BuildRewardFinancialRequestAction;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\CpaRewardCalculationInputData;
 use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
+use App\Features\Rewards\Exceptions\CpaEvidenceContractException;
 use App\Features\Rewards\Exceptions\RewardFinancialOperationNotAllowedException;
 use App\Features\Rewards\Exceptions\RewardNotFoundException;
 use App\Features\Rewards\Exceptions\RewardReconciliationBlockedException;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
+use App\Features\Rewards\Factories\CpaRewardCalculationStrategyFactory;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
@@ -122,16 +126,21 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
             $contextId = (string) Str::uuid7();
             $this->connection->table('cpa_contexts')->insert([
                 'id' => $contextId, 'referred_user_id' => $data->referred_user_id, 'ib_user_id' => $data->ib_user_id,
-                'plan_id' => $subscription->plan_id, 'program_id' => $subscription->program_id, 'module_id' => (string) $rule->module_id,
-                'rule_assignment_id' => (string) $rule->rule_assignment_id, 'rule_id' => (string) $rule->rule_id, 'rule_version_id' => (string) $rule->rule_version_id,
-                'symbols_snapshot' => json_encode(array_map(static fn (object $symbol): array => $symbol->toArray(), $symbols), JSON_THROW_ON_ERROR),
+                'plan_id' => $subscription->plan_id, 'program_id' => $subscription->program_id,
+                'cpa_assignment_id' => $rule->cpa_assignment_id, 'rule_id' => $rule->rule_id, 'rule_version_id' => $rule->rule_version_id,
+                'symbols_snapshot' => json_encode(array_map(static fn (array $items): array => array_map(static fn (object $item): array => $item->toArray(), $items), $symbols), JSON_THROW_ON_ERROR),
                 'requirements_snapshot' => json_encode($requirements, JSON_THROW_ON_ERROR), 'captured_at' => $data->captured_at,
             ]);
+            $sources = [['source_key' => 'deposit', 'kind' => 'deposit', 'module_id' => null, 'symbols_snapshot' => '[]']];
+            foreach ($requirements['volume_modules'] as $conversion) {
+                $sources[] = ['source_key' => 'volume:'.$conversion['module_id'], 'kind' => 'volume', 'module_id' => $conversion['module_id'], 'symbols_snapshot' => json_encode(array_map(static fn (object $symbol): array => $symbol->toArray(), $symbols[$conversion['module_id']] ?? []), JSON_THROW_ON_ERROR)];
+            }
+            foreach ($sources as $source) {
+                $this->connection->table('cpa_sources')->insert(['id' => (string) Str::uuid7(), 'cpa_context_id' => $contextId, ...$source, 'status' => 'pending']);
+            }
             $this->connection->table('cpa_verification_progress')->insert([
                 'id' => (string) Str::uuid7(), 'cpa_context_id' => $contextId, 'referred_user_id' => $data->referred_user_id, 'ib_user_id' => $data->ib_user_id,
-                'status' => 'pending', 'observed_volume' => '0', 'required_volume' => $requirements['required_volume'], 'volume_unit_code' => $requirements['volume_unit_code'],
-                'observed_deposit_minor' => 0, 'required_deposit_minor' => $requirements['required_deposit_minor'], 'currency_code' => $requirements['currency_code'],
-                'volume_satisfied' => false, 'deposit_satisfied' => false, 'observed_from' => $data->captured_at, 'created_at' => $data->captured_at, 'updated_at' => $data->captured_at,
+                'status' => 'pending', 'observed_from' => $data->captured_at, 'created_at' => $data->captured_at, 'updated_at' => $data->captured_at,
             ]);
 
             return ['id' => $contextId, 'created' => true];
@@ -140,50 +149,111 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function listCpaContextsWithoutReward(int $limit): array
     {
-        return $this->connection->table('cpa_contexts as contexts')->join('cpa_verification_progress as progress', 'progress.cpa_context_id', '=', 'contexts.id')
-            ->whereNull('contexts.reward_id')->orderBy('contexts.captured_at')->limit($limit)
-            ->get(['contexts.*', 'progress.observed_volume', 'progress.observed_deposit_minor', 'progress.observed_until'])->all();
+        return $this->connection->table('cpa_contexts')->whereNull('reward_id')->orderBy('captured_at')->limit($limit)->get()->all();
     }
 
-    public function updateCpaProgress(string $contextId, string $volume, int $depositMinor, CarbonImmutable $cutoff, string $status, ?string $errorCode, ?array $requirements = null): void
+    public function listCpaSources(string $contextId): array
     {
-        $this->connection->table('cpa_verification_progress')->where('cpa_context_id', $contextId)->update([
-            'status' => $status, 'observed_volume' => $volume, 'observed_deposit_minor' => $depositMinor,
-            'volume_satisfied' => $requirements !== null && bccomp($volume, (string) $requirements['required_volume'], 8) >= 0,
-            'deposit_satisfied' => $requirements !== null && $depositMinor >= (int) $requirements['required_deposit_minor'],
-            'observed_until' => $cutoff, 'last_evaluated_at' => $cutoff, 'last_error_code' => $errorCode, 'updated_at' => $cutoff,
-        ]);
+        return $this->connection->table('cpa_sources')->where('cpa_context_id', $contextId)->orderBy('source_key')->get()->all();
     }
 
-    public function persistQualifiedCpaContext(object $context, array $requirements, object $evidence, string $volume, int $depositMinor, CarbonImmutable $cutoff, bool $qualified): void
+    public function persistCpaSource(object $context, object $source, array $contributions, CarbonImmutable $cutoff): void
     {
-        $this->connection->transaction(function () use ($context, $requirements, $evidence, $volume, $depositMinor, $cutoff, $qualified): void {
+        $this->connection->transaction(function () use ($context, $source, $contributions, $cutoff): void {
             $locked = $this->connection->table('cpa_contexts')->where('id', $context->id)->lockForUpdate()->first();
             if ($locked === null || $locked->reward_id !== null) {
                 return;
             }
-            $this->updateCpaProgress((string) $context->id, $volume, $depositMinor, $cutoff, $qualified ? 'qualified' : 'pending', null, $requirements);
-            if (! $qualified) {
-                return;
+            $current = $this->connection->table('cpa_sources')->where('id', $source->id)->first();
+            if ($current->last_error_code === 'evidence_contract_invalid') {
+                throw new CpaEvidenceContractException('CPA source requires contract investigation.');
             }
-            $currency = Currency::from((string) $requirements['currency_code'], (int) $requirements['currency_precision']);
-            $amount = PositiveMoney::fromDecimalMajor((string) $requirements['amount'], $currency);
-            $rewardId = (string) Str::uuid7();
-            $now = $cutoff->toIso8601String();
-            $this->connection->table('rewards')->insert([
-                'id' => $rewardId, 'beneficiary_user_id' => $context->ib_user_id, 'plan_id' => $context->plan_id, 'program_id' => $context->program_id, 'module_id' => $context->module_id,
-                'rule_assignment_id' => $context->rule_assignment_id, 'rule_id' => $context->rule_id, 'rule_version_id' => $context->rule_version_id,
-                'amount_minor' => $amount->minorUnits, 'currency_code' => $currency->code(), 'currency_precision' => $currency->precision(), 'status' => 'pending',
-                'commission_type' => 'cpa', 'network_level' => 1,
-                'summary_snapshot' => json_encode(['observed_volume' => $volume, 'observed_deposit_minor' => $depositMinor, 'observed_until' => $now], JSON_THROW_ON_ERROR), 'created_at' => $now, 'updated_at' => $now,
+            foreach ($contributions as $fact) {
+                $existing = $this->connection->table('cpa_contributions')->where('cpa_source_id', $source->id)->where('provider', $fact->provider)->where('source_activity_id', $fact->source_activity_id)->first();
+                if ($existing !== null) {
+                    if (bccomp($existing->quantity, $fact->quantity, 8) !== 0 || bccomp($existing->points, $fact->points, 16) !== 0 || $existing->unit_code !== $fact->unit_code || $existing->subject_external_user_id !== $fact->subject_external_user_id || $existing->instrument_reference !== $fact->instrument_reference || CarbonImmutable::parse($existing->occurred_at)->ne(CarbonImmutable::parse($fact->occurred_at)) || $existing->currency_code !== $fact->currency_code || ($existing->amount_minor === null ? null : (int) $existing->amount_minor) !== $fact->amount_minor) {
+                        throw new CpaEvidenceContractException('CPA source contradicted an immutable contribution.');
+                    }
+
+                    continue;
+                }
+                if ($current->observed_until !== null && CarbonImmutable::parse($fact->occurred_at)->lt(CarbonImmutable::parse($current->observed_until))) {
+                    throw new CpaEvidenceContractException('CPA source published a fact before its confirmed cutoff.');
+                }
+                $this->connection->table('cpa_contributions')->insert([
+                    'id' => (string) Str::uuid7(), 'cpa_context_id' => $context->id, 'cpa_source_id' => $source->id,
+                    ...$fact->toArray(), 'verified_until' => $cutoff, 'created_at' => $cutoff,
+                ]);
+            }
+            if ($current->observed_until === null || CarbonImmutable::parse($current->observed_until)->lte($cutoff)) {
+                $this->connection->table('cpa_sources')->where('id', $source->id)->update(['observed_until' => $cutoff, 'status' => 'ready', 'last_error_code' => null, 'last_evaluated_at' => $cutoff]);
+            }
+        });
+    }
+
+    public function markCpaSource(string $sourceId, string $status, ?string $errorCode, CarbonImmutable $at): void
+    {
+        $this->connection->table('cpa_sources')->where('id', $sourceId)->where(fn ($q) => $q->whereNull('last_evaluated_at')->orWhere('last_evaluated_at', '<=', $at))
+            ->where(fn ($q) => $q->whereNull('last_error_code')->orWhere('last_error_code', '!=', 'evidence_contract_invalid'))
+            ->update(['status' => $status, 'last_error_code' => $errorCode, 'last_evaluated_at' => $at]);
+    }
+
+    public function completeCpaVerification(object $context, CarbonImmutable $at): string
+    {
+        return $this->connection->transaction(function () use ($context, $at): string {
+            $locked = $this->connection->table('cpa_contexts')->where('id', $context->id)->lockForUpdate()->first();
+            if ($locked->reward_id !== null) {
+                return 'already_qualified';
+            }
+            $configuration = json_decode($locked->requirements_snapshot, true, 512, JSON_THROW_ON_ERROR);
+            $totals = [];
+            foreach (['volume', 'deposit'] as $kind) {
+                $totals[$kind] = (string) $this->connection->table('cpa_contributions')->where('cpa_context_id', $context->id)->where('kind', $kind)->sum('points');
+            }
+            $calculation = app(CpaRewardCalculationStrategyFactory::class)->make('cpa_fixed_amount')->calculate(
+                new CpaRewardCalculationInputData($configuration, new CpaEvidenceData([], []), initial_volume_points: $totals['volume'], initial_deposit_points: $totals['deposit'])
+            );
+            $error = $this->connection->table('cpa_sources')->where('cpa_context_id', $context->id)->where('status', 'error')->value('last_error_code');
+            $invalidContract = $this->connection->table('cpa_sources')->where('cpa_context_id', $context->id)->where('last_error_code', 'evidence_contract_invalid')->exists();
+            $qualified = $calculation->qualified && ! $invalidContract;
+            $status = $qualified ? 'qualified' : ($error === null ? 'pending' : 'error');
+            $depositMinor = $this->connection->table('cpa_contributions')->where('cpa_context_id', $context->id)->sum('amount_minor');
+            if (bccomp((string) $depositMinor, (string) PHP_INT_MAX, 0) > 0) {
+                throw new CpaEvidenceContractException('CPA deposit total exceeds integer range.');
+            }
+            $this->connection->table('cpa_verification_progress')->where('cpa_context_id', $context->id)->update([
+                'status' => $status, 'observed_volume_points' => $calculation->volume_points, 'observed_deposit_points' => $calculation->deposit_points,
+                'observed_deposit_minor' => $depositMinor,
+                'volume_satisfied' => bccomp($calculation->volume_points, $configuration['required_volume_points'], 16) >= 0,
+                'deposit_satisfied' => bccomp($calculation->deposit_points, $configuration['required_deposit_points'], 16) >= 0,
+                'last_evaluated_at' => $at, 'last_error_code' => $error, 'updated_at' => $at,
             ]);
-            foreach ($evidence->volume_facts as $fact) {
-                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $rewardId, 'evidence_provider' => 'broker_service', 'evidence_type' => 'closed_trading_volume', 'source_activity_id' => $fact->source_activity_id, 'subject_external_user_id' => $fact->subject_external_user_id, 'quantity' => $fact->quantity, 'unit_code' => $fact->unit_code, 'occurred_at' => $fact->occurred_at, 'instrument_reference' => $fact->instrument_reference, 'created_at' => $now, 'updated_at' => $now]);
+            if (! $qualified) {
+                return $status;
             }
-            foreach ($evidence->deposit_facts as $fact) {
-                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $rewardId, 'evidence_provider' => 'finance', 'evidence_type' => 'certified_external_deposit', 'source_activity_id' => $fact['source_activity_id'], 'subject_external_user_id' => $fact['subject_external_user_id'], 'amount_minor' => $fact['amount_minor'], 'currency_code' => $fact['currency_code'], 'occurred_at' => $fact['occurred_at'], 'created_at' => $now, 'updated_at' => $now]);
+            $currency = Currency::from($configuration['currency'], $configuration['currency_precision']);
+            $amount = PositiveMoney::fromDecimalMajor($configuration['amount'], $currency);
+            $rewardId = (string) Str::uuid7();
+            $this->connection->table('rewards')->insert([
+                'id' => $rewardId, 'beneficiary_user_id' => $locked->ib_user_id, 'plan_id' => $locked->plan_id, 'program_id' => $locked->program_id,
+                'module_id' => null, 'rule_assignment_id' => null, 'rule_id' => $locked->rule_id, 'rule_version_id' => $locked->rule_version_id,
+                'amount_minor' => $amount->minorUnits, 'currency_code' => $currency->code(), 'currency_precision' => $currency->precision(),
+                'status' => 'pending', 'commission_type' => 'cpa', 'network_level' => 1,
+                'summary_snapshot' => json_encode(['cpa_assignment_id' => $locked->cpa_assignment_id, 'configuration' => $configuration, 'volume_points' => $calculation->volume_points, 'deposit_points' => $calculation->deposit_points, 'sources' => $this->listCpaSources($context->id)], JSON_THROW_ON_ERROR),
+                'created_at' => $at, 'updated_at' => $at,
+            ]);
+            foreach ($this->connection->table('cpa_contributions as c')->join('cpa_sources as s', 's.id', '=', 'c.cpa_source_id')->where('c.cpa_context_id', $context->id)->get(['c.*', 's.source_key']) as $fact) {
+                $this->connection->table('reward_evidence')->insert([
+                    'id' => (string) Str::uuid7(), 'reward_id' => $rewardId, 'evidence_provider' => $fact->provider, 'evidence_type' => $fact->kind === 'volume' ? 'closed_trading_volume' : 'certified_external_deposit',
+                    'source_scope' => $fact->source_key, 'source_activity_id' => $fact->source_activity_id, 'subject_external_user_id' => $fact->subject_external_user_id,
+                    'quantity' => $fact->quantity, 'unit_code' => $fact->unit_code, 'amount_minor' => $fact->amount_minor, 'currency_code' => $fact->currency_code,
+                    'points_per_unit' => $fact->points_per_unit, 'points' => $fact->points, 'verified_until' => $fact->verified_until,
+                    'occurred_at' => $fact->occurred_at, 'instrument_reference' => $fact->instrument_reference, 'created_at' => $at, 'updated_at' => $at,
+                ]);
             }
             $this->connection->table('cpa_contexts')->where('id', $context->id)->update(['reward_id' => $rewardId]);
+
+            return 'qualified';
         });
     }
 

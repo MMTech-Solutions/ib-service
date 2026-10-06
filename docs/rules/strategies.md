@@ -122,3 +122,26 @@ Las cantidades decimales se transportan como strings canónicos. Una configuraci
 - Las factories permiten sustitución controlada sin ramas por entorno; las
   implementaciones de un proveedor cumplen el mismo contrato de capacidad.
 - Pruebas locales no sustituyen evidencia S2S ni prueban una arquitectura futura.
+
+## CPA por puntos (2026-10-06)
+
+El schema vigente de cpa_fixed_amount define pago, dos umbrales independientes,
+conversión de lotes por módulo y conversión común de depósitos certificados en
+una moneda explícita independiente del pago. Sustituye el schema anterior sin
+compatibilidad. La asociación CPA histórica pertenece al programa, sin assignment
+genérico a un módulo único; Rules la valida y resuelve mediante repository/factory.
+Modules expone evidencia de volumen por módulo y depósitos certificados por separado.
+
+La Strategy pura convierte hechos normalizados a contribuciones tipadas con puntos.
+Rewards conserva cada contribución y su corte al aceptarla, y reconstruye acumulados
+sumando puntos persistidos. El progreso es único; no hay snapshots del total por run.
+Cada fuente tiene corte y estado independientes. Los proveedores garantizan
+inmutabilidad y ausencia de hechos tardíos antes de cortes confirmados.
+Los fallos de disponibilidad conservan aportes; contradicciones conocidas bloquean
+calificación sin sobrescribir evidencia. El scheduler continúa usando verify-cpa.
+
+Tasas/cantidades admiten ocho decimales; productos y totales usan BCMath a escala
+dieciséis y persistencia decimal exacta, sin floats. Las monedas declaran precisión.
+La Reward CPA tiene module_id y rule_assignment_id nulos; el contexto referencia
+cpa_assignment_id y sus fuentes multi-módulo. Las otras modalidades conservan sus
+referencias. Settlement CPA omite el control por módulo y conserva el del plan.

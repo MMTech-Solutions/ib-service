@@ -1,4 +1,10 @@
 # RWD-A2 — refactor de CPA y volumen
+> Nota de vigencia (2026-10-06): el diseño CPA anterior se conserva aquí como
+> evidencia histórica. El modelo vigente y su implementación se describen en
+> [CPA por puntos](12-cpa-points-refactor.md) y en el BDS de Rewards.
+> CPA usa dos umbrales de puntos, contribuciones persistidas y fuentes independientes;
+> no requiere una asignación genérica a un módulo único.
+
 
 Estado: **Completada; RWD-A2.1, RWD-A2.2 y RWD-A2.3 completadas**
 Última revisión: 2026-10-03.

@@ -8,9 +8,6 @@ use Spatie\LaravelData\Data;
 
 final class CpaRewardCalculationResultData extends Data
 {
-    public function __construct(
-        public readonly string $volume,
-        public readonly int $deposit_minor,
-        public readonly bool $qualified,
-    ) {}
+    /** @param list<CpaContributionData> $contributions */
+    public function __construct(public readonly string $volume_points, public readonly string $deposit_points, public readonly bool $qualified, public readonly array $contributions) {}
 }

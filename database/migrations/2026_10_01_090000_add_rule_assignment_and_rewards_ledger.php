@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cpa_contexts', function (Blueprint $table): void {
-            $table->foreignUuid('rule_assignment_id')->nullable()->after('module_id')->constrained('rule_assignments')->restrictOnDelete();
+            $table->foreignUuid('cpa_assignment_id')->constrained('program_cpa_rule_assignments')->restrictOnDelete();
         });
 
         Schema::create('rewards', function (Blueprint $table): void {
@@ -19,8 +19,8 @@ return new class extends Migration
             $table->uuid('beneficiary_user_id');
             $table->foreignUuid('plan_id')->constrained('plans')->restrictOnDelete();
             $table->foreignUuid('program_id')->constrained('programs')->restrictOnDelete();
-            $table->foreignUuid('module_id')->constrained('modules')->restrictOnDelete();
-            $table->foreignUuid('rule_assignment_id')->constrained('rule_assignments')->restrictOnDelete();
+            $table->foreignUuid('module_id')->nullable()->constrained('modules')->restrictOnDelete();
+            $table->foreignUuid('rule_assignment_id')->nullable()->constrained('rule_assignments')->restrictOnDelete();
             $table->foreignUuid('rule_id')->constrained('rules')->restrictOnDelete();
             $table->foreignUuid('rule_version_id')->constrained('rule_versions')->restrictOnDelete();
             $table->bigInteger('amount_minor');
@@ -38,15 +38,19 @@ return new class extends Migration
             $table->string('evidence_provider', 64);
             $table->string('evidence_type', 64);
             $table->string('source_activity_id', 191);
+            $table->string('source_scope', 64)->default('shared');
+            $table->decimal('points_per_unit', 32, 8)->nullable();
+            $table->decimal('points', 64, 16)->nullable();
+            $table->timestampTz('verified_until')->nullable();
             $table->uuid('subject_external_user_id')->nullable();
-            $table->string('quantity', 24)->nullable();
+            $table->string('quantity', 40)->nullable();
             $table->string('unit_code', 16)->nullable();
             $table->bigInteger('amount_minor')->nullable();
             $table->string('currency_code', 3)->nullable();
             $table->timestampTz('occurred_at')->nullable();
             $table->string('instrument_reference', 200)->nullable();
             $table->timestampsTz();
-            $table->unique(['reward_id', 'evidence_provider', 'source_activity_id']);
+            $table->unique(['reward_id', 'source_scope', 'evidence_provider', 'source_activity_id']);
         });
 
         Schema::table('cpa_contexts', function (Blueprint $table): void {
@@ -62,7 +66,7 @@ return new class extends Migration
         Schema::dropIfExists('reward_evidence');
         Schema::dropIfExists('rewards');
         Schema::table('cpa_contexts', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('rule_assignment_id');
+            $table->dropConstrainedForeignId('cpa_assignment_id');
         });
     }
 };

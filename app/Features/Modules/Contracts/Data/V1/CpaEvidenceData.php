@@ -8,7 +8,7 @@ use Spatie\LaravelData\Data;
 
 final class CpaEvidenceData extends Data
 {
-    /** @param list<CpaVolumeEvidenceData> $volume_facts @param list<array<string, mixed>> $deposit_facts */
+    /** @param list<CpaVolumeEvidenceData> $volume_facts @param list<CertifiedDepositEvidenceData> $deposit_facts */
     public function __construct(
         public readonly array $volume_facts,
         public readonly array $deposit_facts,

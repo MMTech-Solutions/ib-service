@@ -9,7 +9,7 @@ use Spatie\LaravelData\Data;
 final class ResolveProgramContextQueryData extends Data
 {
     public function __construct(
-        public readonly string $plan_id,
+        public readonly ?string $plan_id,
         public readonly string $program_id,
     ) {}
 }

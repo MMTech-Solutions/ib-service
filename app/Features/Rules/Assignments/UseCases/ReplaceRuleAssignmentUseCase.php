@@ -17,6 +17,7 @@ use App\Features\Rules\Assignments\Models\RuleAssignment;
 use App\Features\Rules\Catalog\Enums\RuleStrategyType;
 use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class ReplaceRuleAssignmentUseCase
 {
@@ -34,6 +35,9 @@ final class ReplaceRuleAssignmentUseCase
         $this->assertPlan->assertMutable($command->planId);
         $version = $this->assertVersion->assert($command->planId, $command->ruleId, $command->ruleVersionId);
         $rule = $this->assertVersion->rule($command->planId, $command->ruleId);
+        if ($rule->strategyType === RuleStrategyType::CpaFixedAmount->value) {
+            throw ValidationException::withMessages(['rule_version_id' => 'CPA is associated with a program through its CPA configuration.']);
+        }
         $repository = $this->repositoryFactory->make();
 
         return $repository->transaction(function () use ($repository, $command, $version, $rule): RuleAssignmentData {

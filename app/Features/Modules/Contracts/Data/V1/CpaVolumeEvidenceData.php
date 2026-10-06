@@ -16,5 +16,6 @@ final class CpaVolumeEvidenceData extends Data
         public readonly string $quantity,
         public readonly string $occurred_at,
         public readonly string $instrument_reference,
+        public readonly string $provider = 'broker_service',
     ) {}
 }

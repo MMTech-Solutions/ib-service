@@ -275,3 +275,11 @@ repetida conserva el hecho original y no representa una nueva vinculación.
 - Reglas para publicar una nueva versión del plan y aplicarla a suscripciones existentes.
 - Forma concreta de evidencia auditable de eventos rechazados por inactividad del módulo (BR-MODULE-015).
 - Restauración de un plan archivado.
+
+## Participación multi-módulo en CPA
+
+CPA congela sus módulos y símbolos al capturar la adquisición. Retirarlos posteriormente
+del plan o programa no reescribe contextos anteriores. La disponibilidad vigente
+controla nuevos aportes del módulo, mientras que sus aportes verificados permanecen.
+La Reward CPA pertenece al programa y su pago no depende de un módulo único.
+Los puntos CPA y Progression conservan acumulados y conversiones independientes.

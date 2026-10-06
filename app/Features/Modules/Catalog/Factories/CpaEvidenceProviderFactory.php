@@ -20,4 +20,9 @@ final class CpaEvidenceProviderFactory
             default => throw new UnsupportedRewardEvidenceProviderException($moduleCode),
         };
     }
+
+    public function supports(string $moduleCode): bool
+    {
+        return $moduleCode === 'broker';
+    }
 }

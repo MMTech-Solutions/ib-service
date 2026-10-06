@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Features\Rules\Assignments\Repositories\InMemory\InMemoryCpaConfigurationRepository;
 use App\Features\Rules\Assignments\Repositories\InMemory\InMemoryRuleAssignmentRepository;
+use App\Features\Rules\Assignments\Repositories\PostgreSql\PostgreSqlCpaConfigurationRepository;
 use App\Features\Rules\Assignments\Repositories\PostgreSql\PostgreSqlRuleAssignmentRepository;
 use App\Features\Rules\Assignments\UseCases\ResolveCpaRuleContextUseCase;
 use App\Features\Rules\Assignments\UseCases\ResolveNegativePnlRuleContextUseCase;
@@ -26,6 +28,8 @@ final class RulesServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton('rules.cpa.repositories.postgresql', fn () => new PostgreSqlCpaConfigurationRepository(DB::connection()));
+        $this->app->singleton('rules.cpa.repositories.memory', InMemoryCpaConfigurationRepository::class);
         $this->app->singleton(ResolveNegativePnlRuleContextPort::class, ResolveNegativePnlRuleContextUseCase::class);
         $this->app->singleton(RuleStrategyRegistryInterface::class, ClosedRuleStrategyRegistry::class);
         $this->app->singleton(

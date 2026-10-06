@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Repositories;
 
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
+use App\Features\Rewards\DTOs\CpaContributionData;
 use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
 use Carbon\CarbonImmutable;
@@ -26,11 +27,15 @@ interface RewardRepositoryInterface
     /** @return array<int, object> */
     public function listCpaContextsWithoutReward(int $limit): array;
 
-    /** @param array<string, mixed> $requirements */
-    public function updateCpaProgress(string $contextId, string $volume, int $depositMinor, CarbonImmutable $cutoff, string $status, ?string $errorCode, ?array $requirements = null): void;
+    /** @return list<object> */
+    public function listCpaSources(string $contextId): array;
 
-    /** @param array<string, mixed> $requirements */
-    public function persistQualifiedCpaContext(object $context, array $requirements, object $evidence, string $volume, int $depositMinor, CarbonImmutable $cutoff, bool $qualified): void;
+    /** @param list<CpaContributionData> $contributions */
+    public function persistCpaSource(object $context, object $source, array $contributions, CarbonImmutable $cutoff): void;
+
+    public function markCpaSource(string $sourceId, string $status, ?string $errorCode, CarbonImmutable $at): void;
+
+    public function completeCpaVerification(object $context, CarbonImmutable $at): string;
 
     /** @param list<string> $excludedIds */
     public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt, array $excludedIds = []): ?object;

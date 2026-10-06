@@ -90,8 +90,8 @@ return new class extends Migration
             $table->string('commission_type', 16)->nullable();
             $table->decimal('commission_value', 20, 8)->nullable();
             $table->boolean('use_for_cpa')->default(false);
-            $table->timestampTz('starts_at');
-            $table->timestampTz('ends_at')->nullable();
+            $table->timestampTz('starts_at', 6);
+            $table->timestampTz('ends_at', 6)->nullable();
             $table->timestampTz('created_at');
             $table->timestampTz('updated_at');
             $table->index(['program_id', 'symbol_reference', 'starts_at']);
@@ -102,8 +102,10 @@ return new class extends Migration
             $table->foreignUuid('program_id')->constrained('programs')->restrictOnDelete();
             $table->foreignUuid('rule_id')->constrained('rules')->restrictOnDelete();
             $table->foreignUuid('rule_version_id')->constrained('rule_versions')->restrictOnDelete();
-            $table->timestampTz('starts_at');
-            $table->timestampTz('ends_at')->nullable();
+            $table->uuid('actor_id')->nullable();
+            $table->uuid('withdrawn_by')->nullable();
+            $table->timestampTz('starts_at', 6);
+            $table->timestampTz('ends_at', 6)->nullable();
             $table->timestampTz('created_at');
             $table->timestampTz('updated_at');
             $table->index(['program_id', 'starts_at']);
@@ -117,7 +119,7 @@ return new class extends Migration
             $table->foreignUuid('rule_id')->constrained('rules')->restrictOnDelete();
             $table->foreignUuid('rule_version_id')->constrained('rule_versions')->restrictOnDelete();
             $table->jsonb('symbols_snapshot');
-            $table->timestampTz('captured_at');
+            $table->timestampTz('captured_at', 6);
             $table->unique(['referred_user_id', 'ib_user_id']);
         });
     }

@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 1.9
+- **Versión:** 2.0
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -74,10 +74,10 @@ erDiagram
 | BR-RULE-016 | Para la estrategia `points_per_quantity_unit`, en un instante dado existe como máximo una asignación activa por combinación de programa, módulo y métrica o unidad. El mismo tipo puede repetirse en ese programa y módulo solo con métricas o unidades distintas. |
 | BR-REWARD-001 | Toda Reward CPA, volumen o PnL exige contexto y elegibilidad verificables, una identidad económica que impida duplicados y evidencia auditable de su causa y resultado. |
 | BR-REWARD-002 | Cada modalidad utiliza los hechos y métricas necesarios para su evaluación y conserva la configuración aplicada; compartir garantías no exige la misma secuencia de evaluación ni los mismos inputs. |
-| BR-REWARD-003 | Una recompensa conserva plan, programa, módulo, asignación, versión de regla, inputs y resultado utilizados. |
+| BR-REWARD-003 | Una recompensa conserva plan, programa, versión de regla, inputs y resultado utilizados. Volumen y PnL conservan su módulo y asignación; CPA conserva su asociación al programa y todos los módulos participantes en su contexto y evidencia. |
 | BR-REWARD-004 | La creación de una recompensa es idempotente respecto a su fuente, beneficiario, regla y dimensión de distribución. |
 | BR-REWARD-005 | IB es fuente de verdad de por qué existe una recompensa; el dominio financiero es fuente de verdad de si el dinero fue asentado. |
-| BR-REWARD-006 | El procesamiento pausado de un módulo detiene sus nuevos cálculos y pagos sin modificar reglas ni snapshots publicados. |
+| BR-REWARD-006 | El procesamiento pausado de un módulo detiene sus nuevos cálculos y pagos propios sin modificar reglas ni snapshots publicados. En CPA detiene nuevos aportes de volumen de ese módulo; los aportes confirmados y el pago de una obligación CPA ya calculada son independientes de su disponibilidad. |
 | BR-REWARD-007 | Pausar o desactivar un módulo no revierte automáticamente recompensas ya calculadas ni settlements confirmados. |
 | BR-REWARD-008 | Una recompensa CPA, volumen o PnL nace en estado `pending` y solo transiciona a `settled` cuando Finance confirma síncronamente una comisión `posted`, creada o recuperada por idempotencia. La causa y el snapshot no se sustituyen durante esa transición. |
 | BR-REWARD-009 | Un fallo de integración o contrato de Finance deja la Reward en `failed`. `pending` y `failed` son reintentables; cada reintento usa la misma clave idempotente de settlement. |
@@ -115,37 +115,60 @@ erDiagram
 | BR-INSTRUMENT-001 | Un instrumento se referencia mediante un binding perteneciente al módulo que origina la actividad. |
 | BR-INSTRUMENT-002 | El mismo instrumento comercial puede habilitarse para unos módulos y excluirse de otros. |
 | BR-INSTRUMENT-003 | Los identificadores locales de IB no tienen que coincidir con los identificadores del módulo proveedor. |
-| BR-CPA-001 | Al recibir una adquisición CPA se fija el usuario referido, el IB y el contexto vigente que determina por qué programa se pagará, incluida la asignación y la versión de regla aplicable. El contexto se captura al recibir el hecho; no se presupone un instante de ocurrencia aportado por el productor. |
+| BR-CPA-001 | Al recibir una adquisición CPA se fija el usuario referido, el IB beneficiario y el plan y programa de la suscripción del IB en ese instante, incluida la asociación CPA y versión de regla. El contexto se captura al recibir el hecho; no se presupone un instante de ocurrencia aportado por el productor. |
 | BR-CPA-002 | La progresión posterior del IB y la publicación de nuevas versiones no cambian el programa, asignación, versión de regla, scope o condiciones congeladas en el contexto CPA. |
 | BR-CPA-003 | Una misma adquisición no puede pagarse nuevamente por el solo hecho de que el IB cambie de programa. |
 | BR-CPA-004 | La captura CPA es idempotente por el par usuario referido e IB. Las redeliveries del mismo hecho no crean otro contexto ni otra recompensa. |
-| BR-CPA-005 | El contexto CPA conserva el conjunto de símbolos marcados para CPA del programa en el instante de captura. Cambios posteriores de programa, regla o símbolos no modifican ese snapshot. |
+| BR-CPA-005 | El contexto CPA congela todos los módulos configurados y el conjunto de símbolos y grupos elegibles al capturar. La pausa o inactividad no impide capturar el contexto. Cambios y retiros posteriores no alteran el alcance congelado. |
 | BR-CPA-006 | Un programa puede tener como máximo una asociación CPA activa a una versión publicada de regla `cpa_fixed_amount`. |
-| BR-CPA-007 | Los requisitos CPA configurados se cumplen de forma acumulativa: todos deben satisfacerse para que la estrategia pueda evaluar una adquisición. |
-| BR-CPA-008 | Cuando un requisito CPA exige depósito certificado, este se mide desde la captura CPA y en la misma moneda configurada, sin conversión de moneda. |
-| BR-CPA-009 | Cuando un requisito CPA exige volumen cerrado, se mide desde la captura CPA y solo para el snapshot de símbolos y grupos configurado al capturarla. |
-| BR-CPA-010 | La verificación CPA es independiente de Progression: no mueve placements, no consume puntos y no aplica ponderaciones ni profundidad de red. |
-| BR-CPA-011 | Un contexto CPA tiene un único progreso de verificación observable. Sus estados son `pending`, `qualified` y `error`; un error técnico no altera el contexto ni crea una recompensa. |
-| BR-CPA-012 | La evidencia CPA se observa desde la captura hasta un corte explícito. Cada evaluación conserva el último corte que pudo consultar, sin convertir los intentos en un historial de dominio. |
+| BR-CPA-007 | La adquisición exige dos umbrales positivos independientes: puntos de volumen y puntos de depósito. Ambos deben alcanzarse; el exceso en una dimensión nunca compensa la falta de la otra. |
+| BR-CPA-008 | Los depósitos certificados de Finance se miden desde la captura en una única moneda y precisión configuradas, independientes de la moneda del pago. Una tasa común convierte cada unidad monetaria mayor a puntos de depósito; no existe conversión de moneda ni atribución del mismo depósito a varios módulos. |
+| BR-CPA-009 | Cada módulo configura una tasa positiva de puntos por lote. Solo su volumen cerrado desde la captura, dentro del snapshot de símbolos y grupos, aporta puntos de volumen. Se conservan cantidades reales y unidades. |
+| BR-CPA-010 | Los puntos CPA pertenecen a la adquisición y son independientes de Progression: no mueven placement, no consumen sus puntos ni aplican sus ponderaciones, ventanas o profundidad de red. |
+| BR-CPA-011 | Un contexto CPA tiene un único progreso observable: pending, qualified o error. Un fallo técnico por fuente conserva sus aportes y no bloquea las restantes. Si los dos umbrales se cumplen con aportes verificados, el contexto califica aunque alguna fuente no esté disponible. |
+| BR-CPA-012 | Cada fuente conserva su último corte confirmado y su estado. Solo una consulta completa y persistida permite avanzar ese corte. La verificación conserva todas las entradas nuevas aceptadas, sin exigir un snapshot del total por ejecución. |
 | BR-CPA-013 | Cuando todos los requisitos acumulativos se satisfacen, el contexto puede originar una única recompensa `pending`; la relación a esa recompensa pertenece al contexto CPA, no al progreso de verificación. |
 | BR-CPA-014 | El proveedor de actividad entrega evidencia normalizada y Finance certifica depósitos; ninguno decide elegibilidad CPA, importe, beneficiario, recompensa ni settlement. |
-| BR-CPA-015 | Una versión CPA que exija depósito declara explícitamente la precisión de su moneda. IB usa esa precisión congelada para convertir y comparar minor units; no la infiere de ICU, Finance ni otra fuente externa. |
-| BR-CPA-016 | Al calificar un contexto CPA, IB conserva en la Reward la evidencia normalizada que la justifica. Cada hecho conserva proveedor, tipo e identificador fuente; la evidencia no sustituye el ledger ni el progreso CPA. |
-| BR-CPA-017 | El modo incremental solo es válido si cada proveedor garantiza que no publicará, corregirá ni retirará hechos anteriores a un corte confirmado. Hasta verificar ese contrato, IB debe reevaluar el intervalo completo desde la captura. |
+| BR-CPA-015 | La versión CPA declara moneda y precisión explícitas e independientes para pago y depósito; IB no las infiere de fuentes externas. Tasas, umbrales y cantidades de volumen admiten hasta ocho decimales; los productos y sumas de puntos mantienen exactitud hasta dieciséis sin redondeo. |
+| BR-CPA-016 | Cada contribución CPA conserva proveedor, identidad fuente, módulo cuando corresponde, cantidad real, unidad o moneda, tasa congelada, puntos calculados, ocurrencia y corte verificado. Se conserva desde su aceptación, aun antes de calificar. La Reward conserva la evidencia que justificó su nacimiento. |
+| BR-CPA-017 | Los proveedores garantizan que no corregirán, retirarán ni publicarán hechos anteriores a un corte confirmado. La consulta continúa desde el último corte por fuente. Una contradicción se trata como error de contrato y no reescribe silenciosamente aportes verificados. |
 | BR-CPA-018 | El ledger `rewards` es genérico. La relación específica de CPA se conserva de forma inversa, única e inmutable mediante `cpa_context.reward_id`; una Reward no exige ni contiene un contexto CPA. |
 | BR-CPA-019 | La lectura cliente del progreso CPA queda limitada al IB propietario del contexto. La lectura administrativa requiere la capacidad de gestión de Rewards y puede exponer únicamente los identificadores y errores sanitizados necesarios para auditoría. |
+
+| BR-CPA-020 | La contribución de volumen es única por adquisición, módulo, proveedor e identidad fuente. Una misma operación puede contribuir una vez por cada módulo configurado que la entregue. El depósito es único por adquisición, proveedor e identidad Finance. |
+
+| BR-CPA-021 | Pausar, desactivar o perder una fuente conserva todos sus aportes confirmados y su corte. Las restantes fuentes pueden completar el CPA usando esos aportes. Al reanudar se consulta desde el último corte confirmado. El volumen nuevo de un módulo pausado o inactivo no se convierte mientras dure esa condición. |
+
+| BR-CPA-022 | Los puntos se calculan al aceptar el hecho y se conservan con su tasa congelada. Los totales se reconstruyen sumando los puntos persistidos; no se revaloran por cambios posteriores de política o programa. |
+
+| BR-CPA-023 | La asociación CPA pertenece al programa y tiene vigencia histórica. Seleccionar la misma versión conserva la asociación activa; reemplazar o retirar cierra la vigente sin alterar contextos anteriores. No requiere una asignación CPA a un módulo único. |
+
+| BR-CPA-024 | Una obligación CPA ya calculada se paga independientemente de la pausa o inactividad de módulos participantes, respetando los controles del plan y financieros aplicables. |
+
+## Cálculo CPA por puntos
+
+Para cada adquisición:
+
+- Puntos de volumen = suma de lotes elegibles de cada módulo × tasa congelada de ese módulo.
+- Puntos de depósito = suma de depósitos certificados en unidades monetarias mayores × tasa común congelada.
+- Califica cuando puntos de volumen ≥ umbral de volumen Y puntos de depósito ≥ umbral de depósito.
+
+Los acumulados no vencen ni se reinician por ventanas de Progression.
+Un corte describe la fuente consultada, no un historial obligatorio de snapshots por run.
+Una respuesta satisfactoria sin hechos confirma el intervalo vacío.
+Una evidencia inválida o una contradicción conocida del contrato impide calificar hasta su resolución.
 
 ## Ejemplo de reutilización CPA
 
 ```text
 Plan Fx - Advanced
 └── Regla CPA Standard v1
-    ├── Programa Basic    + Broker
-    ├── Programa Advanced + Broker
-    └── Programa Pro      + Broker
+    ├── Programa Basic
+    ├── Programa Advanced
+    └── Programa Pro
 ```
 
-Las tres asignaciones comparten configuración económica y scope `all`. Si cambian monto o umbrales, se publica otra versión y las asignaciones se reemplazan deliberadamente, conservando el historial.
+Las tres asociaciones comparten importe, umbrales de puntos y conversiones por módulo. Si cambian monto o umbrales, se publica otra versión y las asignaciones se reemplazan deliberadamente, conservando el historial.
 
 ## Eventos de negocio
 
