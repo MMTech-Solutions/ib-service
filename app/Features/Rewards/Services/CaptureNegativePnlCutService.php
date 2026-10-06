@@ -26,7 +26,7 @@ final class CaptureNegativePnlCutService
         }
         $identity = hash('sha256', json_encode([
             $data->module_id, $data->subscription_id, $data->account_id, $data->server_group_id,
-            $data->cadence, CarbonImmutable::parse($data->query->occurred_until)->utc()->toISOString(),
+            $data->cadence, CarbonImmutable::parse($data->query->occurred_from)->utc()->toISOString(), CarbonImmutable::parse($data->query->occurred_until)->utc()->toISOString(),
         ], JSON_THROW_ON_ERROR));
         $repository = $this->repositoryFactory->make();
         $existing = $repository->findNegativePnlCut($identity);
@@ -37,10 +37,12 @@ final class CaptureNegativePnlCutService
 
             return $existing;
         }
-        $period = $resolvedPeriod ?? collect($this->provider->resolve($data->query)->periods)->firstWhere('account_id', $data->account_id);
+        $period = $resolvedPeriod ?? collect($this->provider->resolve($data->query)->periods)->firstWhere('trading_account_id', $data->account_id);
         if ($period === null || $period->server_group_id !== $data->server_group_id
             || ! collect($data->query->subjects)->contains('external_user_id', $period->external_user_id)
-            || $period->balance_read_id === null || $period->balance_read_at === null) {
+            || $period->trading_account_id !== $data->account_id
+            || ! CarbonImmutable::parse($period->occurred_from)->equalTo(CarbonImmutable::parse($data->query->occurred_from))
+            || ! CarbonImmutable::parse($period->occurred_until)->equalTo(CarbonImmutable::parse($data->query->occurred_until))) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }
 

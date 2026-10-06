@@ -5301,9 +5301,8 @@
                                         }
                                     ]
                                 },
-                                "description": "Requires ib.rewards.manage. data is the resource or item array; pagination and filters live in meta. Administrative audit only; lease tokens are excluded."
-                            },
-                            "response": []
+                                "description": "Requires ib.rewards.manage. data is the resource or item array; pagination and filters live in meta. Administrative audit only; lease tokens are excluded.\nPnL realizado: auditoría con occurred_from/occurred_until, npnl firmado y position_ids en receipts; sin balances ni cashflows."
+                            }
                         },
                         {
                             "name": "Show PnL period",
@@ -5404,9 +5403,8 @@
                                         }
                                     ]
                                 },
-                                "description": "Requires ib.rewards.manage. data is the resource or item array; pagination and filters live in meta. Administrative audit only; lease tokens are excluded."
-                            },
-                            "response": []
+                                "description": "Requires ib.rewards.manage. data is the resource or item array; pagination and filters live in meta. Administrative audit only; lease tokens are excluded.\nPnL realizado: auditoría con occurred_from/occurred_until, npnl firmado y position_ids en receipts; sin balances ni cashflows."
+                            }
                         }
                     ]
                 }

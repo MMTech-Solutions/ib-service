@@ -27,7 +27,7 @@ return new class extends Migration
         $jobs = [];
         foreach (DB::table('negative_pnl_jobs')->whereNotNull('server_group_id')->get() as $job) {
             $key = hash('sha256', json_encode([$job->subscription_id, $job->module_id, $job->cadence], JSON_THROW_ON_ERROR));
-            if (isset($jobs[$key]) && [$jobs[$key][0]->cursor_at, $jobs[$key][0]->next_cut_at, $jobs[$key][0]->closed_at, $jobs[$key][0]->reset_baseline, $jobs[$key][0]->finished_at === null] !== [$job->cursor_at, $job->next_cut_at, $job->closed_at, $job->reset_baseline, $job->finished_at === null]) {
+            if (isset($jobs[$key]) && [$jobs[$key][0]->cursor_at, $jobs[$key][0]->next_cut_at, $jobs[$key][0]->closed_at, $jobs[$key][0]->restart_interval, $jobs[$key][0]->finished_at === null] !== [$job->cursor_at, $job->next_cut_at, $job->closed_at, $job->restart_interval, $job->finished_at === null]) {
                 throw new RuntimeException('Align PnL cursors for subscription '.$job->subscription_id.' before upgrading.');
             }
             $jobs[$key][] = $job;
@@ -56,20 +56,6 @@ return new class extends Migration
             $merged['retry_at'] = null;
             $merged['error_code'] = null;
             DB::table('negative_pnl_jobs')->insert($merged);
-            $seen = [];
-            foreach ($sources as $source) {
-                foreach (DB::table('negative_pnl_baselines')->where('job_id', $source->id)->get() as $baseline) {
-                    $identity = $baseline->referral_id.':'.$baseline->account_id;
-                    if (isset($seen[$identity])) {
-                        throw new RuntimeException('Duplicate account baselines during PnL consolidation.');
-                    }
-                    $seen[$identity] = true;
-                    $row = (array) $baseline;
-                    $row['id'] = (string) Str::uuid7();
-                    $row['job_id'] = $merged['id'];
-                    DB::table('negative_pnl_baselines')->insert($row);
-                }
-            }
         }
         DB::table('negative_pnl_jobs')->whereNotNull('server_group_id')->whereNull('finished_at')->update(['finished_at' => now('UTC'), 'lease_token' => null, 'lease_expires_at' => null]);
     }

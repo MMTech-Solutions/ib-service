@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Features\Modules\Catalog\Repositories\PostgreSql\Models\ModuleRecord;
-use App\Features\Rewards\Contracts\Data\V1\NegativePnlCashFlowEvidenceData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlReferralData;
 use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
@@ -16,7 +15,6 @@ use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlReferralsPort;
 use App\Features\Rewards\Contracts\Strategies\NegativePnlRewardCalculationStrategyInterface;
 use App\Features\Rewards\DTOs\NegativePnlRewardCalculationData;
-use App\Features\Rewards\Exceptions\HistoricalPnlCoverageUnavailableException;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
 use App\Features\Rewards\Exceptions\NegativePnlPeriodsUnavailableException;
 use App\Features\Rewards\Factories\NegativePnlProcessingRepositoryFactory;
@@ -108,11 +106,9 @@ final class NegativePnlProcessingTest extends TestCase
                 $rows = [];
                 foreach ($query->subjects as $subject) {
                     foreach ($this->accountsByUser[$subject->external_user_id] ?? $this->accounts as $account) {
-                        $baseline = collect($subject->baselines)->firstWhere('account_id', $account);
-                        $days = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInDays(CarbonImmutable::parse($query->occurred_until));
-                        $seconds = (int) CarbonImmutable::parse('2026-10-01T00:00:00Z')->diffInSeconds(CarbonImmutable::parse($query->occurred_until));
-                        $balance = bcsub('10000', bcmul(bcdiv((string) $seconds, '86400', 12), ($this->lossesByAccount[$account] ?? $this->dailyLoss), 2), 2);
-                        $rows[] = new NegativePnlPeriodData($baseline === null ? 'baseline' : 'resolved', $account, $subject->external_user_id, $this->groupsByAccount[$account] ?? 'external-group', $this->currenciesByAccount[$account] ?? $this->currency, $this->precisionsByAccount[$account] ?? 2, $baseline?->balance_after, $balance, $baseline?->occurred_until, $query->occurred_until, '0', '0', '0', $baseline === null ? null : bcsub($balance, $baseline->balance_after, 2), new NegativePnlCashFlowEvidenceData(0, [], 0, [], 0, [], 0, []), 'read-'.$account.'-'.$days, $query->occurred_until);
+                        $days = CarbonImmutable::parse($query->occurred_from)->diffInSeconds(CarbonImmutable::parse($query->occurred_until)) / 86400;
+                        $npnl = bcmul((string) $days, bcsub('0', $this->lossesByAccount[$account] ?? $this->dailyLoss, 10), 2);
+                        $rows[] = new NegativePnlPeriodData($account, 'trader-'.$account, $subject->external_user_id, $this->groupsByAccount[$account] ?? 'external-group', $this->currenciesByAccount[$account] ?? $this->currency, $this->precisionsByAccount[$account] ?? 2, $query->occurred_from, $query->occurred_until, $npnl, ['position-'.$account.'-'.$query->occurred_until]);
                     }
 
                 }
@@ -123,11 +119,11 @@ final class NegativePnlProcessingTest extends TestCase
         $this->app->instance(ResolveNegativePnlPeriodsPort::class, $this->broker);
     }
 
-    public function test_first_baseline_then_each_delayed_period_and_no_duplicate_or_settlement(): void
+    public function test_first_interval_start_then_each_delayed_period_and_no_duplicate_or_settlement(): void
     {
         config(['rewards.negative_pnl.settlement_enabled' => false]);
         $f = $this->activeFixture();
-        self::assertSame(1, $this->process()['periods']);
+        self::assertSame(0, $this->process()['periods']);
         self::assertSame(0, DB::table('rewards')->count());
         $this->travelTo(CarbonImmutable::parse('2026-10-04T10:00:00Z'));
         $metrics = $this->process();
@@ -135,7 +131,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(3, $metrics['rewards']);
         self::assertSame(0, $metrics['errors']);
         self::assertSame([1000, 1000, 1000], DB::table('rewards')->orderBy('created_at')->pluck('amount_minor')->map(fn ($x) => (int) $x)->all());
-        self::assertSame('2026-10-04T00:00:00.000000Z', $this->broker->queries[3]->occurred_until);
+        self::assertSame('2026-10-04T00:00:00.000000Z', $this->broker->queries[2]->occurred_until);
         self::assertSame(0, $this->process()['rewards']);
         self::assertSame(3, DB::table('rewards')->where('status', 'pending')->count());
         self::assertNull(app(RewardRepositoryFactory::class)->make()->claimNextSettlement(now('UTC')->toImmutable(), now('UTC')->subMinute()->toImmutable(), now('UTC')->addMinute()->toImmutable(), []));
@@ -143,7 +139,7 @@ final class NegativePnlProcessingTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_local_configuration_baseline_period_reward_and_finance_settlement_flow(): void
+    public function test_local_configuration_interval_start_period_reward_and_finance_settlement_flow(): void
     {
         $fixture = $this->activeFixture();
         $this->process();
@@ -201,6 +197,7 @@ final class NegativePnlProcessingTest extends TestCase
         $queries = count($this->broker->queries);
         $networkCalls = $this->network->calls;
         $this->network->items = [];
+        $this->broker->dailyLoss = '999';
         config(['rewards.minimum_amount_major' => '999999']);
         self::assertSame(1, $this->process()['rewards']);
         self::assertSame($queries, count($this->broker->queries));
@@ -212,50 +209,50 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame('0.01', $snapshot['inputs']['minimum_amount_major']);
     }
 
-    public function test_provider_failure_preserves_baseline_and_other_contexts_continue(): void
+    public function test_provider_failure_preserves_interval_start_and_other_contexts_continue(): void
     {
         $this->activeFixture();
         $this->process();
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
-        $this->broker->failAt = 2;
+        $this->broker->failAt = 1;
         self::assertSame(1, $this->process()['errors']);
-        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_baselines')->first()->occurred_until)->toDateString());
+        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_jobs')->first()->cursor_at)->toDateString());
         self::assertSame(0, DB::table('rewards')->count());
         self::assertSame(1, $this->process()['rewards']);
         self::assertSame(1, DB::table('rewards')->count());
     }
 
-    public function test_pause_then_resume_resets_baseline_without_paying_paused_interval(): void
+    public function test_pause_then_resume_resets_interval_start_without_paying_paused_interval(): void
     {
         $f = $this->activeFixture();
         $this->process();
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
         DB::table('modules')->where('id', $f['module_id'])->update(['processing_status' => 'paused']);
         self::assertSame(0, $this->process()['periods']);
-        self::assertCount(1, $this->broker->queries);
+        self::assertCount(0, $this->broker->queries);
         $this->travelTo(CarbonImmutable::parse('2026-10-03T12:00:00Z'));
         DB::table('modules')->where('id', $f['module_id'])->update(['processing_status' => 'running']);
-        self::assertSame(1, $this->process()['periods']);
+        self::assertSame(0, $this->process()['periods']);
         self::assertSame(0, DB::table('rewards')->count());
-        self::assertSame('2026-10-03T12:00:00.000000Z', $this->broker->queries[1]->occurred_until);
+        self::assertSame('2026-10-03T12:00:00.000000Z', CarbonImmutable::parse(DB::table('negative_pnl_jobs')->value('cursor_at'))->toISOString());
         $this->travelTo(CarbonImmutable::parse('2026-10-04T00:00:00Z'));
         self::assertSame(1, $this->process()['rewards']);
     }
 
-    public function test_currency_change_starts_a_new_account_baseline(): void
+    public function test_currency_change_starts_a_new_account_interval_start(): void
     {
         $this->activeFixture();
         $this->process();
         $this->broker->currency = 'EUR';
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
-        self::assertSame(0, $this->process()['rewards']);
-        self::assertSame('EUR', DB::table('negative_pnl_baselines')->first()->currency_code);
+        self::assertSame(1, $this->process()['rewards']);
+        self::assertSame('EUR', DB::table('rewards')->first()->currency_code);
         $this->travelTo(CarbonImmutable::parse('2026-10-03T00:00:00Z'));
         self::assertSame(1, $this->process()['rewards']);
         self::assertSame('EUR', DB::table('rewards')->first()->currency_code);
     }
 
-    public function test_cadence_change_establishes_new_baseline_and_recovers_weekly_boundary(): void
+    public function test_cadence_change_establishes_new_interval_start_and_recovers_weekly_boundary(): void
     {
         $f = $this->activeFixture();
         $this->process();
@@ -315,6 +312,10 @@ final class NegativePnlProcessingTest extends TestCase
         $snapshot = json_decode($reward->summary_snapshot, true);
         self::assertSame('-600.00', $snapshot['aggregate']['signed_pnl']);
         self::assertCount(3, $snapshot['aggregate']['contributions']);
+        foreach ($snapshot['aggregate']['contributions'] as $contribution) {
+            self::assertCount(1, $contribution['position_ids']);
+            self::assertStringContainsString($contribution['trading_account_id'], $contribution['position_ids'][0]);
+        }
         self::assertSame(3, DB::table('reward_evidence')->where('reward_id', $reward->id)->count());
         self::assertSame(0, $this->process()['rewards']);
     }
@@ -331,7 +332,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame('-0.12', json_decode(DB::table('rewards')->value('summary_snapshot'), true)['aggregate']['signed_pnl']);
     }
 
-    public function test_conflicting_currency_precision_keeps_baselines_and_period_pending(): void
+    public function test_conflicting_currency_precision_keeps_interval_starts_and_period_pending(): void
     {
         $this->activeFixture();
         $this->broker->accounts = ['a', 'b'];
@@ -342,7 +343,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(0, DB::table('rewards')->count());
         self::assertSame('preparing', DB::table('negative_pnl_periods')->orderByDesc('occurred_until')->value('status'));
         self::assertSame('evidence_invalid', DB::table('negative_pnl_jobs')->value('error_code'));
-        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_baselines')->value('occurred_until'))->toDateString());
+        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_jobs')->value('cursor_at'))->toDateString());
     }
 
     private function process(): array
@@ -358,7 +359,7 @@ final class NegativePnlProcessingTest extends TestCase
         $this->process();
         $this->travelTo(CarbonImmutable::parse($now));
         self::assertSame(count($cuts), $this->process()['rewards']);
-        self::assertSame(array_map(static fn (string $at): string => CarbonImmutable::parse($at)->toISOString(), $cuts), array_map(static fn ($query): string => $query->occurred_until, array_slice($this->broker->queries, 1)));
+        self::assertSame(array_map(static fn (string $at): string => CarbonImmutable::parse($at)->toISOString(), $cuts), array_map(static fn ($query): string => $query->occurred_until, $this->broker->queries));
     }
 
     public static function otherCadences(): array
@@ -381,12 +382,12 @@ final class NegativePnlProcessingTest extends TestCase
         $this->broker->currenciesByAccount = ['eur-account' => 'EUR'];
         $this->process();
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
-        $this->broker->failAt = 4;
+        $this->broker->failAt = 2;
         self::assertSame(1, $this->process()['errors']);
         self::assertSame(0, DB::table('rewards')->count());
         $calls = $this->network->calls;
         self::assertSame(2, $this->process()['rewards']);
-        self::assertCount(5, $this->broker->queries);
+        self::assertCount(3, $this->broker->queries);
         self::assertSame($calls, $this->network->calls);
         self::assertSame(['EUR', 'USD'], DB::table('rewards')->orderBy('currency_code')->pluck('currency_code')->all());
         self::assertSame([500, 1000], DB::table('rewards')->orderBy('amount_minor')->pluck('amount_minor')->map(fn ($x) => (int) $x)->all());
@@ -412,7 +413,7 @@ final class NegativePnlProcessingTest extends TestCase
     }
 
     #[DataProvider('invalidEvidenceCases')]
-    public function test_invalid_contract_or_absent_coverage_never_advances_baseline(string $exceptionType, string $code): void
+    public function test_invalid_contract_or_absent_coverage_never_advances_interval_start(string $exceptionType, string $code): void
     {
         $this->activeFixture();
         $this->process();
@@ -420,7 +421,7 @@ final class NegativePnlProcessingTest extends TestCase
         $this->broker->failure = $exceptionType::create();
         self::assertSame(1, $this->process()['errors']);
         self::assertSame($code, DB::table('negative_pnl_jobs')->first()->error_code);
-        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_baselines')->first()->occurred_until)->toDateString());
+        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_jobs')->first()->cursor_at)->toDateString());
         self::assertSame(0, DB::table('rewards')->count());
         $this->broker->failure = null;
         self::assertSame(1, $this->process()['rewards']);
@@ -428,10 +429,10 @@ final class NegativePnlProcessingTest extends TestCase
 
     public static function invalidEvidenceCases(): array
     {
-        return [[InvalidNegativePnlPeriodsResponseException::class, 'evidence_invalid'], [HistoricalPnlCoverageUnavailableException::class, 'historical_coverage_unavailable']];
+        return [[InvalidNegativePnlPeriodsResponseException::class, 'evidence_invalid']];
     }
 
-    public function test_cut_snapshot_and_referral_receipt_rollback_together_before_baseline_advance(): void
+    public function test_cut_snapshot_and_referral_receipt_rollback_together_before_interval_start_advance(): void
     {
         $this->activeFixture();
         $this->process();
@@ -445,12 +446,12 @@ final class NegativePnlProcessingTest extends TestCase
         });
         $this->app->instance('rewards.repositories.postgresql', $repository);
         self::assertSame(1, $this->process()['errors']);
-        self::assertSame(1, DB::table('negative_pnl_cut_snapshots')->count());
+        self::assertSame(0, DB::table('negative_pnl_cut_snapshots')->count());
         self::assertSame([], json_decode(DB::table('negative_pnl_periods')->orderByDesc('occurred_until')->first()->receipts, true));
-        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_baselines')->first()->occurred_until)->toDateString());
+        self::assertSame('2026-10-01', CarbonImmutable::parse(DB::table('negative_pnl_jobs')->first()->cursor_at)->toDateString());
         $this->app->instance('rewards.repositories.postgresql', $actual);
         self::assertSame(1, $this->process()['rewards']);
-        self::assertSame(2, DB::table('negative_pnl_cut_snapshots')->count());
+        self::assertSame(1, DB::table('negative_pnl_cut_snapshots')->count());
     }
 
     public function test_cadence_round_trip_between_runs_does_not_pay_the_skipped_interval(): void
@@ -489,9 +490,9 @@ final class NegativePnlProcessingTest extends TestCase
         $f = $this->activeFixture();
         $second = $this->seedAuthorizedCustomer((string) Str::uuid7());
         $this->customerGatewayJson('POST', '/api/ib/v1/customer/subscriptions', ['plan_id' => $f['plan_id']], $second)->assertCreated();
-        self::assertSame(2, $this->process()['periods']);
+        self::assertSame(0, $this->process()['periods']);
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
-        $this->broker->failAt = 3;
+        $this->broker->failAt = 1;
         self::assertSame(1, app(ProcessNegativePnlRewardsUseCase::class)->execute(1, 1)['errors']);
         self::assertSame(1, app(ProcessNegativePnlRewardsUseCase::class)->execute(1, 1)['rewards']);
         self::assertSame(1, $this->process()['rewards']);
@@ -521,7 +522,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertNull(DB::table('negative_pnl_pending_closures')->first()->completed_at);
         $incomingJob = DB::table('negative_pnl_jobs')->where('subscription_id', $incoming['id'])->first();
         $initial = DB::table('negative_pnl_periods')->where('job_id', $incomingJob->id)->orderBy('occurred_until')->first();
-        self::assertTrue(CarbonImmutable::parse($initial->occurred_until)->equalTo(CarbonImmutable::parse($closure->closed_at)));
+        self::assertTrue(CarbonImmutable::parse($initial->occurred_from)->equalTo(CarbonImmutable::parse($closure->closed_at)));
         self::assertSame(0, $this->process()['rewards']);
         self::assertNotNull(DB::table('negative_pnl_pending_closures')->first()->completed_at);
     }
@@ -536,7 +537,7 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(1, $this->process()['rewards']);
         self::assertSame(1, DB::table('rewards')->count());
         $oldJob = DB::table('negative_pnl_jobs')->where('subscription_id', $source['subscription']['id'])->first();
-        self::assertSame(2, DB::table('negative_pnl_periods')->where('job_id', $oldJob->id)->count());
+        self::assertSame(1, DB::table('negative_pnl_periods')->where('job_id', $oldJob->id)->count());
         self::assertNotNull($oldJob->finished_at);
     }
 

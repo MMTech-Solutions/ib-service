@@ -36,3 +36,7 @@ baselines, conservando cursores para evitar pagos repetidos.
 
 S2S Broker/IAM/Finance y datos reales pendientes; esta entrega no acredita
 esos escenarios. No se ejecutaron migraciones ni despliegue en producción.
+
+## Refactor PnL realizado — 2026-10-06
+
+El contrato vigente utiliza exclusivamente profit de posiciones cerradas por intervalo, con position_ids completos y snapshots por cuenta en IB. Sustituye el cálculo anterior por balances, cashflows y baselines monetarias descrito en entregas históricas de este documento. Se conserva compensación por nivel/moneda y settlement. Implementación completada localmente: IB 115 pruebas / 1246 assertions; Broker 18 pruebas / 146 assertions. Pint aprobado y Graphify actualizado en ambos servicios. Postman v2.1 válido; IB cubre las 100 rutas propias, incluido /up; la ruta interna Broker conserva método y headers S2S. Instalación limpia validada por las suites sobre bases aisladas de testing; no se reinició la base operativa. S2S y datos reales pendientes. Reconciliación de cierres incorporados o corregidos después del run pendiente de decisión. Véase [contrato vigente](../../rules/negative-pnl-contract.md).

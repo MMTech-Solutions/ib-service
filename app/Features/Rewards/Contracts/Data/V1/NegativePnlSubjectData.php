@@ -8,6 +8,5 @@ use Spatie\LaravelData\Data;
 
 final class NegativePnlSubjectData extends Data
 {
-    /** @param list<NegativePnlBaselineData> $baselines */
-    public function __construct(public readonly string $external_user_id, public readonly array $baselines = []) {}
+    public function __construct(public readonly string $external_user_id) {}
 }

@@ -163,7 +163,7 @@ final class NegativePnlConfigurationTest extends TestCase
         app(ResolveNegativePnlRuleContextPort::class)->execute(new ResolveNegativePnlRuleContextQueryData($f['plan_id'], $f['program_id'], $f['module_id'], $f['version_id'], now('UTC')->toISOString()));
     }
 
-    public function test_upgrade_consolidates_matching_selections_and_preserves_cursor_and_baselines(): void
+    public function test_upgrade_consolidates_matching_selections_and_preserves_cursor_and_intervals(): void
     {
         $f = $this->fixture();
         $configuration = $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk()->json('data.id');
@@ -176,7 +176,6 @@ final class NegativePnlConfigurationTest extends TestCase
             DB::table('program_negative_pnl_groups')->insert(['id' => (string) Str::uuid7(), 'configuration_id' => $configuration, 'module_id' => $f['module_id'], 'server_group_id' => $group, 'rule_version_id' => $f['version_id'], 'economic_context' => json_encode($context)]);
             $job = (string) Str::uuid7();
             DB::table('negative_pnl_jobs')->insert(['id' => $job, 'identity_key' => hash('sha256', $job), 'subscription_id' => $subscription, 'beneficiary_id' => $beneficiary, 'plan_id' => $f['plan_id'], 'module_id' => $f['module_id'], 'server_group_id' => $group, 'cadence' => 'daily', 'cursor_at' => '2026-10-05T00:00:00Z', 'next_cut_at' => '2026-10-06T00:00:00Z']);
-            DB::table('negative_pnl_baselines')->insert(['id' => (string) Str::uuid7(), 'job_id' => $job, 'referral_id' => (string) Str::uuid7(), 'account_id' => 'account-'.$group, 'currency_code' => 'USD', 'currency_precision' => 2, 'balance_after' => '900.00', 'occurred_until' => '2026-10-05T00:00:00Z']);
         }
         Schema::drop('program_negative_pnl_modules');
         $migration = require database_path('migrations/2026_10_06_055706_replace_negative_pnl_group_configuration_with_modules.php');
@@ -186,7 +185,6 @@ final class NegativePnlConfigurationTest extends TestCase
         self::assertNotNull($merged);
         self::assertSame('2026-10-05', CarbonImmutable::parse($merged->cursor_at)->toDateString());
         self::assertSame('2026-10-06', CarbonImmutable::parse($merged->next_cut_at)->toDateString());
-        self::assertSame(2, DB::table('negative_pnl_baselines')->where('job_id', $merged->id)->count());
         self::assertSame(2, DB::table('negative_pnl_jobs')->whereNotNull('server_group_id')->whereNotNull('finished_at')->count());
         self::assertArrayNotHasKey('server_group_id', json_decode(DB::table('program_negative_pnl_modules')->value('economic_context'), true));
     }
@@ -195,7 +193,7 @@ final class NegativePnlConfigurationTest extends TestCase
     {
         $id = (string) Str::uuid7();
         DB::table('negative_pnl_jobs')->insert(['id' => $id, 'identity_key' => hash('sha256', $id), 'subscription_id' => (string) Str::uuid7(), 'beneficiary_id' => (string) Str::uuid7(), 'plan_id' => (string) Str::uuid7(), 'module_id' => (string) Str::uuid7(), 'server_group_id' => 'legacy', 'cadence' => 'daily', 'next_cut_at' => '2026-10-06T00:00:00Z']);
-        DB::table('negative_pnl_periods')->insert(['id' => (string) Str::uuid7(), 'job_id' => $id, 'occurred_until' => '2026-10-06T00:00:00Z', 'status' => 'preparing', 'inputs' => '{}', 'receipts' => '{}']);
+        DB::table('negative_pnl_periods')->insert(['id' => (string) Str::uuid7(), 'job_id' => $id, 'occurred_from' => '2026-10-05T00:00:00Z', 'occurred_until' => '2026-10-06T00:00:00Z', 'status' => 'preparing', 'inputs' => '{}', 'receipts' => '{}']);
         $migration = require database_path('migrations/2026_10_06_055706_replace_negative_pnl_group_configuration_with_modules.php');
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Complete all open PnL periods');

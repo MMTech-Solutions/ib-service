@@ -6,8 +6,6 @@ namespace App\Features\Rewards\Repositories\PostgreSql;
 
 use App\Features\Programs\Contracts\Data\V1\NegativePnlModuleConfigurationData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
-use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
-use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
 use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
 use App\Features\Rewards\DTOs\NegativePnlAccountCutData;
 use App\Features\Rewards\DTOs\NegativePnlAggregateData;
@@ -71,9 +69,9 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
             'id' => (string) Str::uuid7(), 'identity_key' => $identity, 'subscription_id' => $subscription->id,
             'beneficiary_id' => $subscription->external_user_id, 'plan_id' => $subscription->plan_id,
             'module_id' => $group->module_id, 'cadence' => $configuration->cadence,
-            'next_cut_at' => $start, 'closed_at' => $subscription->closed_at,
+            'cursor_at' => $start, 'next_cut_at' => NegativePnlCadence::next($configuration->cadence, $start->toISOString()), 'closed_at' => $subscription->closed_at,
         ]);
-        $this->connection->table('negative_pnl_jobs')->where('identity_key', $identity)->whereNotNull('finished_at')->where('cursor_at', '<', $start)->where('next_cut_at', '<', $start)->update(['finished_at' => null, 'next_cut_at' => $start, 'reset_baseline' => true, 'retry_at' => null]);
+        $this->connection->table('negative_pnl_jobs')->where('identity_key', $identity)->whereNotNull('finished_at')->where('cursor_at', '<', $start)->where('next_cut_at', '<', $start)->update(['finished_at' => null, 'cursor_at' => $start, 'next_cut_at' => NegativePnlCadence::next($configuration->cadence, $start->toISOString()), 'restart_interval' => false, 'retry_at' => null]);
         if ($subscription->closed_at !== null) {
             $this->connection->table('negative_pnl_jobs')->where('identity_key', $identity)->update(['closed_at' => $subscription->closed_at]);
             $this->connection->table('negative_pnl_jobs')->where('identity_key', $identity)->where('next_cut_at', '>', $subscription->closed_at)->whereNull('finished_at')->update(['next_cut_at' => $subscription->closed_at]);
@@ -118,22 +116,10 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
     public function beginPeriod(NegativePnlWorkData $work, NegativePnlFrozenInputsData $inputs): NegativePnlProcessingPeriodData
     {
         return $this->guarded($work, function () use ($work, $inputs): NegativePnlProcessingPeriodData {
-            $this->connection->table('negative_pnl_periods')->insertOrIgnore(['id' => (string) Str::uuid7(), 'job_id' => $work->id, 'occurred_until' => $work->next_cut_at, 'status' => 'preparing', 'inputs' => json_encode($inputs->toArray(), JSON_THROW_ON_ERROR), 'receipts' => '{}']);
+            $this->connection->table('negative_pnl_periods')->insertOrIgnore(['id' => (string) Str::uuid7(), 'job_id' => $work->id, 'occurred_from' => $work->cursor_at, 'occurred_until' => $work->next_cut_at, 'status' => 'preparing', 'inputs' => json_encode($inputs->toArray(), JSON_THROW_ON_ERROR), 'receipts' => '{}']);
 
             return $this->period($this->connection->table('negative_pnl_periods')->where('job_id', $work->id)->where('occurred_until', $work->next_cut_at)->firstOrFail());
         });
-    }
-
-    public function baselines(string $jobId, string $referralId): array
-    {
-        return $this->connection->table('negative_pnl_baselines')->where('job_id', $jobId)->where('referral_id', $referralId)->orderBy('account_id')->get()->map(static fn ($row): NegativePnlBaselineData => new NegativePnlBaselineData($row->account_id, $row->balance_after, CarbonImmutable::parse($row->occurred_until)->utc()->toISOString()))->all();
-    }
-
-    public function accountNeedsBaseline(string $jobId, string $referralId, NegativePnlPeriodData $cut): bool
-    {
-        $row = $this->connection->table('negative_pnl_baselines')->where('job_id', $jobId)->where('referral_id', $referralId)->where('account_id', $cut->account_id)->first();
-
-        return $row === null || $row->currency_code !== $cut->currency_code || (int) $row->currency_precision !== $cut->currency_precision;
     }
 
     public function recordReceipt(NegativePnlWorkData $work, string $periodId, string $referralId, array $periods): void
@@ -158,22 +144,12 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
                 }
             }
             if ($period->status === 'preparing') {
-                foreach ($period->receipts as $referralId => $cuts) {
-                    foreach ($cuts as $accountCut) {
-                        $cut = $accountCut->cut;
-                        $this->connection->table('negative_pnl_baselines')->upsert([['id' => (string) Str::uuid7(), 'job_id' => $work->id, 'referral_id' => $referralId, 'account_id' => $cut->account_id, 'currency_code' => $cut->currency_code, 'currency_precision' => $cut->currency_precision, 'balance_after' => $cut->balance_after, 'occurred_until' => $cut->occurred_until]], ['job_id', 'referral_id', 'account_id'], ['currency_code', 'currency_precision', 'balance_after', 'occurred_until']);
-                    }
-                }
-                foreach ($period->receipts as $referralId => $cuts) {
-                    $this->connection->table('negative_pnl_baselines')->where('job_id', $work->id)->where('referral_id', $referralId)->whereNotIn('account_id', array_map(static fn ($cut): string => $cut->cut->account_id, $cuts))->delete();
-                }
-                $this->connection->table('negative_pnl_baselines')->where('job_id', $work->id)->whereNotIn('referral_id', array_keys($period->receipts))->delete();
                 $next = NegativePnlCadence::next($work->cadence, $period->occurred_until);
                 $closedAt = $this->connection->table('negative_pnl_jobs')->where('id', $work->id)->value('closed_at');
                 if ($closedAt !== null) {
                     $next = CarbonImmutable::parse($next)->min(CarbonImmutable::parse($closedAt))->toISOString();
                 }
-                $this->connection->table('negative_pnl_jobs')->where('id', $work->id)->update(['cursor_at' => $period->occurred_until, 'next_cut_at' => $next, 'reset_baseline' => $work->reset_baseline && ! $period->inputs->reset_baseline]);
+                $this->connection->table('negative_pnl_jobs')->where('id', $work->id)->update(['cursor_at' => $period->occurred_until, 'next_cut_at' => $next, 'restart_interval' => false]);
                 $this->connection->table('negative_pnl_periods')->where('id', $periodId)->update(['status' => 'ready']);
             }
 
@@ -201,7 +177,7 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
                 return false;
             }
             foreach ($aggregate->contributions as $cut) {
-                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->account_id), 'subject_external_user_id' => $cut->external_user_id, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
+                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->trading_account_id), 'subject_external_user_id' => $cut->external_user_id, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
             }
 
             return true;
@@ -242,16 +218,16 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
         });
     }
 
-    public function release(NegativePnlWorkData $work, ?string $error, bool $resetBaseline = false, bool $finished = false): void
+    public function release(NegativePnlWorkData $work, ?string $error, bool $restartInterval = false, bool $finished = false): void
     {
-        $this->ownedLease($work)->update(['lease_token' => null, 'lease_expires_at' => null, 'retry_at' => CarbonImmutable::now('UTC')->addSeconds((int) config('rewards.negative_pnl.retry_delay_seconds', 60)), 'error_code' => $error, 'reset_baseline' => $resetBaseline || $work->reset_baseline, 'finished_at' => $finished ? CarbonImmutable::now('UTC') : null]);
+        $this->ownedLease($work)->update(['lease_token' => null, 'lease_expires_at' => null, 'retry_at' => CarbonImmutable::now('UTC')->addSeconds((int) config('rewards.negative_pnl.retry_delay_seconds', 60)), 'error_code' => $error, 'restart_interval' => $restartInterval || $work->restart_interval, 'finished_at' => $finished ? CarbonImmutable::now('UTC') : null]);
     }
 
     public function reset(NegativePnlWorkData $work, string $at): NegativePnlWorkData
     {
         return $this->guarded($work, function () use ($work, $at): NegativePnlWorkData {
             $cut = $work->closed_at === null ? $at : CarbonImmutable::parse($at)->min(CarbonImmutable::parse($work->closed_at))->toISOString();
-            $this->connection->table('negative_pnl_jobs')->where('id', $work->id)->update(['next_cut_at' => $cut, 'reset_baseline' => true]);
+            $this->connection->table('negative_pnl_jobs')->where('id', $work->id)->update(['cursor_at' => $cut, 'next_cut_at' => $work->closed_at === null ? NegativePnlCadence::next($work->cadence, $cut) : CarbonImmutable::parse(NegativePnlCadence::next($work->cadence, $cut))->min(CarbonImmutable::parse($work->closed_at))->toISOString(), 'restart_interval' => false]);
 
             return $this->work($this->connection->table('negative_pnl_jobs')->where('id', $work->id)->firstOrFail());
         });
@@ -290,11 +266,11 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
             $receipts[$referralId] = array_map(static fn (array $cut): NegativePnlAccountCutData => NegativePnlAccountCutData::from($cut), $cuts);
         }
 
-        return new NegativePnlProcessingPeriodData($row->id, CarbonImmutable::parse($row->occurred_until)->utc()->toISOString(), $row->status, NegativePnlFrozenInputsData::from(json_decode($row->inputs, true, 512, JSON_THROW_ON_ERROR)), $receipts);
+        return new NegativePnlProcessingPeriodData($row->id, CarbonImmutable::parse($row->occurred_until)->utc()->toISOString(), $row->status, NegativePnlFrozenInputsData::from(json_decode($row->inputs, true, 512, JSON_THROW_ON_ERROR)), $receipts, CarbonImmutable::parse($row->occurred_from)->utc()->toISOString());
     }
 
     private function work(object $row): NegativePnlWorkData
     {
-        return new NegativePnlWorkData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->cadence, CarbonImmutable::parse($row->next_cut_at)->utc()->toISOString(), $row->cursor_at === null ? null : CarbonImmutable::parse($row->cursor_at)->utc()->toISOString(), $row->closed_at === null ? null : CarbonImmutable::parse($row->closed_at)->utc()->toISOString(), (bool) $row->reset_baseline, $row->lease_token);
+        return new NegativePnlWorkData($row->id, $row->subscription_id, $row->beneficiary_id, $row->plan_id, $row->module_id, $row->cadence, CarbonImmutable::parse($row->next_cut_at)->utc()->toISOString(), $row->cursor_at === null ? null : CarbonImmutable::parse($row->cursor_at)->utc()->toISOString(), $row->closed_at === null ? null : CarbonImmutable::parse($row->closed_at)->utc()->toISOString(), (bool) $row->restart_interval, $row->lease_token);
     }
 }

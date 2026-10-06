@@ -121,9 +121,7 @@ La recuperación Finance se adapta al GET real mediante una segunda consulta
 al listado paginado de wallets, enlazada por ID exacto. La evidencia local y
 los límites S2S se registran en [RWD3.2](07-rwd3-corrections-and-reconciliation.md).
 
-El [plan E2E y su evidencia](11-e2e-historical-pnl.md) completa su alcance local. Las lecturas
-de margen son la fuente seleccionada bajo el supuesto de continuidad hasta el
-corte; el desfase temporal queda documentado sin detección ni gracia.
+El [plan E2E y su evidencia](11-e2e-historical-pnl.md) conserva la evidencia de la entrega anterior. El contrato vigente sustituye lecturas de margen y cashflows por profit realizado e identidades de posiciones en intervalos explícitos.
 
 La configuración/cálculo RWD4.2.1 y
 [RWD4.2.2](11-e2e-historical-pnl.md#rwd422-runner-pnl-recuperacion-y-generacion-de-rewards)
@@ -135,3 +133,7 @@ Esa evidencia no bloquea habilitación del código; sigue requerida para declara
 completo el E2E y no equivale a validación con datos reales.
 
 N-PnL por nivel y moneda (2026-10-06): [entrega y evidencia](13-negative-pnl-level-currency.md).
+
+## Refactor PnL realizado — 2026-10-06
+
+El contrato vigente utiliza exclusivamente profit de posiciones cerradas por intervalo, con position_ids completos y snapshots por cuenta en IB. Sustituye el cálculo anterior por balances, cashflows y baselines monetarias descrito en entregas históricas de este documento. Se conserva compensación por nivel/moneda y settlement. Implementación completada localmente: IB 115 pruebas / 1246 assertions; Broker 18 pruebas / 146 assertions. Pint aprobado y Graphify actualizado en ambos servicios. Postman v2.1 válido; IB cubre las 100 rutas propias, incluido /up; la ruta interna Broker conserva método y headers S2S. Instalación limpia validada por las suites sobre bases aisladas de testing; no se reinició la base operativa. S2S y datos reales pendientes. Reconciliación de cierres incorporados o corregidos después del run pendiente de decisión. Véase [contrato vigente](../../rules/negative-pnl-contract.md).

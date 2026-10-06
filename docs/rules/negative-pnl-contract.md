@@ -1,4 +1,4 @@
-# Contrato N-PnL por lotes y agregación económica
+# Contrato N-PnL realizado por intervalos
 
 Estado: obligatorio; cambio incompatible, sin fallback. Revisión: 2026-10-06.
 
@@ -8,84 +8,70 @@ Estado: obligatorio; cambio incompatible, sin fallback. Revisión: 2026-10-06.
 `X-Internal-Token` y `X-Internal-Source: mmt-ib-service`.
 
 ```json
-{
-  "subjects": [
-    {"external_user_id": "usuario-a", "baselines": [
-      {"account_id": "00000000-0000-7000-8000-000000000001", "balance_after": "2000.00", "occurred_until": "2026-10-05T00:00:00Z"}
-    ]},
-    {"external_user_id": "usuario-b", "baselines": []}
-  ],
-  "occurred_until": "2026-10-06T00:00:00Z"
-}
+{"subjects":[{"external_user_id":"usuario-a"},{"external_user_id":"usuario-b"}],"occurred_from":"2026-10-01T00:00:00Z","occurred_until":"2026-10-02T00:00:00Z"}
 ```
 
-`subjects` es una lista no vacía de usuarios únicos. Cada `baselines` es una
-lista presente, con máximo 100 cuentas, IDs únicos y decimales como strings.
-El corte es obligatorio, no futuro; las baselines lo preceden. La petición
-no contiene niveles, tasas ni plantilla. Se retira el payload de usuario único.
+Usuarios únicos, lote no vacío y máximo 100 por defecto. Inicio anterior al fin,
+fin no futuro. Se rechazan baselines y el payload antiguo. Broker e IB alinean
+`IB_NEGATIVE_PNL_SUBJECT_BATCH_SIZE` y `REWARDS_NEGATIVE_PNL_SUBJECT_BATCH_SIZE`.
 
-El máximo por lote es 100 por defecto: Broker usa
-`IB_NEGATIVE_PNL_SUBJECT_BATCH_SIZE`, IB usa `REWARDS_NEGATIVE_PNL_SUBJECT_BATCH_SIZE`.
-Configurar ambos al mismo límite positivo. IB divide la red pendiente en lotes
-acotados con el mismo corte; no necesita enviar nuevamente receipts congelados.
+Broker encuentra cuentas LIVE/B_BOOK del usuario existentes al corte, incluidas
+archivadas o inactivas. Consulta cierres por `unix_closed_at` en milisegundos en
+`[inicio, fin)`. Suma exclusivamente `profit`, con ambos signos y escala 10,
+sin redondeo por posición. No usa swap, comisión, balance ni cashflow.
 
-La respuesta usa `data` como array plano de cuentas. Cada ítem conserva
-`status`, `account_id`, `external_user_id`, `server_group_id`, `currency_code`,
-`currency_precision`, `balance_before`, `balance_after`, `occurred_from`,
-`occurred_until`, `deposits`, `withdrawals`, `cash_flow_net`, `net_pnl`,
-`evidence`, `balance_read_id` y `balance_read_at`. `net_pnl` conserva ambos signos;
-una cuenta inicial entrega estado `baseline` y PnL nulo.
+`data` es un array plano de resultados de cuenta:
 
 ```json
-{"success": true, "data": [], "meta": {"completed_subjects": ["usuario-sin-cuentas"]}}
+{"success":true,"data":[{"external_user_id":"usuario-a","trading_account_id":"UUID","external_trader_id":"12345","server_group_id":"UUID","currency_code":"USD","currency_precision":2,"occurred_from":"2026-10-01T00:00:00.000000Z","occurred_until":"2026-10-02T00:00:00.000000Z","npnl":"-600.0000000000","position_ids":["UUID-ganadora","UUID-perdedora"]}],"meta":{"completed_subjects":["usuario-a","usuario-b"]}}
 ```
 
-`meta.completed_subjects` contiene exactamente una vez cada usuario solicitado,
-incluidos aquellos sin cuentas. El orden no tiene semántica. Una falta de cobertura
-impide el éxito del lote completo; no se confirma una consulta parcial.
-Se conservan 422 de validación/contrato y `HISTORICAL_PNL_COVERAGE_UNAVAILABLE`;
-409, timeout y 5xx son recuperables. IB rechaza cuentas ajenas o duplicadas,
-lecturas futuras, aritmética incompatible y baselines omitidas o discontinuas.
+`npnl` es firmado pese al nombre: positivo, negativo o cero.
+`position_ids` contiene todas las posiciones utilizadas, únicas y ordenadas
+por ID. Sin cierres, la cuenta devuelve cero y lista vacía. Un usuario sin
+cuentas se confirma en `meta.completed_subjects`, exactamente una vez por
+usuario solicitado. No se confirma un lote parcialmente resuelto.
 
-## Configuración y cálculo IB
+IB rechaza usuarios ajenos, cuentas o posiciones duplicadas, intervalos
+incompatibles, importes no decimales string y moneda/precisión inválidas.
+409, timeout y 5xx son recuperables; otros errores y 2xx incompatibles producen
+`evidence_invalid`. La ausencia de lecturas de margen no es un error PnL.
 
-GET/PUT `.../programs/{program}/negative-pnl-configuration` sustituyen `groups`
-por `modules`: `{"cadence":"daily","modules":[{"module_id":"UUID","rule_version_id":"UUID"}]}`.
-`modules=[]` retira la configuración. No se admite `server_group_id` en la
-selección. La regla publicada conserva el binding de plantilla; sus niveles y
-tasas son comunes a las cuentas del módulo. Se exige asignación explícita.
+## Persistencia y cálculo IB
 
-IB conserva usuario → nivel desde IAM, asocia las cuentas y agrega por nivel y
-`currency_code` dentro de suscripción/módulo/período. La precisión no crea grupos:
-se asume conscientemente única por moneda; una contradicción deja el período
-pendiente con `evidence_invalid`, sin avanzar baselines ni generar Rewards.
+El run congela red IAM, niveles, configuración, tasas y mínimo. Usa intervalo
+común por contexto suscripción/módulo/cadencia y un cursor temporal consecutivo,
+sin baseline por cuenta. Activación y reanudación fijan el inicio; cambios de
+plan cierran el tramo anterior y abren el siguiente en el mismo límite.
 
-La preparación conserva toda la evidencia antes de avanzar baselines. El cálculo
-usa decimales exactos, mínimo antes del único redondeo half-up y las tasas personales
-congeladas. Cada total negativo crea una Reward `pending`; cada resultado se conserva
-en `outcomes.aggregates[nivel][moneda]`. El snapshot de Reward incluye `aggregate`
-(total y contribuciones), `inputs`, importe minor y modo de redondeo. Las referencias
-de todas las cuentas contribuyentes están vinculadas en `reward_evidence`.
-Las lecturas administrativas conservan el envelope; ya no aceptan filtro server group.
-Finance mantiene su contrato y nivel económico + 1; no cambia la solicitud de
-obligaciones históricas. La fuente y fórmula del PnL por cuenta permanecen intactas.
+`negative_pnl_periods` conserva ambos límites, inputs, receipts y outcomes.
+`negative_pnl_cut_snapshots` congela por cuenta intervalo, identidades, moneda,
+precisión, npnl y position_ids. Los reintentos conservan receipts y consultan
+solo referidos pendientes. Evidencia completa y válida habilita el estado
+ready y avance del cursor en una transacción; errores posteriores continúan
+la misma generación. No se crean obligaciones con evidencia parcial.
 
-## Actualización operativa sin compatibilidad
+IB compensa por nivel y moneda. Precisión contradictoria para una misma moneda
+deja el período pendiente con `evidence_invalid`. Solo el agregado negativo
+origina Reward pending si cumple mínimo y redondeo. Los resultados positivos,
+cero o bajo mínimo viven en `outcomes.aggregates`, sin fila en rewards.
+Las contribuciones y sus IDs quedan en el snapshot económico; reward_evidence
+vincula las cuentas participantes. Finance conserva payload congelado,
+idempotencia y nivel económico + 1. La finalización del run no requiere que
+sus Rewards estén settled.
 
-1. Con la versión anterior, completar períodos abiertos y detener generación PnL.
-2. Respaldar datos y resolver selecciones divergentes por módulo explícitamente.
-3. Alinear cursores de los trabajos que se consolidarán; ejecutar la migración
-   con generación detenida. Rechaza períodos abiertos, selecciones divergentes,
-   cursores incompatibles y baselines duplicadas. No decide una regla por defecto.
-4. Desplegar Broker e IB con contratos nuevos, límites de lote coincidentes y
-   ejecutar verificación controlada antes de reanudar generación.
+Las lecturas administrativas de períodos incluyen intervalo, receipts y
+outcomes. Los futuros reportes podrán comparar los IDs actuales del intervalo
+con los congelados. Eso detecta cambios de pertenencia, no cambios de profit
+bajo el mismo ID. La reconciliación y correcciones económicas quedan pendientes.
 
-La migración copia selecciones coincidentes a `program_negative_pnl_modules`,
-consolida trabajos/baselines manteniendo el cursor y conserva tablas originales
-para auditoría. Finaliza los trabajos anteriores activos; no altera Rewards,
-settlements ni períodos históricos. No vuelve a remunerar desde el origen.
-No hay dos cálculos ni adaptador de compatibilidad. Tras crear trabajos agregados,
-el downgrade exige restauración del respaldo y coordinación operativa; `down`
-rechaza convertirlos automáticamente en trabajos por grupo.
+## Configuración y actualización
+
+La selección modules por programa, asignación explícita y plantilla común por
+módulo permanecen vigentes. No se introducen filtros económicos por server group.
+No hay compatibilidad con balances ni cálculo dual. Las migraciones originales
+se ajustan al modelo inicial; se requiere recreación de la base para estos
+cambios. Validar instalación limpia únicamente en base de pruebas desechable.
+No ejecutar migrate:fresh sobre una base operativa como parte de la entrega.
 
 Pruebas locales no acreditan S2S ni aceptación con datos reales.

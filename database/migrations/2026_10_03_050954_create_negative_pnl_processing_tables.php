@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestampTz('next_cut_at', 6);
             $table->timestampTz('cursor_at', 6)->nullable();
             $table->timestampTz('closed_at', 6)->nullable();
-            $table->boolean('reset_baseline')->default(false);
+            $table->boolean('restart_interval')->default(false);
             $table->uuid('lease_token')->nullable();
             $table->timestampTz('lease_expires_at', 6)->nullable();
             $table->timestampTz('retry_at', 6)->nullable();
@@ -38,20 +38,10 @@ return new class extends Migration
             $table->timestampTz('last_attempt_at', 6)->nullable();
             $table->index(['finished_at', 'retry_at', 'next_cut_at']);
         });
-        Schema::create('negative_pnl_baselines', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('job_id')->constrained('negative_pnl_jobs')->restrictOnDelete();
-            $table->uuid('referral_id');
-            $table->string('account_id', 191);
-            $table->string('currency_code', 3);
-            $table->integer('currency_precision');
-            $table->text('balance_after');
-            $table->timestampTz('occurred_until', 6);
-            $table->unique(['job_id', 'referral_id', 'account_id']);
-        });
         Schema::create('negative_pnl_periods', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('job_id')->constrained('negative_pnl_jobs')->restrictOnDelete();
+            $table->timestampTz('occurred_from', 6);
             $table->timestampTz('occurred_until', 6);
             $table->string('status', 16);
             $table->jsonb('inputs');
@@ -69,14 +59,13 @@ return new class extends Migration
         });
         DB::statement("ALTER TABLE negative_pnl_jobs ADD CONSTRAINT negative_pnl_jobs_cadence_check CHECK (cadence IN ('daily', 'weekly', 'monthly', 'yearly'))");
         DB::statement("ALTER TABLE negative_pnl_periods ADD CONSTRAINT negative_pnl_periods_status_check CHECK (status IN ('preparing', 'ready', 'completed'))");
-        DB::statement('ALTER TABLE negative_pnl_baselines ADD CONSTRAINT negative_pnl_baselines_precision_check CHECK (currency_precision BETWEEN 0 AND 10)');
+        DB::statement('ALTER TABLE negative_pnl_periods ADD CONSTRAINT negative_pnl_periods_interval_check CHECK (occurred_from < occurred_until)');
     }
 
     public function down(): void
     {
         Schema::dropIfExists('negative_pnl_pending_closures');
         Schema::dropIfExists('negative_pnl_periods');
-        Schema::dropIfExists('negative_pnl_baselines');
         Schema::dropIfExists('negative_pnl_jobs');
         Schema::dropIfExists('negative_pnl_discovery_cursors');
     }

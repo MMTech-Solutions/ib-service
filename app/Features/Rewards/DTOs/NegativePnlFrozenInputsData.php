@@ -12,5 +12,5 @@ use Spatie\LaravelData\Data;
 final class NegativePnlFrozenInputsData extends Data
 {
     /** @param list<NegativePnlReferralData> $referrals */
-    public function __construct(public readonly SubscriptionContextData $subscription, public readonly NegativePnlModuleConfigurationData $configuration, public readonly string $configuration_id, public readonly string $minimum_amount_major, public readonly array $referrals, public readonly bool $reset_baseline = false) {}
+    public function __construct(public readonly SubscriptionContextData $subscription, public readonly NegativePnlModuleConfigurationData $configuration, public readonly string $configuration_id, public readonly string $minimum_amount_major, public readonly array $referrals) {}
 }

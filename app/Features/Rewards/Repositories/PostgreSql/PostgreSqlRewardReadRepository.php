@@ -121,7 +121,7 @@ final class PostgreSqlRewardReadRepository implements RewardReadRepositoryInterf
         }
         $ids = $this->connection->table('rewards')->where('summary_snapshot->period_id', $row->id)->orderBy('id')->pluck('id')->all();
 
-        return new NegativePnlPeriodReadData($row->id, $row->job_id, $row->status, $this->timestamp($row->occurred_until), json_decode($row->inputs, true, 512, JSON_THROW_ON_ERROR), json_decode($row->receipts, true, 512, JSON_THROW_ON_ERROR), json_decode($row->outcomes, true, 512, JSON_THROW_ON_ERROR), $ids);
+        return new NegativePnlPeriodReadData($row->id, $row->job_id, $row->status, $this->timestamp($row->occurred_until), json_decode($row->inputs, true, 512, JSON_THROW_ON_ERROR), json_decode($row->receipts, true, 512, JSON_THROW_ON_ERROR), json_decode($row->outcomes, true, 512, JSON_THROW_ON_ERROR), $ids, $this->timestamp($row->occurred_from));
     }
 
     private function timestamp(?string $value): ?string

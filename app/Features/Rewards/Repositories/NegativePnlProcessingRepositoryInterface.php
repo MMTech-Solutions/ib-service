@@ -6,8 +6,6 @@ namespace App\Features\Rewards\Repositories;
 
 use App\Features\Programs\Contracts\Data\V1\NegativePnlModuleConfigurationData;
 use App\Features\Programs\Contracts\Data\V1\NegativePnlProgramConfigurationData;
-use App\Features\Rewards\Contracts\Data\V1\NegativePnlBaselineData;
-use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
 use App\Features\Rewards\Contracts\Data\V1\RecordNegativePnlClosureData;
 use App\Features\Rewards\DTOs\NegativePnlAccountCutData;
 use App\Features\Rewards\DTOs\NegativePnlAggregateData;
@@ -42,11 +40,6 @@ interface NegativePnlProcessingRepositoryInterface
 
     public function beginPeriod(NegativePnlWorkData $work, NegativePnlFrozenInputsData $inputs): NegativePnlProcessingPeriodData;
 
-    /** @return list<NegativePnlBaselineData> */
-    public function baselines(string $jobId, string $referralId): array;
-
-    public function accountNeedsBaseline(string $jobId, string $referralId, NegativePnlPeriodData $cut): bool;
-
     /** @param list<NegativePnlAccountCutData> $periods */
     public function recordReceipt(NegativePnlWorkData $work, string $periodId, string $referralId, array $periods): void;
 
@@ -60,7 +53,7 @@ interface NegativePnlProcessingRepositoryInterface
 
     public function complete(NegativePnlWorkData $work, string $periodId): void;
 
-    public function release(NegativePnlWorkData $work, ?string $error, bool $resetBaseline = false, bool $finished = false): void;
+    public function release(NegativePnlWorkData $work, ?string $error, bool $restartInterval = false, bool $finished = false): void;
 
     public function reset(NegativePnlWorkData $work, string $at): NegativePnlWorkData;
 }

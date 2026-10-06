@@ -22,20 +22,18 @@ final class NegativePnlCutSnapshotTest extends TestCase
     {
         $fixture = json_decode(file_get_contents(base_path('tests/Fixtures/Rewards/broker-negative-pnl-periods-v1.json')), true, 512, JSON_THROW_ON_ERROR);
         $row = $fixture['data'][0];
-        $row['balance_read_id'] = '123';
-        $row['balance_read_at'] = '2026-10-02T09:58:00Z';
         Http::fake(['*' => Http::response(['data' => [$row], 'meta' => ['completed_subjects' => [$row['external_user_id']]]])]);
         $input = new CaptureNegativePnlCutData(
-            (string) Str::uuid7(), (string) Str::uuid7(), $row['account_id'], $row['server_group_id'], 'monthly',
-            new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData($row['external_user_id'])], '2026-10-02T10:00:00Z'),
+            (string) Str::uuid7(), (string) Str::uuid7(), $row['trading_account_id'], $row['server_group_id'], 'monthly',
+            new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData($row['external_user_id'])], '2026-10-02T10:00:00Z', '2026-10-01T10:00:00Z'),
         );
         $useCase = app(CaptureNegativePnlCutUseCase::class);
         $first = $useCase->execute($input);
         $second = $useCase->execute($input);
 
         self::assertSame($first->identity_key, $second->identity_key);
-        self::assertSame('125.50', $second->period->balance_after);
-        self::assertSame('123', $second->period->balance_read_id);
+        self::assertSame('125.5000000000', $second->period->npnl);
+        self::assertSame(['position-positive'], $second->period->position_ids);
         self::assertSame(1, DB::table('negative_pnl_cut_snapshots')->count());
         Http::assertSentCount(1);
     }

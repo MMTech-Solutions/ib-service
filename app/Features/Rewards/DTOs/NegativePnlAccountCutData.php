@@ -9,5 +9,5 @@ use Spatie\LaravelData\Data;
 
 final class NegativePnlAccountCutData extends Data
 {
-    public function __construct(public readonly NegativePnlPeriodData $cut, public readonly bool $requires_baseline) {}
+    public function __construct(public readonly NegativePnlPeriodData $cut) {}
 }

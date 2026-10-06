@@ -20,7 +20,6 @@ use App\Features\Rewards\DTOs\NegativePnlFrozenInputsData;
 use App\Features\Rewards\DTOs\NegativePnlProcessingPeriodData;
 use App\Features\Rewards\DTOs\NegativePnlRewardCalculationData;
 use App\Features\Rewards\DTOs\NegativePnlWorkData;
-use App\Features\Rewards\Exceptions\HistoricalPnlCoverageUnavailableException;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlReferralsException;
 use App\Features\Rewards\Exceptions\NegativePnlPeriodsUnavailableException;
@@ -73,20 +72,27 @@ final class ProcessNegativePnlRewardsUseCase
             try {
                 $period = $repository->pendingPeriod($work);
                 if (! $this->operational($work)) {
-                    $repository->release($work, 'processing_paused', resetBaseline: true);
+                    $repository->release($work, 'processing_paused', restartInterval: true);
                     $excluded[] = $work->id;
 
                     continue;
                 }
                 if ($period === null) {
-                    if ($work->reset_baseline) {
+                    if ($work->restart_interval) {
                         $work = $repository->reset($work, CarbonImmutable::now('UTC')->toISOString());
-                    } elseif (($resetAt = $this->baselineResetAt($work)) !== null) {
+                    } elseif (($resetAt = $this->intervalRestartAt($work)) !== null) {
                         $work = $repository->reset($work, $resetAt);
+                    }
+                    if (CarbonImmutable::parse($work->next_cut_at)->isFuture()
+                        || CarbonImmutable::parse($work->cursor_at)->greaterThanOrEqualTo(CarbonImmutable::parse($work->next_cut_at))) {
+                        $repository->release($work, null, finished: $work->closed_at !== null && CarbonImmutable::parse($work->cursor_at)->greaterThanOrEqualTo(CarbonImmutable::parse($work->closed_at)));
+                        $excluded[] = $work->id;
+
+                        continue;
                     }
                     $inputs = $this->inputs($work);
                     if ($inputs === null) {
-                        $repository->release($work, 'configuration_not_applicable', resetBaseline: true, finished: true);
+                        $repository->release($work, 'configuration_not_applicable', restartInterval: true, finished: true);
                         $excluded[] = $work->id;
 
                         continue;
@@ -104,7 +110,6 @@ final class ProcessNegativePnlRewardsUseCase
                 }
             } catch (Throwable $exception) {
                 $code = match (true) {
-                    $exception instanceof HistoricalPnlCoverageUnavailableException => 'historical_coverage_unavailable',
                     $exception instanceof NegativePnlPeriodsUnavailableException, $exception instanceof NegativePnlReferralsUnavailableException => 'evidence_unavailable',
                     $exception instanceof InvalidNegativePnlPeriodsResponseException, $exception instanceof InvalidNegativePnlReferralsException => 'evidence_invalid',
                     default => 'processing_failed',
@@ -175,7 +180,7 @@ final class ProcessNegativePnlRewardsUseCase
         $group = $configuration->modules[0];
         $depth = max(array_map(static fn ($level): int => $level->distribution_level, $group->levels));
 
-        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) config('rewards.minimum_amount_major', '0.01'), $this->referrals->resolve($work->beneficiary_id, $depth), $work->reset_baseline);
+        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) config('rewards.minimum_amount_major', '0.01'), $this->referrals->resolve($work->beneficiary_id, $depth));
     }
 
     private function evidence(NegativePnlProcessingRepositoryInterface $repository, NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period): NegativePnlProcessingPeriodData
@@ -183,11 +188,11 @@ final class ProcessNegativePnlRewardsUseCase
         $subjects = [];
         foreach ($period->inputs->referrals as $referral) {
             if (! array_key_exists($referral->external_user_id, $period->receipts)) {
-                $subjects[] = new NegativePnlSubjectData($referral->external_user_id, $period->inputs->reset_baseline ? [] : $repository->baselines($work->id, $referral->external_user_id));
+                $subjects[] = new NegativePnlSubjectData($referral->external_user_id);
             }
         }
         foreach (array_chunk($subjects, max(1, (int) config('rewards.negative_pnl.subject_batch_size', 100))) as $batch) {
-            $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until);
+            $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until, $period->occurred_from);
             $response = $this->broker->resolve($query);
             $expected = array_map(static fn ($subject): string => $subject->external_user_id, $batch);
             $completed = $response->completed_subjects;
@@ -199,21 +204,21 @@ final class ProcessNegativePnlRewardsUseCase
             $cutsBySubject = array_fill_keys($expected, []);
             $seen = [];
             foreach ($response->periods as $cut) {
-                if (! array_key_exists($cut->external_user_id, $cutsBySubject) || isset($seen[$cut->account_id])
+                if (! array_key_exists($cut->external_user_id, $cutsBySubject) || isset($seen[$cut->trading_account_id])
                     || ! CarbonImmutable::parse($cut->occurred_until)->equalTo(CarbonImmutable::parse($period->occurred_until))
-                    || $cut->balance_read_id === null || $cut->balance_read_at === null) {
+                    || ! CarbonImmutable::parse($cut->occurred_from)->equalTo(CarbonImmutable::parse($period->occurred_from))) {
                     throw InvalidNegativePnlPeriodsResponseException::create();
                 }
-                $seen[$cut->account_id] = true;
-                $cutsBySubject[$cut->external_user_id][] = new NegativePnlAccountCutData($cut, $repository->accountNeedsBaseline($work->id, $cut->external_user_id, $cut) || $period->inputs->reset_baseline);
+                $seen[$cut->trading_account_id] = true;
+                $cutsBySubject[$cut->external_user_id][] = new NegativePnlAccountCutData($cut);
             }
             $repository->transactionForLease($work, function () use ($repository, $work, $period, $query, $cutsBySubject): void {
                 foreach ($cutsBySubject as $subjectId => $cuts) {
                     $frozen = [];
                     foreach ($cuts as $accountCut) {
                         $cut = $accountCut->cut;
-                        $snapshot = $this->capture->execute(new CaptureNegativePnlCutData($work->module_id, $work->subscription_id, $cut->account_id, $cut->server_group_id, $work->cadence, $query), $cut);
-                        $frozen[] = new NegativePnlAccountCutData($snapshot->period, $accountCut->requires_baseline);
+                        $snapshot = $this->capture->execute(new CaptureNegativePnlCutData($work->module_id, $work->subscription_id, $cut->trading_account_id, $cut->server_group_id, $work->cadence, $query), $cut);
+                        $frozen[] = new NegativePnlAccountCutData($snapshot->period);
                     }
                     $repository->recordReceipt($work, $period->id, $subjectId, $frozen);
                 }
@@ -230,13 +235,6 @@ final class ProcessNegativePnlRewardsUseCase
         $aggregates = $this->aggregation->execute($period);
         $strategy = $this->calculationFactory->make('negative_pnl_share');
         $subscription = $period->inputs->subscription;
-        foreach ($period->receipts as $referralId => $cuts) {
-            foreach ($cuts as $accountCut) {
-                if ($accountCut->requires_baseline || $accountCut->cut->establishesBaseline()) {
-                    $repository->recordOutcome($work, $period->id, $referralId, $accountCut->cut->account_id, 'baseline');
-                }
-            }
-        }
         foreach ($aggregates as $aggregate) {
             $level = collect($period->inputs->configuration->levels)->firstWhere('distribution_level', $aggregate->distribution_level);
             $amount = $strategy->calculate(new NegativePnlRewardCalculationData($aggregate->signed_pnl, $level->rate, $subscription->personal_rate, $subscription->is_master, $subscription->master_rate, $aggregate->currency_code, $aggregate->currency_precision, $period->inputs->minimum_amount_major));
@@ -249,7 +247,7 @@ final class ProcessNegativePnlRewardsUseCase
         }
     }
 
-    private function baselineResetAt(NegativePnlWorkData $work): ?string
+    private function intervalRestartAt(NegativePnlWorkData $work): ?string
     {
         if ($work->cursor_at === null) {
             return null;

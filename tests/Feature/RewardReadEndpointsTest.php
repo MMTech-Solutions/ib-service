@@ -65,17 +65,18 @@ final class RewardReadEndpointsTest extends TestCase
 
     public function test_jobs_and_periods_are_administrative_and_filter_frozen_context(): void
     {
+        $this->freezeTime();
         $reward = $this->seedReward('pending');
         $row = DB::table('rewards')->where('id', $reward)->first();
         $job = (string) Str::uuid7();
         $period = (string) Str::uuid7();
         DB::table('negative_pnl_jobs')->insert(['id' => $job, 'identity_key' => hash('sha256', $job), 'subscription_id' => (string) Str::uuid7(), 'beneficiary_id' => $row->beneficiary_user_id, 'plan_id' => $row->plan_id, 'module_id' => $row->module_id, 'server_group_id' => 'group', 'cadence' => 'daily', 'next_cut_at' => now('UTC')]);
-        DB::table('negative_pnl_periods')->insert(['id' => $period, 'job_id' => $job, 'occurred_until' => now('UTC'), 'status' => 'ready', 'inputs' => json_encode(['subscription' => ['program_id' => $row->program_id]]), 'receipts' => '{}']);
+        DB::table('negative_pnl_periods')->insert(['id' => $period, 'job_id' => $job, 'occurred_from' => now('UTC')->subDay()->toISOString(), 'occurred_until' => now('UTC'), 'status' => 'ready', 'inputs' => json_encode(['subscription' => ['program_id' => $row->program_id]]), 'receipts' => '{}']);
         DB::table('rewards')->where('id', $reward)->update(['summary_snapshot' => json_encode(['period_id' => $period])]);
         $this->gatewayJson('GET', '/api/ib/v1/admin/rewards/negative-pnl/jobs?program_id='.$row->program_id)->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.status', 'pending');
         $this->gatewayJson('GET', '/api/ib/v1/admin/rewards/negative-pnl/jobs/'.$job)->assertOk()->assertJsonPath('data.id', $job)->assertJsonMissingPath('data.lease_token');
         $this->gatewayJson('GET', '/api/ib/v1/admin/rewards/negative-pnl/periods?job_id='.$job)->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reward_ids', [$reward]);
-        $this->gatewayJson('GET', '/api/ib/v1/admin/rewards/negative-pnl/periods/'.$period)->assertOk()->assertJsonPath('data.inputs.subscription.program_id', $row->program_id);
+        $this->gatewayJson('GET', '/api/ib/v1/admin/rewards/negative-pnl/periods/'.$period)->assertOk()->assertJsonPath('data.inputs.subscription.program_id', $row->program_id)->assertJsonPath('data.occurred_from', now('UTC')->subDay()->toISOString());
         $this->customerGatewayJson('GET', '/api/ib/v1/customer/rewards/negative-pnl/jobs')->assertNotFound();
     }
 

@@ -1,48 +1,39 @@
 {
-    "data": [
-        {
-            "status": "baseline",
-            "account_id": "00000000-0000-7000-8000-000000000001",
-            "external_user_id": "11111111-1111-4111-8111-111111111111",
-            "server_group_id": "00000000-0000-7000-8000-000000000010",
-            "currency_code": "USD",
-            "currency_precision": 2,
-            "balance_before": null,
-            "balance_after": "125.50",
-            "occurred_from": null,
-            "occurred_until": "2026-10-02T10:00:00+00:00",
-            "deposits": "0.00",
-            "withdrawals": "0.00",
-            "cash_flow_net": "0.00",
-            "net_pnl": null,
-            "evidence": {
-                "external_deposits": {"count": 0, "references": []},
-                "external_withdrawals": {"count": 0, "references": []},
-                "internal_deposits": {"count": 0, "references": []},
-                "internal_withdrawals": {"count": 0, "references": []}
-            }
-        },
-        {
-            "status": "resolved",
-            "account_id": "00000000-0000-7000-8000-000000000002",
-            "external_user_id": "11111111-1111-4111-8111-111111111111",
-            "server_group_id": "00000000-0000-7000-8000-000000000010",
-            "currency_code": "USD",
-            "currency_precision": 2,
-            "balance_before": "100.00",
-            "balance_after": "70.00",
-            "occurred_from": "2026-10-01T10:00:00+00:00",
-            "occurred_until": "2026-10-02T10:00:00+00:00",
-            "deposits": "30.00",
-            "withdrawals": "20.00",
-            "cash_flow_net": "10.00",
-            "net_pnl": "-40.00",
-            "evidence": {
-                "external_deposits": {"count": 1, "references": ["00000000-0000-7000-8000-000000000101"]},
-                "external_withdrawals": {"count": 1, "references": ["00000000-0000-7000-8000-000000000102"]},
-                "internal_deposits": {"count": 1, "references": ["00000000-0000-7000-8000-000000000103"]},
-                "internal_withdrawals": {"count": 1, "references": ["00000000-0000-7000-8000-000000000104"]}
-            }
-        }
+  "success": true,
+  "data": [
+    {
+      "trading_account_id": "account-one",
+      "external_trader_id": "trader-account-one",
+      "external_user_id": "11111111-1111-4111-8111-111111111111",
+      "server_group_id": "group",
+      "currency_code": "USD",
+      "currency_precision": 2,
+      "occurred_from": "2026-10-01T10:00:00.000000Z",
+      "occurred_until": "2026-10-02T10:00:00.000000Z",
+      "npnl": "125.5000000000",
+      "position_ids": [
+        "position-positive"
+      ]
+    },
+    {
+      "trading_account_id": "account-two",
+      "external_trader_id": "trader-account-two",
+      "external_user_id": "11111111-1111-4111-8111-111111111111",
+      "server_group_id": "group",
+      "currency_code": "USD",
+      "currency_precision": 2,
+      "occurred_from": "2026-10-01T10:00:00.000000Z",
+      "occurred_until": "2026-10-02T10:00:00.000000Z",
+      "npnl": "-40.0000000000",
+      "position_ids": [
+        "position-loss",
+        "position-gain"
+      ]
+    }
+  ],
+  "meta": {
+    "completed_subjects": [
+      "11111111-1111-4111-8111-111111111111"
     ]
+  }
 }

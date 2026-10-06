@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('account_id', 191);
             $table->string('server_group_id', 191);
             $table->string('cadence', 16);
-            $table->timestampTz('occurred_from', 6)->nullable();
+            $table->timestampTz('occurred_from', 6);
             $table->timestampTz('occurred_until', 6);
             $table->jsonb('snapshot');
             $table->index(['subscription_id', 'occurred_until']);
