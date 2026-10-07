@@ -18,6 +18,7 @@ PropFirm, Copy Trading o Broker Service.
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
 Última revisión: 2026-10-02.
+Última revisión de volumen: 2026-10-06. Broker y Copy Trading declaran suscripciones en la capacidad; catálogo/feed Copy Trading y normalización están implementados en IB. Véase [entrega de eventos de volumen](../rewards/14-volume-provider-events.md); aceptación integrada pendiente.
 
 ## Decisiones confirmadas
 

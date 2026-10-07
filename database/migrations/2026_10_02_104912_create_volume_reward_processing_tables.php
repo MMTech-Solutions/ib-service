@@ -32,8 +32,11 @@ return new class extends Migration
         Schema::create('volume_reward_event_receipts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('module_id')->constrained('modules')->restrictOnDelete();
-            $table->string('order_id', 120);
-            $table->string('external_trader_id', 120);
+            $table->string('source_activity_id', 255);
+            $table->uuid('event_id');
+            $table->unsignedInteger('schema_version');
+            $table->jsonb('activity');
+            $table->jsonb('conflict_snapshot')->nullable();
             $table->string('status', 16);
             $table->unsignedInteger('attempt_count')->default(0);
             $table->timestampTz('next_attempt_at')->nullable();
@@ -42,7 +45,7 @@ return new class extends Migration
             $table->timestampTz('resolved_at')->nullable();
             $table->timestampTz('created_at');
             $table->timestampTz('updated_at');
-            $table->unique(['module_id', 'order_id', 'external_trader_id'], 'volume_reward_event_receipts_source_unique');
+            $table->unique(['module_id', 'source_activity_id'], 'volume_reward_event_receipts_source_unique');
             $table->index(['status', 'next_attempt_at'], 'volume_reward_event_receipts_retry_index');
         });
         Schema::table('rewards', function (Blueprint $table): void {

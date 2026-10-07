@@ -21,12 +21,12 @@ Dependencias: Modules M5, Rules R2, Programs, Subscriptions, IAM y Broker Servic
 - PnL se configura por programa y vigencia con cadencia `daily`, `weekly`, `monthly` o `yearly`. La cadencia determina cuándo vence el run; las ventanas son cortes UTC reales encadenados.
 - El `server_group` es la autoridad de moneda y precisión para ambas modalidades.
 - La base de volumen se calcula desde la posición: fija = `volume × participation_rate`; porcentual = `broker_granted_commission × participation_rate`. La plantilla distribuye esa base por nivel y cada beneficiario aplica su `personal_rate` y, solo si `is_master`, su `master_rate`, todos congelados en la Reward.
-- El evento Avro de posición cerrada de la modalidad `event` lo publica Trading directamente a IB y solo funciona como disparador. IB resuelve la posición en Broker por `order_id` + `external_trader_id`/`login`; Broker entrega entonces volumen, comisión otorgada, instrumento, grupo, moneda y precisión congeladas. `broker-service` también entrega esos campos en su feed paginado para `periodic`.
-- Existe una carrera conocida: Trading publica el mismo evento para Broker e IB, así que IB puede consultar Broker antes de que Broker haya persistido el cierre. `409 CLOSED_POSITION_NOT_READY`, timeout y 5xx se tratan como recuperables mediante receipts durables. Trading Account Service permanece como mejora futura para eliminar la carrera, no como requisito para habilitar `event`.
+- Volumen consume eventos completos de Broker y Copy Trading publicados después de persistir. Las capacidades declaran topic, evento, versión y adapter; IB no consulta el cierre por orden/login. Véase [entrega vigente](14-volume-provider-events.md).
+- La carrera del disparador Trading queda sustituida por evidencia publicada mediante outbox del proveedor. El productor Broker está implementado localmente; Copy Trading y aceptación integrada siguen pendientes.
 
 ## RWD4.0 — contratos que deben confirmarse
 
-1. Trading debe confirmar el evento Avro de posición cerrada con `id` estable y `login` (header o payload coherente). El contrato económico se resuelve en Broker mediante consulta interna por ambos valores; Broker debe confirmar tanto esa consulta como el feed paginado equivalente para `periodic`.
+1. Cada proveedor debe confirmar el contrato JSON position_closed V1, su topic propio y equivalencia con el feed periódico. La aceptación integrada requiere Kafka real, S2S y datos reproducibles.
 2. Broker publica para PnL cuentas operativas, balance actual, grupo, moneda, precisión, flujo de caja asentado y referencias opacas de evidencia. El primer corte establece baseline sin PnL; los siguientes resuelven el intervalo desde el último corte de IB.
 3. Finance no participa directamente en PnL. Broker es autoridad del balance y cashflow de la cuenta de trading; la consulta CPA de depósitos por usuario permanece independiente.
 4. El SDK IAM instalado permite limitar `getUpline` por profundidad y el adapter de Rewards ya transmite el límite.
@@ -38,7 +38,7 @@ El contrato local de PnL está implementado en Broker e IB; RWD4.0 se cerrará c
 - El alcance original incluía cálculo, run durable, snapshot de red e identidad
   por posición/beneficiario/nivel/regla. RWD-A2 alineó su cálculo mediante factory
   sin cambiar el recorrido por actividad ni afirmar garantías nuevas implementadas.
-- Reutilizar el feed M5 para el barrido periódico y el evento Avro V1 como disparador de resolución en Broker. Ambos caminos comparten la misma idempotencia económica.
+- Reutilizar el feed periódico y el evento completo del proveedor, con la misma identidad económica. El modo por evento procesa el snapshot recibido sin resolución HTTP individual.
 - Persistir evidencia de la posición y congelar configuración instrumental, template, participación, rates de nivel/personal/master, moneda y precisión en el ledger.
 - El procesamiento durable, puertos históricos y creación económica de RWD4.1
   están implementados. La denominación anterior de pipeline no impone una

@@ -5,6 +5,8 @@ Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-10-06
 
+Volumen: [eventos declarados en capacidades](14-volume-provider-events.md), implementación local de IB y Broker; productor Copy Trading y aceptación Kafka/S2S pendientes.
+
 ## Objetivo
 
 `Rewards` registra las obligaciones económicas de IB y conserva su causa,

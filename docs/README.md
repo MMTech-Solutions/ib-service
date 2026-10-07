@@ -20,6 +20,7 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`architecture-validation.md`](rules/architecture-validation.md): guardrails PHPUnit y ratchet de deuda arquitectónica.
 - [`api-conventions.md`](rules/api-conventions.md): forma del envelope HTTP; `data` es el recurso o la colección.
 - [`integrations.md`](rules/integrations.md): Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia.
+- [`volume-activity-event-contract.md`](rules/volume-activity-event-contract.md): evidencia completa de proveedores y suscripciones declaradas en capacidades.
 - [`negative-pnl-contract.md`](rules/negative-pnl-contract.md): contrato PnL por lotes y agregado por nivel/moneda.
 - [`strategies.md`](rules/strategies.md): reglas configurables y patrón Strategy.
 - [`code-style.md`](rules/code-style.md): convenciones de PHP y Laravel.

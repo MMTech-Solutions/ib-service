@@ -18,7 +18,7 @@ final class ListCpaEvidenceUseCaseTest extends TestCase
 {
     public function test_it_composes_closed_volume_and_exact_currency_certified_deposits(): void
     {
-        config()->set('broker_catalog.base_url', 'http://broker.test');
+        config()->set('modules.sources.broker.base_url', 'http://broker.test');
         config()->set('finance.base_url', 'http://finance.test');
         Http::fake(static function (Request $request) {
             if (str_contains($request->url(), '/progression-activities')) {

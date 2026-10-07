@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Features\Modules\Catalog\Contracts\Strategies\ClosedVolumeRewardActivityProviderStrategyInterface;
 use App\Features\Modules\Catalog\Contracts\Strategies\CpaEvidenceProviderStrategyInterface;
 use App\Features\Modules\Catalog\Contracts\Strategies\VolumeRewardActivitiesProviderStrategyInterface;
 use App\Features\Modules\Catalog\Exceptions\UnsupportedRewardEvidenceProviderException;
-use App\Features\Modules\Catalog\Factories\ClosedVolumeRewardActivityProviderFactory;
 use App\Features\Modules\Catalog\Factories\CpaEvidenceProviderFactory;
 use App\Features\Modules\Catalog\Factories\VolumeRewardActivitiesProviderFactory;
-use App\Features\Modules\Sources\Broker\Services\Strategies\BrokerClosedVolumeRewardActivityProviderStrategy;
 use App\Features\Modules\Sources\Broker\Services\Strategies\BrokerCpaEvidenceProviderStrategy;
 use App\Features\Modules\Sources\Broker\Services\Strategies\BrokerVolumeRewardActivitiesProviderStrategy;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
@@ -28,7 +25,6 @@ final class RewardEvidenceProviderFactoriesTest extends TestCase
     {
         yield 'CPA' => [CpaEvidenceProviderFactory::class, BrokerCpaEvidenceProviderStrategy::class, CpaEvidenceProviderStrategyInterface::class, UnsupportedRewardEvidenceProviderException::class];
         yield 'volume page' => [VolumeRewardActivitiesProviderFactory::class, BrokerVolumeRewardActivitiesProviderStrategy::class, VolumeRewardActivitiesProviderStrategyInterface::class, UnsupportedRewardEvidenceProviderException::class];
-        yield 'closed position' => [ClosedVolumeRewardActivityProviderFactory::class, BrokerClosedVolumeRewardActivityProviderStrategy::class, ClosedVolumeRewardActivityProviderStrategyInterface::class, UnsupportedRewardEvidenceProviderException::class];
         yield 'PnL' => [NegativePnlPeriodsProviderFactory::class, BrokerResolveNegativePnlPeriodsAdapter::class, ResolveNegativePnlPeriodsPort::class, UnsupportedNegativePnlPeriodsProviderException::class];
     }
 

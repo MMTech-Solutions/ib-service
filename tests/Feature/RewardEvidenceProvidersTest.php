@@ -9,16 +9,13 @@ use App\Features\Modules\Catalog\Factories\CpaEvidenceProviderFactory;
 use App\Features\Modules\Catalog\Models\Module;
 use App\Features\Modules\Catalog\Models\ModuleCapability;
 use App\Features\Modules\Catalog\UseCases\ListVolumeRewardActivitiesUseCase;
-use App\Features\Modules\Catalog\UseCases\ResolveClosedVolumeRewardActivityUseCase;
 use App\Features\Modules\Catalog\ValueObjects\ProcessingStatus;
 use App\Features\Modules\Contracts\Data\V1\ListCertifiedDepositsQueryData;
 use App\Features\Modules\Contracts\Data\V1\ListCpaEvidenceQueryData;
 use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesQueryData;
-use App\Features\Modules\Contracts\Data\V1\ResolveClosedVolumeRewardActivityQueryData;
-use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionNotReadyException;
 use App\Features\Modules\Contracts\Exceptions\BrokerProgressionActivityUnavailableException;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
-use App\Features\Modules\Contracts\Exceptions\VolumeRewardModuleNotOperationalException;
+use App\Features\Modules\Contracts\Exceptions\InvalidVolumeRewardActivityException;
 use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use Illuminate\Support\Facades\Http;
 use Mockery;
@@ -34,16 +31,16 @@ final class RewardEvidenceProvidersTest extends TestCase
         $repository = Mockery::mock(ModuleRepositoryInterface::class);
         $repository->shouldReceive('findById')->with('module')->andReturn($module);
         app()->instance('modules.repositories.postgresql', $repository);
-        config()->set('broker_catalog.base_url', 'http://broker.test');
+        config()->set('modules.sources.broker.base_url', 'http://broker.test');
         config()->set('finance.base_url', 'http://finance.test');
     }
 
     /** @return array<string, mixed> */
     private function activity(): array
     {
-        return ['source_activity_id' => 'position', 'subject_external_user_id' => 'user', 'metric_code' => 'closed_trading_volume',
+        return ['source_activity_id' => 'broker:position:position', 'subject_external_user_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'metric_code' => 'closed_trading_volume',
             'unit_code' => 'lot', 'quantity' => '1.23456789', 'occurred_at' => '2026-10-01T12:00:00Z',
-            'symbol_id' => 'symbol', 'server_group_id' => 'group', 'currency_code' => 'usd', 'currency_precision' => 2,
+            'symbol_id' => 'symbol', 'server_group_id' => 'group', 'currency_code' => 'USD', 'currency_precision' => 2,
             'broker_granted_commission' => '3.50'];
     }
 
@@ -58,7 +55,7 @@ final class RewardEvidenceProvidersTest extends TestCase
         $this->installModule();
         Http::fake(fn ($request) => Http::response(['data' => str_contains($request->url(), 'progression-activities') ? [$this->activity()] : $this->activity(), 'meta' => ['next_cursor' => 'next']]));
         $page = app(ListVolumeRewardActivitiesUseCase::class)->execute($this->pageQuery());
-        $position = app(ResolveClosedVolumeRewardActivityUseCase::class)->execute(new ResolveClosedVolumeRewardActivityQueryData('module', 'order', 'login'));
+        $position = $page->activities[0];
         self::assertSame('next', $page->next_cursor);
         self::assertTrue($page->provider_invoked);
         self::assertSame($position->toArray(), $page->activities[0]->toArray());
@@ -84,27 +81,14 @@ final class RewardEvidenceProvidersTest extends TestCase
         $page = app(ListVolumeRewardActivitiesUseCase::class)->execute($this->pageQuery());
         self::assertFalse($page->provider_invoked);
         self::assertSame([], $page->activities);
-        try {
-            app(ResolveClosedVolumeRewardActivityUseCase::class)->execute(new ResolveClosedVolumeRewardActivityQueryData('module', 'order', 'login'));
-            self::fail('Expected operational rejection.');
-        } catch (VolumeRewardModuleNotOperationalException) {
-            Http::assertNothingSent();
-        }
-    }
-
-    public function test_position_not_ready_propagates(): void
-    {
-        $this->installModule();
-        Http::fake(['*' => Http::response([], 409)]);
-        $this->expectException(BrokerClosedPositionNotReadyException::class);
-        app(ResolveClosedVolumeRewardActivityUseCase::class)->execute(new ResolveClosedVolumeRewardActivityQueryData('module', 'order', 'login'));
+        Http::assertNothingSent();
     }
 
     public function test_page_rejects_invalid_metric(): void
     {
         $this->installModule();
         Http::fake(['*' => Http::response(['data' => [array_replace($this->activity(), ['metric_code' => 'unexpected'])]])]);
-        $this->expectException(InvalidProgressionActivityQueryException::class);
+        $this->expectException(InvalidVolumeRewardActivityException::class);
         app(ListVolumeRewardActivitiesUseCase::class)->execute($this->pageQuery());
     }
 

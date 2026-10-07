@@ -18,16 +18,16 @@ final class BrokerNegativePnlApiClient
     public function resolve(array $payload): array
     {
         try {
-            $response = Http::baseUrl((string) config('broker_catalog.base_url'))
+            $response = Http::baseUrl((string) config('modules.sources.broker.base_url'))
                 ->acceptJson()
                 ->asJson()
                 ->timeout((int) config('rewards.negative_pnl.broker_timeout_seconds', 15))
                 ->connectTimeout(3)
                 ->withHeaders([
-                    'X-Internal-Token' => (string) config('broker_catalog.internal_token'),
-                    'X-Internal-Source' => (string) config('broker_catalog.source_service'),
+                    'X-Internal-Token' => (string) config('modules.sources.broker.internal_token'),
+                    'X-Internal-Source' => (string) config('modules.sources.broker.source_service'),
                 ])
-                ->post('/api/broker/v1/internal/accounts/negative-pnl-periods/resolve', $payload);
+                ->post((string) config('modules.sources.broker.internal_prefix').'/accounts/negative-pnl-periods/resolve', $payload);
         } catch (Throwable) {
             throw NegativePnlPeriodsUnavailableException::create();
         }

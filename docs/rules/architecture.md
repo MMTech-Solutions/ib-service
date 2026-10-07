@@ -608,3 +608,31 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 - Estrategia de consistencia entre runs, actividad tardía y settlement.
 - Contratos S2S, autenticación, observabilidad y topología de despliegue.
 - QG1 establece PHPUnit estático como guardrail inicial; futuras reglas se añaden a [`architecture-validation.md`](architecture-validation.md) con baseline explícito cuando exista deuda histórica.
+
+## Suscripciones de actividad en capacidades
+
+La definición técnica de una capacidad puede declarar suscripciones tipadas con topic,
+event_name, schema_version y código de adapter registrado. Modules publica el puerto
+de descubrimiento y el de normalización; no expone DTOs internos ni clases de Sources
+a Rewards. El adapter se selecciona mediante factory cerrada, nunca desde el mensaje.
+
+KafkaServiceProvider conecta las suscripciones de volumen con el registro nativo
+rbac.consumer.handlers; el comando rbac:consume-snapshots pertenece a la librería
+RBAC y no se sustituye. La preparación idempotente ocurre antes de resolver
+TopicHandlerRegistry: agrupa por topic y compone handlers existentes. No mantiene
+otro mapa manual de proveedores ni invalida el registro ya construido.
+
+Modules separa descubrimiento (ListModuleActivitySubscriptionsPort) de validación
+estricta (ValidateModuleActivitySubscriptionsPort). La preparación omite topics
+vacíos, mal formados o reservados para permitir inicializar Artisan. CommandStarting
+valida todas las declaraciones antes del consumo y rechaza esos casos, rutas
+ambiguas y adapters desconocidos. Comandos ajenos, ayuda, bootstrap HTTP y consumidor
+deshabilitado no exigen topics completos ni conectividad Kafka. El mapa dinámico
+se genera en memoria y no pertenece al cache de configuración. Cambiar declaraciones
+o configuración requiere reiniciar el consumidor.
+
+La recepción guarda evidencia económica normalizada completa y el worker procesa ese
+snapshot. El barrido por proveedor utiliza el mismo contrato normalizado y runs/cursores
+independientes. Copy Trading incorpora catálogo y volumen; sus otras modalidades no se
+habilitan por compartir el nombre de una capacidad. Véase el
+[contrato de actividad V1](volume-activity-event-contract.md).

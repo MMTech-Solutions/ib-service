@@ -39,9 +39,6 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
                 rejection_code: $module->isActive ? 'module_paused' : 'module_inactive',
             );
         }
-        if ($module->code !== 'broker') {
-            throw InvalidProgressionActivityQueryException::withMessage('Volume reward activity is unavailable for this module.');
-        }
         if (! $this->hasClosedTradingVolumeCapability($module->capabilities)) {
             throw UnsupportedProgressionActivityCapabilityException::forModule($module->id);
         }

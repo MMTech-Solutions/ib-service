@@ -22,6 +22,8 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 ## Secuencia entre features
 
+Actualización de volumen, 2026-10-06: [eventos de proveedores](rewards/14-volume-provider-events.md), implementación local en IB/Broker; productor Copy Trading y aceptación integrada pendientes.
+
 La jerarquía del dominio determina el orden inicial. Tras PR1, P2 cierra el
 ladder vivo de umbrales. Rules y Subscriptions pueden avanzar después;
 Progression y Rewards dependen de ambos.

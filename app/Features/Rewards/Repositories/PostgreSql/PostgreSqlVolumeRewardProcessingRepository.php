@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Repositories\PostgreSql;
 
 use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
+use App\Features\Modules\Contracts\Exceptions\InvalidVolumeRewardActivityException;
 use App\Features\Rewards\Contracts\Data\V1\ResolveRewardUplineResultData;
 use App\Features\Rewards\Contracts\Data\V1\RewardUplineBeneficiaryData;
 use App\Features\Rewards\DTOs\PersistVolumeRewardData;
@@ -29,10 +30,8 @@ final class PostgreSqlVolumeRewardProcessingRepository implements VolumeRewardPr
                 return null;
             }
             $frozenActivity = json_decode($row->activity, true, 512, JSON_THROW_ON_ERROR);
-            if ($frozenActivity['broker_granted_commission'] === null && $activity->broker_granted_commission !== null && json_decode($row->preparations, true, 512, JSON_THROW_ON_ERROR) === []) {
-                $frozenActivity['broker_granted_commission'] = $activity->broker_granted_commission;
-                $row->activity = json_encode($frozenActivity, JSON_THROW_ON_ERROR);
-                $this->connection->table('volume_reward_evaluations')->where('id', $row->id)->update(['activity' => $row->activity]);
+            if (VolumeRewardActivityData::from($frozenActivity)->toArray() !== $activity->toArray()) {
+                throw new InvalidVolumeRewardActivityException('VOLUME_ACTIVITY_CONFLICT', 'Volume activity conflicts with frozen evidence.', 422);
             }
             $token = (string) Str::uuid7();
             $this->connection->table('volume_reward_evaluations')->where('id', $row->id)->update(['lease_token' => $token, 'lease_expires_at' => $expiresAt, 'updated_at' => $now]);
@@ -102,9 +101,22 @@ final class PostgreSqlVolumeRewardProcessingRepository implements VolumeRewardPr
     public function recordEvent(RecordVolumeRewardEventData $data): void
     {
         $now = now('UTC')->toIso8601String();
-        $this->connection->table('volume_reward_event_receipts')->upsert([
-            ['id' => (string) Str::uuid7(), 'module_id' => $data->module_id, 'order_id' => $data->order_id, 'external_trader_id' => $data->external_trader_id, 'status' => 'pending', 'attempt_count' => 0, 'next_attempt_at' => $now, 'transport_snapshot' => json_encode($data->transport_snapshot, JSON_THROW_ON_ERROR), 'created_at' => $now, 'updated_at' => $now],
-        ], ['module_id', 'order_id', 'external_trader_id'], ['updated_at']);
+        $this->connection->transaction(function () use ($data, $now): void {
+            $activity = $data->activity->toArray();
+            $this->connection->table('volume_reward_event_receipts')->insertOrIgnore([
+                'id' => (string) Str::uuid7(), 'module_id' => $data->activity->module_id, 'source_activity_id' => $data->activity->source_activity_id,
+                'event_id' => $data->event_id, 'schema_version' => $data->schema_version, 'activity' => json_encode($activity, JSON_THROW_ON_ERROR),
+                'status' => 'pending', 'attempt_count' => 0, 'next_attempt_at' => $now,
+                'transport_snapshot' => json_encode($data->transport_snapshot, JSON_THROW_ON_ERROR), 'created_at' => $now, 'updated_at' => $now,
+            ]);
+            $row = $this->connection->table('volume_reward_event_receipts')->where('module_id', $data->activity->module_id)->where('source_activity_id', $data->activity->source_activity_id)->lockForUpdate()->firstOrFail();
+            if (VolumeRewardActivityData::from(json_decode($row->activity, true, 512, JSON_THROW_ON_ERROR))->toArray() !== $activity) {
+                $this->connection->table('volume_reward_event_receipts')->where('id', $row->id)->update([
+                    'conflict_snapshot' => json_encode(['event_id' => $data->event_id, 'activity' => $activity, 'transport' => $data->transport_snapshot], JSON_THROW_ON_ERROR),
+                    'last_error_code' => 'VOLUME_ACTIVITY_CONFLICT',
+                ]);
+            }
+        });
     }
 
     public function claimNextEvent(CarbonImmutable $now, CarbonImmutable $leaseExpiresAt): ?object

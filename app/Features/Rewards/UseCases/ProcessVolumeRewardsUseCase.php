@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace App\Features\Rewards\UseCases;
 
 use App\Features\Modules\Contracts\Data\V1\ListVolumeRewardActivitiesQueryData;
-use App\Features\Modules\Contracts\Data\V1\ResolveClosedVolumeRewardActivityQueryData;
 use App\Features\Modules\Contracts\Data\V1\VolumeRewardActivityData;
-use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionInvalidResponseException;
-use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionNotReadyException;
-use App\Features\Modules\Contracts\Exceptions\BrokerClosedPositionUnavailableException;
 use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryException;
+use App\Features\Modules\Contracts\Exceptions\InvalidVolumeRewardActivityException;
 use App\Features\Modules\Contracts\Exceptions\VolumeRewardModuleNotOperationalException;
 use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
-use App\Features\Modules\Contracts\Ports\Input\ResolveClosedVolumeRewardActivityPort;
+use App\Features\Modules\Contracts\Ports\Input\ResolveVolumeRewardModulesPort;
 use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardDistributionLimitQueryData;
 use App\Features\Programs\Contracts\Data\V1\ResolveVolumeRewardProgramConfigurationQueryData;
 use App\Features\Programs\Contracts\Ports\Input\ResolveVolumeRewardDistributionLimitPort;
@@ -34,6 +31,7 @@ use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextQuery
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveRewardBackfillStartPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final class ProcessVolumeRewardsUseCase
@@ -41,7 +39,7 @@ final class ProcessVolumeRewardsUseCase
     public function __construct(
         private readonly VolumeRewardProcessingRepositoryFactory $processingRepositoryFactory,
         private readonly RewardRepositoryFactory $rewardRepositoryFactory,
-        private readonly ResolveClosedVolumeRewardActivityPort $closedActivity,
+        private readonly ResolveVolumeRewardModulesPort $modules,
         private readonly ListVolumeRewardActivitiesPort $activities,
         private readonly ResolveVolumeRewardDistributionLimitPort $distributionLimit,
         private readonly ResolveVolumeRewardProgramConfigurationPort $programConfiguration,
@@ -67,11 +65,7 @@ final class ProcessVolumeRewardsUseCase
             }
 
             try {
-                $activity = $this->closedActivity->execute(new ResolveClosedVolumeRewardActivityQueryData(
-                    (string) $receipt->module_id,
-                    (string) $receipt->order_id,
-                    (string) $receipt->external_trader_id,
-                ));
+                $activity = VolumeRewardActivityData::from(json_decode($receipt->activity, true, 512, JSON_THROW_ON_ERROR));
                 $activityResult = $this->processActivity($activity, 'event');
                 if ($activityResult->retry_code !== null) {
                     $this->retryReceipt($receipt, $activityResult->retry_code);
@@ -84,10 +78,10 @@ final class ProcessVolumeRewardsUseCase
                 $result['event_processed']++;
                 $result['rewards_created'] += $activityResult->created;
                 $result['rewards_skipped'] += $activityResult->skipped;
-            } catch (BrokerClosedPositionInvalidResponseException|InvalidProgressionActivityQueryException $exception) {
+            } catch (InvalidVolumeRewardActivityException|InvalidProgressionActivityQueryException $exception) {
                 $repository->markEventRejected((string) $receipt->id, (string) $receipt->claim_token, $exception->getErrorCode(), CarbonImmutable::now('UTC'));
                 $result['event_rejected']++;
-            } catch (BrokerClosedPositionNotReadyException|BrokerClosedPositionUnavailableException|VolumeRewardModuleNotOperationalException $exception) {
+            } catch (VolumeRewardModuleNotOperationalException $exception) {
                 $this->retryReceipt($receipt, $exception->getErrorCode());
                 $result['event_retryable']++;
             } catch (Throwable) {
@@ -96,19 +90,23 @@ final class ProcessVolumeRewardsUseCase
             }
         }
 
-        $this->processPeriodicPage($limit, $leaseSeconds, $result);
+        foreach ($this->modules->execute() as $module) {
+            if (! $module->is_active || $module->processing_status !== 'running') {
+                continue;
+            }
+            try {
+                $this->processPeriodicPage($module->id, $limit, $leaseSeconds, $result);
+            } catch (Throwable) {
+                Log::warning('Volume reward module run unavailable.', ['module_id' => $module->id]);
+            }
+        }
 
         return $result;
     }
 
     /** @param array{event_processed: int, event_retryable: int, event_rejected: int, rewards_created: int, rewards_skipped: int, periodic_pages: int} $result */
-    private function processPeriodicPage(int $limit, int $leaseSeconds, array &$result): void
+    private function processPeriodicPage(string $moduleId, int $limit, int $leaseSeconds, array &$result): void
     {
-        $moduleId = config('rewards.volume.broker_module_id');
-        if (! is_string($moduleId) || $moduleId === '') {
-            return;
-        }
-
         $now = CarbonImmutable::now('UTC');
         $run = $this->processingRepositoryFactory->make()->claimPeriodicRun(
             $moduleId,
@@ -169,6 +167,10 @@ final class ProcessVolumeRewardsUseCase
 
     private function processActivity(VolumeRewardActivityData $activity, string $channel): VolumeRewardActivityProcessingResultData
     {
+        $module = $this->modules->execute($activity->module_id)[0] ?? null;
+        if ($module === null || ! $module->is_active || $module->processing_status !== 'running') {
+            return VolumeRewardActivityProcessingResultData::retryable('module_not_operational');
+        }
         if ($activity->currency_code === null || $activity->currency_precision === null) {
             return VolumeRewardActivityProcessingResultData::retryable('activity_economic_contract_incomplete');
         }

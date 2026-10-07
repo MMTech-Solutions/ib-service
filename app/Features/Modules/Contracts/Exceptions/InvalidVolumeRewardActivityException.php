@@ -6,10 +6,10 @@ namespace App\Features\Modules\Contracts\Exceptions;
 
 use App\Support\Exceptions\ApiException;
 
-final class BrokerClosedPositionNotReadyException extends ApiException
+final class InvalidVolumeRewardActivityException extends ApiException
 {
     public static function create(): self
     {
-        return new self('BROKER_CLOSED_POSITION_NOT_READY', 'Broker closed position is not ready yet.', 409);
+        return new self('INVALID_VOLUME_REWARD_ACTIVITY', 'Invalid volume reward activity contract.', 422);
     }
 }

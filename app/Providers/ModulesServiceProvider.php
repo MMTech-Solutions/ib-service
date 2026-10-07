@@ -13,19 +13,25 @@ use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
 use App\Features\Modules\Catalog\UseCases\ListCertifiedDepositsUseCase;
 use App\Features\Modules\Catalog\UseCases\ListCpaEvidenceUseCase;
 use App\Features\Modules\Catalog\UseCases\ListInstrumentCatalogUseCase;
+use App\Features\Modules\Catalog\UseCases\ListModuleActivitySubscriptionsUseCase;
 use App\Features\Modules\Catalog\UseCases\ListProgressionActivitiesUseCase;
 use App\Features\Modules\Catalog\UseCases\ListVolumeRewardActivitiesUseCase;
-use App\Features\Modules\Catalog\UseCases\ResolveClosedVolumeRewardActivityUseCase;
+use App\Features\Modules\Catalog\UseCases\NormalizeVolumeRewardEventUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveCpaEvidenceCapabilityUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveModulesUseCase;
+use App\Features\Modules\Catalog\UseCases\ResolveVolumeRewardModulesUseCase;
+use App\Features\Modules\Catalog\UseCases\ValidateModuleActivitySubscriptionsUseCase;
 use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ListInstrumentCatalogPort;
+use App\Features\Modules\Contracts\Ports\Input\ListModuleActivitySubscriptionsPort;
 use App\Features\Modules\Contracts\Ports\Input\ListProgressionActivitiesPort;
 use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
-use App\Features\Modules\Contracts\Ports\Input\ResolveClosedVolumeRewardActivityPort;
+use App\Features\Modules\Contracts\Ports\Input\NormalizeVolumeRewardEventPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveCpaEvidenceCapabilityPort;
 use App\Features\Modules\Contracts\Ports\Input\ResolveModulesPort;
+use App\Features\Modules\Contracts\Ports\Input\ResolveVolumeRewardModulesPort;
+use App\Features\Modules\Contracts\Ports\Input\ValidateModuleActivitySubscriptionsPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -37,12 +43,15 @@ final class ModulesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(ListModuleActivitySubscriptionsPort::class, ListModuleActivitySubscriptionsUseCase::class);
+        $this->app->singleton(ValidateModuleActivitySubscriptionsPort::class, ValidateModuleActivitySubscriptionsUseCase::class);
+        $this->app->singleton(NormalizeVolumeRewardEventPort::class, NormalizeVolumeRewardEventUseCase::class);
+        $this->app->singleton(ResolveVolumeRewardModulesPort::class, ResolveVolumeRewardModulesUseCase::class);
         $this->app->singleton(ResolveCpaEvidenceCapabilityPort::class, ResolveCpaEvidenceCapabilityUseCase::class);
         $this->app->singleton(ListCertifiedDepositsPort::class, ListCertifiedDepositsUseCase::class);
         $this->app->singleton(ResolveModulesPort::class, ResolveModulesUseCase::class);
         $this->app->singleton(ListProgressionActivitiesPort::class, ListProgressionActivitiesUseCase::class);
         $this->app->singleton(ListVolumeRewardActivitiesPort::class, ListVolumeRewardActivitiesUseCase::class);
-        $this->app->singleton(ResolveClosedVolumeRewardActivityPort::class, ResolveClosedVolumeRewardActivityUseCase::class);
         $this->app->singleton(ListInstrumentCatalogPort::class, ListInstrumentCatalogUseCase::class);
         $this->app->singleton(ListCpaEvidencePort::class, ListCpaEvidenceUseCase::class);
         $this->app->singleton(ModuleActivityRejectionEvidence::class);

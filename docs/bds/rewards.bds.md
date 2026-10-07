@@ -1,6 +1,6 @@
 # Reglas y recompensas IB — BDS
 
-- **Versión:** 2.2
+- **Versión:** 2.3
 - **Estado:** vigente; garantías comunes de recompensa y responsabilidades de evidencia confirmadas
 
 **Propósito:** definir reglas reutilizables, su asignación contextual y la trazabilidad de las recompensas.
@@ -94,7 +94,7 @@ erDiagram
 | BR-REWARD-019 | La configuración de volumen pertenece al programa y tiene vigencia. Sus modos admisibles son `event`, `periodic` y `both`; cambiarla no modifica Rewards ya creadas. |
 | BR-REWARD-020 | La moneda y precisión de una Reward de volumen proceden del `server_group` de la posición. No se infieren de ICU, Finance ni de una plantilla de pago. |
 | BR-REWARD-021 | La base distribuible de volumen se obtiene de la posición: modalidad fija = `closed_volume × participation_rate`; modalidad porcentual = `broker_granted_commission × participation_rate`. La base se distribuye por nivel conforme a la plantilla congelada. Cada resultado aplica además `personal_rate` del beneficiario y, solo si es Master IB, su `master_rate`; los tres valores se congelan en la Reward. |
-| BR-REWARD-021A | El modo predeterminado de una Reward de volumen es `periodic`. Los modos `event` y `both` usan el evento de Trading únicamente como disparador para consultar la posición autoritativa en Broker. Un `409 CLOSED_POSITION_NOT_READY`, timeout o 5xx no crea Reward y conserva una recepción reintentable con backoff. |
+| BR-REWARD-021A | El modo predeterminado de volumen es periodic. Los modos event y both reciben evidencia completa de posiciones cerradas del proveedor de actividad después de que este haya confirmado el cierre y sus datos económicos. Broker y Copy Trading son los proveedores actuales. Una evidencia incompleta no origina una obligación económica; recibirla durante pausa o inactividad conserva la evidencia y aplaza su evaluación. |
 | BR-REWARD-022 | Una configuración PnL pertenece al programa y sus módulos, es histórica y declara una única cadencia común `daily`, `weekly`, `monthly` o `yearly`. Los períodos vencen en límites UTC: día, lunes semanal, primero de mes y primero de enero. La frecuencia del procesamiento no modifica esos límites ni fusiona períodos atrasados. |
 | BR-REWARD-022A | Cada configuración PnL admite una sola selección por módulo Broker habilitado en el plan. La versión elegida debe estar publicada, ser de PnL, pertenecer al plan y tener una única asignación efectiva de esa versión al programa/módulo. La plantilla asociada a la regla pertenece al mismo plan y fija una tasa común por nivel. No se crean asignaciones implícitas ni se sustituye la versión seleccionada por otra vigente. |
 | BR-REWARD-022B | Reemplazar la configuración completa conserva actor y revisiones con vigencias semiabiertas, fijadas al momento del cambio sin retroactividad. Un reemplazo idéntico conserva la revisión; retirar todos los módulos termina su vigencia. Las consultas históricas conservan asignación, regla, versión y plantilla con sus niveles y tasas originales. |
@@ -213,7 +213,6 @@ asignaciones ni snapshots históricos. La vinculación no genera obligaciones.
 
 - Prioridad cuando múltiples reglas de recompensa coinciden con la misma actividad.
 - Si una actividad puede producir varias recompensas válidas dentro del mismo plan.
-- Confirmación futura de Trading Account Service como emisor posterior a la persistencia para eliminar la carrera conocida del modo `event`; `event` y `both` ya están autorizados mediante receipts recuperables.
 - Validación S2S reproducible del contrato de profit realizado e identidades de posiciones publicado por Broker.
 - Tratamiento económico de posiciones incorporadas o corregidas después de completar un período.
 - Forma del scope instrumental explícito cuando exista el catálogo de instrumentos.

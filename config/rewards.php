@@ -6,8 +6,6 @@ return [
     'repository' => env('REWARDS_REPOSITORY', 'postgresql'),
     'minimum_amount_major' => env('REWARDS_MINIMUM_AMOUNT_MAJOR', '0.01'),
     'volume' => [
-        'trading_topic' => env('REWARDS_VOLUME_TRADING_TOPIC', 'trading-services.events.v1'),
-        'broker_module_id' => env('REWARDS_VOLUME_BROKER_MODULE_ID'),
         'retry_delay_seconds' => (int) env('REWARDS_VOLUME_RETRY_DELAY_SECONDS', 60),
         'batch_size' => (int) env('REWARDS_VOLUME_BATCH_SIZE', 100),
         'claim_lease_seconds' => (int) env('REWARDS_VOLUME_CLAIM_LEASE_SECONDS', 60),
