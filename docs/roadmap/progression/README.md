@@ -9,6 +9,8 @@ Dependencia operativa PG2 satisfecha: resolución vigente de upline mediante
 IAM; la distribución se congela localmente por actividad
 Última revisión: 2026-10-05
 
+Scheduling (2026-10-07): cierre periódico administrable y auditado desde [Scheduling](../scheduling/README.md). Se conserva el mutex de dominio y el contrato JSON/exit codes de Progression.
+
 La preparación administrativa de bindings de plantillas quedó completada localmente
 en [Plans P3](../plans/06-template-version-bindings.md). PG2 demostró su consumo
 con fixtures preparadas, sin cerrar su creación pública.

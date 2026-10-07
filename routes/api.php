@@ -74,6 +74,9 @@ use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\StoreRuleVersionController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleController;
 use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleVersionController;
+use App\Features\Scheduling\Http\V1\Controllers\ReadSchedulingController;
+use App\Features\Scheduling\Http\V1\Controllers\RequestSchedulingRunController;
+use App\Features\Scheduling\Http\V1\Controllers\UpdateSchedulingTaskController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApplyForSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApproveSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\CancelSubscriptionController;
@@ -97,6 +100,16 @@ Route::prefix('ib/v1')
     ->group(function (): void {
         Route::prefix('admin')
             ->group(function (): void {
+                Route::prefix('scheduling')->middleware('throttle:60,1')->group(function (): void {
+                    Route::get('tasks', ReadSchedulingController::class)->defaults('scheduling_resource', 'tasks')->name('ib.v1.admin.scheduling.tasks.index');
+                    Route::get('tasks/{code}', ReadSchedulingController::class)->defaults('scheduling_resource', 'task')->name('ib.v1.admin.scheduling.tasks.show');
+                    Route::patch('tasks/{code}', UpdateSchedulingTaskController::class)->name('ib.v1.admin.scheduling.tasks.update');
+                    Route::post('tasks/{code}/runs', RequestSchedulingRunController::class)->name('ib.v1.admin.scheduling.runs.store');
+                    Route::get('tasks/{code}/audits', ReadSchedulingController::class)->defaults('scheduling_resource', 'audits')->name('ib.v1.admin.scheduling.audits.index');
+                    Route::get('runs', ReadSchedulingController::class)->defaults('scheduling_resource', 'runs')->name('ib.v1.admin.scheduling.runs.index');
+                    Route::get('runs/{id}', ReadSchedulingController::class)->whereUuid('id')->defaults('scheduling_resource', 'run')->name('ib.v1.admin.scheduling.runs.show');
+                    Route::get('runs/{id}/output', ReadSchedulingController::class)->whereUuid('id')->defaults('scheduling_resource', 'output')->name('ib.v1.admin.scheduling.output.show');
+                });
                 Route::get('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.show');
                 Route::put('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.replace');
                 Route::delete('programs/{program}/cpa-configuration', CpaConfigurationController::class)->name('ib.v1.admin.programs.cpa-configuration.destroy');

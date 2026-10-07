@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Features\Modules\Contracts\Events\V1\ModuleDeactivated;
-use App\Features\Plans\Catalog\Jobs\DeactivatePlansWithoutOperationalModulesJob;
+use App\Features\Plans\Catalog\Console\ReconcilePlansWithoutOperationalModulesCommand;
 use App\Features\Plans\Catalog\Listeners\DeactivatePlansAfterModuleDeactivated;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPaymentTemplateBindingRepository;
 use App\Features\Plans\Catalog\Repositories\InMemory\InMemoryPlanRepository;
@@ -30,7 +30,6 @@ use App\Features\Plans\Contracts\Ports\Input\ResolvePlanSubscriptionContextPort;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 
 final class PlansServiceProvider extends ServiceProvider
@@ -63,8 +62,6 @@ final class PlansServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(ModuleDeactivated::class, DeactivatePlansAfterModuleDeactivated::class);
-        Schedule::job(new DeactivatePlansWithoutOperationalModulesJob)
-            ->everyFiveMinutes()
-            ->name('plans.reconcile-without-operational-modules');
+        $this->commands([ReconcilePlansWithoutOperationalModulesCommand::class]);
     }
 }

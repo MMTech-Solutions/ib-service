@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Features\Scheduling\Jobs\ExecuteSchedulingRunJob;
 use App\SharedFeatures\Clock\Console\LabClockAdvanceCommand;
 use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Console\Events\CommandFinished;
@@ -30,9 +31,12 @@ final class ClockServiceProvider extends ServiceProvider
                 $clock->begin();
             }
         });
-        Event::listen(JobProcessing::class, function (): void {
+        Event::listen(JobProcessing::class, function (JobProcessing $event): void {
             $clock = $this->app->make(DomainClock::class);
             $clock->end();
+            if ($event->job->resolveName() === ExecuteSchedulingRunJob::class) {
+                return;
+            }
             $clock->begin();
         });
         foreach ([JobProcessed::class, JobExceptionOccurred::class] as $event) {

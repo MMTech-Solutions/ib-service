@@ -5,6 +5,8 @@ Dependencias: `Rules R2`, `Subscriptions S1`, Modules M5, `auth-service` V1 y
 Finance interno para depósitos certificados
 Última revisión: 2026-10-06
 
+Scheduling (2026-10-07): las cinco tareas periódicas se administran desde [Scheduling](../scheduling/README.md), conservando cadencias iniciales y gates vigentes. Los cálculos y el settlement permanecen en Rewards.
+
 Volumen: [eventos declarados en capacidades](14-volume-provider-events.md), implementación local de IB y Broker; productor Copy Trading y aceptación Kafka/S2S pendientes.
 
 ## Objetivo

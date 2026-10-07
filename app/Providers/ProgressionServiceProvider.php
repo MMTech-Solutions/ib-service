@@ -25,7 +25,6 @@ use App\Features\Progression\Services\Adapters\ModulesFetchProgressionActivities
 use App\Features\Progression\Services\ProgressionExecutionEvidence;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 
 final class ProgressionServiceProvider extends ServiceProvider
@@ -60,6 +59,5 @@ final class ProgressionServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([CloseProgressionWindowsCommand::class, RecoverProgressionRunsCommand::class, EvaluateProgressionActivitiesCommand::class, ArmProgressionLabFailureCommand::class]);
-        Schedule::command('progression:close-windows')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
     }
 }

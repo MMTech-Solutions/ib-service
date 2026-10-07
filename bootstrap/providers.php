@@ -9,6 +9,7 @@ use App\Providers\ProgramsServiceProvider;
 use App\Providers\ProgressionServiceProvider;
 use App\Providers\RewardsServiceProvider;
 use App\Providers\RulesServiceProvider;
+use App\Providers\SchedulingServiceProvider;
 use App\Providers\SubscriptionsServiceProvider;
 use App\SharedFeatures\User\UserServiceProvider;
 
@@ -22,6 +23,7 @@ return [
     ProgressionServiceProvider::class,
     RewardsServiceProvider::class,
     RulesServiceProvider::class,
+    SchedulingServiceProvider::class,
     SubscriptionsServiceProvider::class,
     UserServiceProvider::class,
 ];

@@ -4,9 +4,11 @@ Estado: **Implementado; pendiente de evidencia de despliegue**
 
 ## Operación
 
-- El scheduler ejecuta `progression:close-windows` cada cinco minutos con
-  `onOneServer`, `withoutOverlapping` y un advisory lock PostgreSQL compartido
-  por scheduler e invocaciones manuales.
+- Scheduling admite `progression:close-windows` cada cinco minutos por defecto;
+  permite editar su cron UTC y auditar la ejecución. Su exclusión persistente
+  sustituye onOneServer/withoutOverlapping del schedule anterior. El advisory
+  lock propio de Progression sigue compartido por CLI y ejecuciones de Scheduling.
+  Véase [operación de Scheduling](../../rules/scheduling.md).
 - El cierre crea runs de ventanas vencidas, reintenta únicamente resultados
   fallidos y aplica placements finales pendientes. No consulta IAM ni recalcula
   distribuciones o contribuciones.

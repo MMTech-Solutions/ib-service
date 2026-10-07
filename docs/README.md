@@ -8,6 +8,7 @@ Este directorio contiene las fuentes de verdad funcionales y técnicas del servi
 
 Business Domain Specifications. Describen conceptos, invariantes, cálculos, estados y eventos del negocio sin depender de Laravel, bases de datos, endpoints o mensajería.
 
+
 - [`plans-and-subscriptions.bds.md`](bds/plans-and-subscriptions.bds.md): planes, programas, módulos, suscripciones y placement.
 - [`progression.bds.md`](bds/progression.bds.md): contribuciones multi-módulo, ponderación por puntos y runs de progresión.
 - [`rewards.bds.md`](bds/rewards.bds.md): reglas reutilizables, asignaciones, CPA, volumen tradeado, PnL y recompensas.
@@ -15,6 +16,7 @@ Business Domain Specifications. Describen conceptos, invariantes, cálculos, est
 ### [`rules/`](rules/README.md)
 
 Reglas de construcción y operación del software. Traducen las necesidades del dominio a límites técnicos sin sustituir los BDS.
+
 
 - [`architecture.md`](rules/architecture.md): estructura, fronteras y dependencias.
 - [`architecture-validation.md`](rules/architecture-validation.md): guardrails PHPUnit y ratchet de deuda arquitectónica.
@@ -29,8 +31,12 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`security.md`](rules/security.md): controles de seguridad y protección de datos.
 - [`bds.md`](rules/bds.md): propósito, formato y mantenimiento de los BDS.
 - [`domain-clock.md`](rules/domain-clock.md): reloj de aplicación y controles exclusivos de Lab.
+- [`scheduling.md`](rules/scheduling.md): catálogo cron, ejecución administrativa, auditoría y operación.
 
 ### [`roadmap/`](roadmap/README.md)
+
+
+- [`scheduling/`](roadmap/scheduling/README.md): administración y auditoría de tareas programadas, implementadas localmente.
 
 Planificación trazable por feature. Organiza inventarios de casos de uso,
 modelado de dominio, entregas verticales, diseño de datos e implementación sin

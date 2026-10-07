@@ -30,6 +30,14 @@ return [
     */
 
     'connections' => [
+        'scheduling' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'scheduling',
+            'retry_after' => (int) env('SCHEDULING_TIMEOUT_SECONDS', 3600) + 120,
+            'after_commit' => false,
+        ],
 
         'sync' => [
             'driver' => 'sync',

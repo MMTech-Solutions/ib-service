@@ -41,7 +41,6 @@ use App\Support\Messaging\Kafka\KafkaMessagePublisher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 
 final class RewardsServiceProvider extends ServiceProvider
@@ -79,11 +78,6 @@ final class RewardsServiceProvider extends ServiceProvider
     {
         Event::listen(CpaContextExpired::class, PublishCpaContextExpiredListener::class);
         $this->commands([ProcessNegativePnlRewardsCommand::class]);
-        Schedule::command('rewards:process-negative-pnl')->everyMinute()->onOneServer()->withoutOverlapping()->when(fn (): bool => (bool) config('rewards.negative_pnl.enabled', false));
         $this->commands([VerifyCpaContextsCommand::class, SettlePendingRewardsCommand::class, ReconcileRewardSettlementsCommand::class, ProcessVolumeRewardsCommand::class]);
-        Schedule::command('rewards:verify-cpa')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
-        Schedule::command('rewards:settle-pending')->everyMinute()->onOneServer()->withoutOverlapping();
-        Schedule::command('rewards:reconcile-settlements')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
-        Schedule::command('rewards:process-volume')->everyMinute()->onOneServer()->withoutOverlapping();
     }
 }

@@ -2,7 +2,9 @@
 
 Estado: **P1, extensión de Progression (P0.3) y vinculación de plantillas (P3) completados localmente**
 Dependencia satisfecha: `Modules M1` completado
-Última revisión: 2026-10-04
+Última revisión: 2026-10-07
+
+La reconciliación periódica se administra desde [Scheduling](../scheduling/README.md), con cron inicial cada cinco minutos y ejecución auditada. Plans conserva su comando y listener propietarios.
 
 ## Posición en la secuencia
 
