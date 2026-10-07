@@ -14,6 +14,7 @@ use App\Features\Rewards\DTOs\NegativePnlProcessingPeriodData;
 use App\Features\Rewards\DTOs\NegativePnlWorkData;
 use App\Features\Rewards\Repositories\NegativePnlProcessingRepositoryInterface;
 use App\Features\Rewards\ValueObjects\NegativePnlCadence;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use App\Features\Subscriptions\Contracts\Data\V1\NegativePnlSubscriptionData;
 use Carbon\CarbonImmutable;
@@ -220,7 +221,8 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
 
     public function release(NegativePnlWorkData $work, ?string $error, bool $restartInterval = false, bool $finished = false): void
     {
-        $this->ownedLease($work)->update(['lease_token' => null, 'lease_expires_at' => null, 'retry_at' => CarbonImmutable::now('UTC')->addSeconds((int) config('rewards.negative_pnl.retry_delay_seconds', 60)), 'error_code' => $error, 'restart_interval' => $restartInterval || $work->restart_interval, 'finished_at' => $finished ? CarbonImmutable::now('UTC') : null]);
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.retry_delay_seconds']);
+        $this->ownedLease($work)->update(['lease_token' => null, 'lease_expires_at' => null, 'retry_at' => CarbonImmutable::now('UTC')->addSeconds((int) $settings->get('rewards.negative_pnl.retry_delay_seconds')), 'error_code' => $error, 'restart_interval' => $restartInterval || $work->restart_interval, 'finished_at' => $finished ? CarbonImmutable::now('UTC') : null]);
     }
 
     public function reset(NegativePnlWorkData $work, string $at): NegativePnlWorkData

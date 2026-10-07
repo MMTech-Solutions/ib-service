@@ -27,6 +27,8 @@ use App\Features\Rewards\Factories\VolumeRewardCalculationStrategyFactory;
 use App\Features\Rewards\Factories\VolumeRewardProcessingRepositoryFactory;
 use App\Features\Rules\Contracts\Data\V1\ResolveVolumeRewardRuleContextQueryData;
 use App\Features\Rules\Contracts\Ports\Input\ResolveVolumeRewardRuleContextPort;
+use App\Features\Settings\Contracts\Data\V1\ResolvedSettingsData;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\Features\Subscriptions\Contracts\Data\V1\ResolveSubscriptionContextQueryData;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveRewardBackfillStartPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveSubscriptionContextPort;
@@ -36,6 +38,8 @@ use Throwable;
 
 final class ProcessVolumeRewardsUseCase
 {
+    private ResolvedSettingsData $operationSettings;
+
     public function __construct(
         private readonly VolumeRewardProcessingRepositoryFactory $processingRepositoryFactory,
         private readonly RewardRepositoryFactory $rewardRepositoryFactory,
@@ -53,9 +57,10 @@ final class ProcessVolumeRewardsUseCase
     /** @return array{event_processed: int, event_retryable: int, event_rejected: int, rewards_created: int, rewards_skipped: int, periodic_pages: int} */
     public function execute(int $limit): array
     {
+        $this->operationSettings = app(ResolveSettingsPort::class)->execute(['rewards.volume.claim_lease_seconds', 'rewards.minimum_amount_major', 'rewards.volume.retry_delay_seconds']);
         $result = ['event_processed' => 0, 'event_retryable' => 0, 'event_rejected' => 0, 'rewards_created' => 0, 'rewards_skipped' => 0, 'periodic_pages' => 0];
         $repository = $this->processingRepositoryFactory->make();
-        $leaseSeconds = max((int) config('rewards.volume.claim_lease_seconds', 60), 1);
+        $leaseSeconds = max((int) $this->operationSettings->get('rewards.volume.claim_lease_seconds'), 1);
 
         for ($processed = 0; $processed < $limit; $processed++) {
             $now = CarbonImmutable::now('UTC');
@@ -176,7 +181,7 @@ final class ProcessVolumeRewardsUseCase
         }
         $repository = $this->processingRepositoryFactory->make();
         $now = CarbonImmutable::now('UTC');
-        $evaluation = $repository->claimEvaluation($activity, $now, $now->addSeconds(max((int) config('rewards.volume.claim_lease_seconds', 60), 1)));
+        $evaluation = $repository->claimEvaluation($activity, $now, $now->addSeconds(max((int) $this->operationSettings->get('rewards.volume.claim_lease_seconds'), 1)));
         if ($evaluation === null) {
             return VolumeRewardActivityProcessingResultData::retryable('volume_evaluation_busy');
         }
@@ -249,7 +254,7 @@ final class ProcessVolumeRewardsUseCase
         $prepared = [];
         $skipped = 0;
         $outcomes = [];
-        $minimum = (string) config('rewards.minimum_amount_major', '0.01');
+        $minimum = (string) $this->operationSettings->get('rewards.minimum_amount_major');
         foreach ($upline->beneficiaries as $beneficiary) {
             $subscription = $this->subscriptions->resolve(new ResolveSubscriptionContextQueryData(
                 $beneficiary->beneficiary_external_user_id,
@@ -408,7 +413,7 @@ final class ProcessVolumeRewardsUseCase
 
     private function nextAttemptAt(CarbonImmutable $now, int $attemptCount): CarbonImmutable
     {
-        $baseDelay = max((int) config('rewards.volume.retry_delay_seconds', 60), 1);
+        $baseDelay = max((int) $this->operationSettings->get('rewards.volume.retry_delay_seconds'), 1);
         $multiplier = 2 ** min(max($attemptCount - 1, 0), 10);
 
         return $now->addSeconds($baseDelay * $multiplier);

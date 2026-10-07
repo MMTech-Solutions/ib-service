@@ -38,6 +38,13 @@
 
 ## Configuración dinámica
 
+Settings puede conservar secretos de integración únicamente en campos sensibles
+cifrados, con permisos específicos y sin exponerlos en respuestas ni auditoría.
+Esta excepción no permite secretos en reglas JSON, eventos o snapshots económicos.
+URLs HTTP(S) configurables no admiten credenciales embebidas. La certificación usa
+la URL efectiva y un path interno fijo, sin redirects ni credenciales aportadas por
+el request. Véase [Settings](settings.md).
+
 - `strategy_type` se resuelve mediante allowlist.
 - Toda configuración se valida contra un schema versionado.
 - Prohibir nombres de clases, expresiones ejecutables, SQL, URLs y credenciales arbitrarias.

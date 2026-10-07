@@ -8,6 +8,7 @@ Este directorio contiene las fuentes de verdad funcionales y técnicas del servi
 
 Business Domain Specifications. Describen conceptos, invariantes, cálculos, estados y eventos del negocio sin depender de Laravel, bases de datos, endpoints o mensajería.
 
+- [`settings.bds.md`](bds/settings.bds.md): configuraciones globales por dominio, respaldo, personalización y certificación de conexiones.
 
 - [`plans-and-subscriptions.bds.md`](bds/plans-and-subscriptions.bds.md): planes, programas, módulos, suscripciones y placement.
 - [`progression.bds.md`](bds/progression.bds.md): contribuciones multi-módulo, ponderación por puntos y runs de progresión.
@@ -17,6 +18,7 @@ Business Domain Specifications. Describen conceptos, invariantes, cálculos, est
 
 Reglas de construcción y operación del software. Traducen las necesidades del dominio a límites técnicos sin sustituir los BDS.
 
+- [`settings.md`](rules/settings.md): resolución, sincronización, secretos y contrato de salud autenticado de proveedores.
 
 - [`architecture.md`](rules/architecture.md): estructura, fronteras y dependencias.
 - [`architecture-validation.md`](rules/architecture-validation.md): guardrails PHPUnit y ratchet de deuda arquitectónica.
@@ -35,6 +37,7 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 
 ### [`roadmap/`](roadmap/README.md)
 
+- [`settings/`](roadmap/settings/README.md): catálogo agrupado, administración y certificación compartida con Modules.
 
 - [`scheduling/`](roadmap/scheduling/README.md): administración y auditoría de tareas programadas, implementadas localmente.
 

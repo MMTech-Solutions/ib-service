@@ -25,7 +25,7 @@ final class LocalRbacSnapshotSeeder extends Seeder
                     'sub' => self::ADMIN_SUB,
                     'surface' => 'admin_panel',
                     'rev' => 1,
-                    'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage', 'ib.progression.read', 'ib.rewards.manage', 'ib.scheduling.read', 'ib.scheduling.update', 'ib.scheduling.execute', 'ib.scheduling.audit', 'ib.scheduling.output'], JSON_THROW_ON_ERROR),
+                    'permissions' => json_encode(['ib.modules.manage', 'ib.plans.manage', 'ib.programs.manage', 'ib.rules.manage', 'ib.subscriptions.manage', 'ib.progression.read', 'ib.rewards.manage', 'ib.settings.read', 'ib.settings.manage', 'ib.settings.secrets.manage', 'ib.scheduling.read', 'ib.scheduling.update', 'ib.scheduling.execute', 'ib.scheduling.audit', 'ib.scheduling.output'], JSON_THROW_ON_ERROR),
                     'roles' => json_encode([
                         ['id' => '019f3802-74b2-713f-bbbb-0e4d3f5409e5', 'name' => 'super-admin'],
                     ], JSON_THROW_ON_ERROR),

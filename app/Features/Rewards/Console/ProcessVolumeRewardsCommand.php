@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Console;
 
 use App\Features\Rewards\UseCases\ProcessVolumeRewardsUseCase;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -20,8 +21,9 @@ final class ProcessVolumeRewardsCommand extends Command
 
     public function handle(): int
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.volume.batch_size']);
         $limit = $this->option('limit') === null
-            ? (int) config('rewards.volume.batch_size', 100)
+            ? (int) $settings->get('rewards.volume.batch_size')
             : (int) $this->option('limit');
         $this->table(
             ['Metric', 'Count'],

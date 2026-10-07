@@ -6,6 +6,7 @@ namespace App\Features\Modules\Sources\CopyTrading\Services;
 
 use App\Features\Modules\Contracts\Exceptions\ActivityProviderUnavailableException;
 use App\Features\Modules\Contracts\Exceptions\InvalidVolumeRewardActivityException;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -14,16 +15,17 @@ final class CopyTradingApiClient
     /** @param array<string, mixed> $query @return array{data: list<array<string, mixed>>, meta: array<string, mixed>} */
     public function get(string $path, array $query): array
     {
-        $baseUrl = (string) config('modules.sources.copy_trading.base_url');
+        $settings = app(ResolveSettingsPort::class)->execute(['modules.sources.copy_trading.base_url', 'modules.sources.copy_trading.timeout_seconds', 'modules.sources.copy_trading.internal_token', 'modules.sources.copy_trading.source_service', 'modules.sources.copy_trading.internal_prefix']);
+        $baseUrl = (string) $settings->get('modules.sources.copy_trading.base_url');
         if ($baseUrl === '') {
             throw ActivityProviderUnavailableException::create();
         }
         try {
-            $response = Http::baseUrl($baseUrl)->acceptJson()->timeout((int) config('modules.sources.copy_trading.timeout_seconds', 15))->connectTimeout(3)
+            $response = Http::baseUrl($baseUrl)->acceptJson()->timeout((int) $settings->get('modules.sources.copy_trading.timeout_seconds'))->connectTimeout(3)
                 ->withHeaders([
-                    'X-Internal-Token' => (string) config('modules.sources.copy_trading.internal_token'),
-                    'X-Internal-Source' => (string) config('modules.sources.copy_trading.source_service'),
-                ])->get((string) config('modules.sources.copy_trading.internal_prefix').$path, $query);
+                    'X-Internal-Token' => (string) $settings->get('modules.sources.copy_trading.internal_token'),
+                    'X-Internal-Source' => (string) $settings->get('modules.sources.copy_trading.source_service'),
+                ])->get((string) $settings->get('modules.sources.copy_trading.internal_prefix').$path, $query);
         } catch (Throwable) {
             throw ActivityProviderUnavailableException::create();
         }

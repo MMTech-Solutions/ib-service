@@ -119,6 +119,11 @@ UseCase
 
 ## SDKs y clientes HTTP propios
 
+Las conexiones de Modules se certifican con GET internal_prefix/health protegido
+por el mismo token y autorización de origen de las rutas internas de actividad.
+Modules posee el mecanismo y Settings lo consume por puerto. Un /up público no
+certifica credenciales. Contrato y resultados: [Settings](settings.md).
+
 Si existe SDK:
 
 1. El adapter o repository recibe el SDK por constructor.

@@ -29,6 +29,8 @@ use App\Features\Rewards\Factories\NegativePnlRewardCalculationStrategyFactory;
 use App\Features\Rewards\Repositories\NegativePnlProcessingRepositoryInterface;
 use App\Features\Rewards\Services\AggregateNegativePnlService;
 use App\Features\Rewards\Services\CaptureNegativePnlCutService;
+use App\Features\Settings\Contracts\Data\V1\ResolvedSettingsData;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListNegativePnlSubscriptionSegmentsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ListNegativePnlSubscriptionsPort;
 use App\Features\Subscriptions\Contracts\Ports\Input\ResolveNegativePnlSubscriptionContextPort;
@@ -37,6 +39,8 @@ use Throwable;
 
 final class ProcessNegativePnlRewardsUseCase
 {
+    private ResolvedSettingsData $operationSettings;
+
     public function __construct(
         private readonly NegativePnlProcessingRepositoryFactory $repositoryFactory,
         private readonly ListNegativePnlConfigurationsPort $configurations,
@@ -56,15 +60,16 @@ final class ProcessNegativePnlRewardsUseCase
     /** @return array{contexts: int, periods: int, closures: int, pending_closures: int, rewards: int, errors: int} */
     public function execute(int $limit = 100, int $discoveryLimit = 100): array
     {
+        $this->operationSettings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.enabled', 'rewards.negative_pnl.claim_lease_seconds', 'rewards.minimum_amount_major', 'rewards.negative_pnl.subject_batch_size']);
         $metrics = ['contexts' => 0, 'periods' => 0, 'closures' => 0, 'pending_closures' => 0, 'rewards' => 0, 'errors' => 0];
-        if (! config('rewards.negative_pnl.enabled', false)) {
+        if (! $this->operationSettings->get('rewards.negative_pnl.enabled')) {
             return $metrics;
         }
         $repository = $this->repositoryFactory->make();
         $this->discover($repository, max(1, min($discoveryLimit, 1000)));
         $excluded = [];
         for ($index = 0; $index < max(1, min($limit, 1000)); $index++) {
-            $work = $repository->claim(CarbonImmutable::now('UTC')->toISOString(), max(1, (int) config('rewards.negative_pnl.claim_lease_seconds', 120)), $excluded);
+            $work = $repository->claim(CarbonImmutable::now('UTC')->toISOString(), max(1, (int) $this->operationSettings->get('rewards.negative_pnl.claim_lease_seconds')), $excluded);
             if ($work === null) {
                 break;
             }
@@ -180,7 +185,7 @@ final class ProcessNegativePnlRewardsUseCase
         $group = $configuration->modules[0];
         $depth = max(array_map(static fn ($level): int => $level->distribution_level, $group->levels));
 
-        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) config('rewards.minimum_amount_major', '0.01'), $this->referrals->resolve($work->beneficiary_id, $depth));
+        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) $this->operationSettings->get('rewards.minimum_amount_major'), $this->referrals->resolve($work->beneficiary_id, $depth));
     }
 
     private function evidence(NegativePnlProcessingRepositoryInterface $repository, NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period): NegativePnlProcessingPeriodData
@@ -191,7 +196,7 @@ final class ProcessNegativePnlRewardsUseCase
                 $subjects[] = new NegativePnlSubjectData($referral->external_user_id);
             }
         }
-        foreach (array_chunk($subjects, max(1, (int) config('rewards.negative_pnl.subject_batch_size', 100))) as $batch) {
+        foreach (array_chunk($subjects, max(1, (int) $this->operationSettings->get('rewards.negative_pnl.subject_batch_size'))) as $batch) {
             $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until, $period->occurred_from);
             $response = $this->broker->resolve($query);
             $expected = array_map(static fn ($subject): string => $subject->external_user_id, $batch);

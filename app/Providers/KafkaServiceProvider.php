@@ -15,10 +15,14 @@ final class KafkaServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(VolumeRewardKafkaSubscriptions::class);
-        $this->app->beforeResolving(TopicHandlerRegistry::class, function (): void {
-            if ((bool) config('rbac.consumer.enabled', true)) {
-                $this->app->make(VolumeRewardKafkaSubscriptions::class)->register();
-            }
+        $this->app->singleton(TopicHandlerRegistry::class, function (): TopicHandlerRegistry {
+            return (new \ReflectionClass(TopicHandlerRegistry::class))->newLazyProxy(function (): TopicHandlerRegistry {
+                if ((bool) config('rbac.consumer.enabled', true)) {
+                    $this->app->make(VolumeRewardKafkaSubscriptions::class)->register();
+                }
+
+                return new TopicHandlerRegistry($this->app);
+            });
         });
     }
 

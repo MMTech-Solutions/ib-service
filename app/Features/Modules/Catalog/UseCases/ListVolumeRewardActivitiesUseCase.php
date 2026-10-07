@@ -12,6 +12,7 @@ use App\Features\Modules\Contracts\Exceptions\InvalidProgressionActivityQueryExc
 use App\Features\Modules\Contracts\Exceptions\ModuleNotFoundException;
 use App\Features\Modules\Contracts\Exceptions\UnsupportedProgressionActivityCapabilityException;
 use App\Features\Modules\Contracts\Ports\Input\ListVolumeRewardActivitiesPort;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 
 final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivitiesPort
@@ -61,6 +62,7 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
     /** @return array{0: CarbonImmutable, 1: CarbonImmutable, 2: int} */
     private function validatedBounds(ListVolumeRewardActivitiesQueryData $query): array
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['modules.activity.default_limit', 'modules.activity.max_limit']);
         try {
             $from = CarbonImmutable::parse($query->occurred_from)->utc();
             $until = CarbonImmutable::parse($query->occurred_until)->utc();
@@ -71,8 +73,8 @@ final class ListVolumeRewardActivitiesUseCase implements ListVolumeRewardActivit
             throw InvalidProgressionActivityQueryException::withMessage('Volume reward activity requires a valid interval and configured instruments.');
         }
 
-        $limit = $query->limit ?? (int) config('modules.activity.default_limit', 100);
-        if ($limit < 1 || $limit > (int) config('modules.activity.max_limit', 200)) {
+        $limit = $query->limit ?? (int) $settings->get('modules.activity.default_limit');
+        if ($limit < 1 || $limit > (int) $settings->get('modules.activity.max_limit')) {
             throw InvalidProgressionActivityQueryException::withMessage('Volume reward activity page limit is invalid.');
         }
 

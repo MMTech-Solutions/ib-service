@@ -11,6 +11,8 @@ use App\Features\Rewards\DTOs\RewardReversalRequestData;
 use App\Features\Rewards\DTOs\RewardSettlementRequestData;
 use App\Features\Rewards\DTOs\RewardSettlementResultData;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
+use App\Features\Settings\Contracts\Data\V1\ResolvedSettingsData;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -18,22 +20,25 @@ use Illuminate\Support\Facades\Http;
 
 final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInterface, RewardSettlementGatewayInterface
 {
+    private ResolvedSettingsData $operationSettings;
+
     public function __construct(private readonly ConfigRepository $config) {}
 
     public function settle(RewardSettlementRequestData $request): RewardSettlementResultData
     {
+        $this->operationSettings = app(ResolveSettingsPort::class)->execute(['finance.base_url', 'finance.timeout_seconds', 'finance.internal_token', 'finance.source_service']);
         try {
-            $response = Http::baseUrl((string) $this->config->get('finance.base_url'))
+            $response = Http::baseUrl((string) $this->operationSettings->get('finance.base_url'))
                 ->acceptJson()
                 ->asJson()
-                ->timeout((int) $this->config->get('finance.timeout_seconds', 5))
+                ->timeout((int) $this->operationSettings->get('finance.timeout_seconds'))
                 ->connectTimeout(3)
                 ->withHeaders([
-                    'X-Internal-Token' => (string) $this->config->get('finance.internal_token'),
-                    'X-Internal-Source' => (string) $this->config->get('finance.source_service'),
+                    'X-Internal-Token' => (string) $this->operationSettings->get('finance.internal_token'),
+                    'X-Internal-Source' => (string) $this->operationSettings->get('finance.source_service'),
                 ])->post('/api/finance/v1/ib/commission-events', [
                     'idempotency_key' => $request->idempotency_key,
-                    'source_service' => (string) $this->config->get('finance.source_service'),
+                    'source_service' => (string) $this->operationSettings->get('finance.source_service'),
                     'ib_user_id' => $request->beneficiary_user_id,
                     'system_wallet_slug' => strtolower($request->currency_code).'-main',
                     'commission_type' => $request->commission_type,
@@ -64,6 +69,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
 
     public function reverse(RewardReversalRequestData $request): RewardSettlementResultData
     {
+        $this->operationSettings = app(ResolveSettingsPort::class)->execute(['finance.base_url', 'finance.timeout_seconds', 'finance.internal_token', 'finance.source_service']);
         $data = $this->postCommissionEvent([
             'idempotency_key' => $request->idempotency_key,
             'ib_user_id' => $request->beneficiary_user_id,
@@ -90,6 +96,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
 
     public function findByIdempotencyKey(string $idempotencyKey): ?FinanceCommissionEventData
     {
+        $this->operationSettings = app(ResolveSettingsPort::class)->execute(['finance.base_url', 'finance.timeout_seconds', 'finance.internal_token', 'finance.source_service']);
         try {
             $response = $this->client()->get('/api/finance/v1/ib/commission-events', ['idempotency_key' => $idempotencyKey, 'per_page' => 1]);
         } catch (ConnectionException) {
@@ -184,7 +191,7 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
     {
         try {
             $response = $this->client()->post('/api/finance/v1/ib/commission-events', array_merge([
-                'source_service' => (string) $this->config->get('finance.source_service'),
+                'source_service' => (string) $this->operationSettings->get('finance.source_service'),
             ], $payload));
         } catch (ConnectionException) {
             throw new RewardSettlementException('finance_unavailable');
@@ -202,9 +209,9 @@ final class FinanceRewardSettlementGateway implements RewardFinancialGatewayInte
 
     private function client(): PendingRequest
     {
-        return Http::baseUrl((string) $this->config->get('finance.base_url'))
-            ->acceptJson()->asJson()->timeout((int) $this->config->get('finance.timeout_seconds', 5))->connectTimeout(3)
-            ->withHeaders(['X-Internal-Token' => (string) $this->config->get('finance.internal_token'), 'X-Internal-Source' => (string) $this->config->get('finance.source_service')]);
+        return Http::baseUrl((string) $this->operationSettings->get('finance.base_url'))
+            ->acceptJson()->asJson()->timeout((int) $this->operationSettings->get('finance.timeout_seconds'))->connectTimeout(3)
+            ->withHeaders(['X-Internal-Token' => (string) $this->operationSettings->get('finance.internal_token'), 'X-Internal-Source' => (string) $this->operationSettings->get('finance.source_service')]);
     }
 
     /** @param array<string, mixed> $data */

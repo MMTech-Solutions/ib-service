@@ -39,6 +39,16 @@ final class VolumeRewardKafkaSubscriptions
             $byTopic[$subscription->topic][] = $subscription;
         }
         $handlers = $this->config->get('rbac.consumer.handlers', []);
+        foreach ($handlers as $topic => $binding) {
+            if ($binding === AuthAccountRegisteredTopicHandler::class) {
+                unset($handlers[$topic]);
+                $authTopic = $this->container->make(AuthAccountRegisteredTopicHandler::class)->topic();
+                if ($authTopic === $this->snapshotTopic() || ! preg_match('/^[a-zA-Z0-9._-]{1,249}$/D', $authTopic)) {
+                    throw new InvalidArgumentException('Invalid auth activity topic.');
+                }
+                $handlers[$authTopic] = $binding;
+            }
+        }
         foreach ($byTopic as $topic => $subscriptions) {
             $previous = $handlers[$topic] ?? null;
             $binding = 'volume-reward.kafka.'.hash('sha256', $topic);

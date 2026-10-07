@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Features\Modules\Catalog\Http\V1\Controllers\ActivateModuleController;
+use App\Features\Modules\Catalog\Http\V1\Controllers\CertifyModuleConnectionController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\DeactivateModuleController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ListInstrumentCatalogController;
 use App\Features\Modules\Catalog\Http\V1\Controllers\ListModuleOperationalHistoryController;
@@ -77,6 +78,11 @@ use App\Features\Rules\Catalog\Http\V1\Controllers\UpdateRuleVersionController;
 use App\Features\Scheduling\Http\V1\Controllers\ReadSchedulingController;
 use App\Features\Scheduling\Http\V1\Controllers\RequestSchedulingRunController;
 use App\Features\Scheduling\Http\V1\Controllers\UpdateSchedulingTaskController;
+use App\Features\Settings\Http\V1\Controllers\CertifySettingsConnectionController;
+use App\Features\Settings\Http\V1\Controllers\ListSettingsController;
+use App\Features\Settings\Http\V1\Controllers\ResetSettingController;
+use App\Features\Settings\Http\V1\Controllers\ShowSettingController;
+use App\Features\Settings\Http\V1\Controllers\UpdateSettingController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApplyForSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ApproveSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\CancelSubscriptionController;
@@ -100,6 +106,12 @@ Route::prefix('ib/v1')
     ->group(function (): void {
         Route::prefix('admin')
             ->group(function (): void {
+                Route::get('settings', ListSettingsController::class)->name('ib.v1.admin.settings.index');
+                Route::get('settings/{key}', ShowSettingController::class)->name('ib.v1.admin.settings.show');
+                Route::patch('settings/{key}', UpdateSettingController::class)->name('ib.v1.admin.settings.update');
+                Route::post('settings/{key}/reset', ResetSettingController::class)->name('ib.v1.admin.settings.reset');
+                Route::post('settings/modules/{provider}/certify-connection', CertifySettingsConnectionController::class)->middleware('throttle:module-connection-certification')->name('ib.v1.admin.settings.modules.certify-connection');
+                Route::post('modules/{module}/certify-connection', CertifyModuleConnectionController::class)->middleware('throttle:module-connection-certification')->name('ib.v1.admin.modules.certify-connection');
                 Route::prefix('scheduling')->middleware('throttle:60,1')->group(function (): void {
                     Route::get('tasks', ReadSchedulingController::class)->defaults('scheduling_resource', 'tasks')->name('ib.v1.admin.scheduling.tasks.index');
                     Route::get('tasks/{code}', ReadSchedulingController::class)->defaults('scheduling_resource', 'task')->name('ib.v1.admin.scheduling.tasks.show');

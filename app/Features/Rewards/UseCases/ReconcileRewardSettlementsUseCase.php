@@ -9,6 +9,7 @@ use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rewards\Services\RewardFinancialOperationService;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 
 final class ReconcileRewardSettlementsUseCase
@@ -18,12 +19,13 @@ final class ReconcileRewardSettlementsUseCase
     /** @return array{confirmed: int, held: int, unavailable: int} */
     public function execute(int $limit): array
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.settlement.claim_lease_seconds']);
         $result = ['confirmed' => 0, 'held' => 0, 'unavailable' => 0];
         $repository = $this->repositoryFactory->make();
         $excluded = [];
         for ($index = 0; $index < $limit; $index++) {
             $now = CarbonImmutable::now('UTC');
-            $reward = $repository->claimNextReconciliation($now, $now->addSeconds(max((int) config('rewards.settlement.claim_lease_seconds', 60), 1)), $excluded);
+            $reward = $repository->claimNextReconciliation($now, $now->addSeconds(max((int) $settings->get('rewards.settlement.claim_lease_seconds'), 1)), $excluded);
             if ($reward === null) {
                 break;
             }

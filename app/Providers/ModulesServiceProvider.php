@@ -10,6 +10,7 @@ use App\Features\Modules\Catalog\Repositories\InMemory\InMemoryModuleRepository;
 use App\Features\Modules\Catalog\Repositories\PostgreSql\PostgreSqlModuleRepository;
 use App\Features\Modules\Catalog\Services\Adapters\PlanModuleReferenceGuard;
 use App\Features\Modules\Catalog\Services\ModuleActivityRejectionEvidence;
+use App\Features\Modules\Catalog\UseCases\CertifyProviderConnectionUseCase;
 use App\Features\Modules\Catalog\UseCases\ListCertifiedDepositsUseCase;
 use App\Features\Modules\Catalog\UseCases\ListCpaEvidenceUseCase;
 use App\Features\Modules\Catalog\UseCases\ListInstrumentCatalogUseCase;
@@ -21,6 +22,7 @@ use App\Features\Modules\Catalog\UseCases\ResolveCpaEvidenceCapabilityUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveModulesUseCase;
 use App\Features\Modules\Catalog\UseCases\ResolveVolumeRewardModulesUseCase;
 use App\Features\Modules\Catalog\UseCases\ValidateModuleActivitySubscriptionsUseCase;
+use App\Features\Modules\Contracts\Ports\Input\CertifyProviderConnectionPort;
 use App\Features\Modules\Contracts\Ports\Input\ListCertifiedDepositsPort;
 use App\Features\Modules\Contracts\Ports\Input\ListCpaEvidencePort;
 use App\Features\Modules\Contracts\Ports\Input\ListInstrumentCatalogPort;
@@ -43,6 +45,7 @@ final class ModulesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(CertifyProviderConnectionPort::class, CertifyProviderConnectionUseCase::class);
         $this->app->singleton(ListModuleActivitySubscriptionsPort::class, ListModuleActivitySubscriptionsUseCase::class);
         $this->app->singleton(ValidateModuleActivitySubscriptionsPort::class, ValidateModuleActivitySubscriptionsUseCase::class);
         $this->app->singleton(NormalizeVolumeRewardEventPort::class, NormalizeVolumeRewardEventUseCase::class);

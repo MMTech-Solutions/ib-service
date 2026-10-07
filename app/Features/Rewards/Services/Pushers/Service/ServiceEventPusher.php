@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Services\Pushers\Service;
 
 use App\Features\Rewards\Contracts\Events\V1\CpaContextExpired;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\Support\Messaging\Contracts\MessagePublisherInterface;
 
 final class ServiceEventPusher
@@ -15,14 +16,15 @@ final class ServiceEventPusher
 
     public function pushCpaContextExpired(CpaContextExpired $event): void
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.events.topic', 'rewards.events.source']);
         $this->publisher->publish(
-            (string) config('rewards.events.topic'),
+            (string) $settings->get('rewards.events.topic'),
             [
                 'event_id' => $event->eventId,
                 'event_name' => self::CPA_CONTEXT_EXPIRED,
                 'schema_version' => '1.0',
                 'occurred_at' => $event->occurredAt,
-                'source' => (string) config('rewards.events.source'),
+                'source' => (string) $settings->get('rewards.events.source'),
                 'payload' => [
                     'cpa_context_id' => $event->cpaContextId,
                     'referred_user_id' => $event->referredUserId,

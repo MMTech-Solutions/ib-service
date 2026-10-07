@@ -6,6 +6,7 @@ Los BDS son la fuente de verdad del dominio IB. Expresan el comportamiento esper
 
 | Documento | Alcance |
 | --- | --- |
+| [`settings.bds.md`](settings.bds.md) | Configuraciones globales por dominio, personalización, respaldo y certificación de conexiones. |
 | [`plans-and-subscriptions.bds.md`](plans-and-subscriptions.bds.md) | Jerarquía Plan → Programa, módulos habilitados, suscripción y placement. |
 | [`progression.bds.md`](progression.bds.md) | Conversión de actividad heterogénea a puntos, evaluaciones, ventanas y runs de progresión. |
 | [`rewards.bds.md`](rewards.bds.md) | Reglas reutilizables, asignaciones y garantías económicas comunes de CPA, volumen y PnL. |

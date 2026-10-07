@@ -4,6 +4,7 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 
 | Documento | Propósito |
 | --- | --- |
+| [`settings.md`](settings.md) | Configuración persistida, catálogo/sync, secretos y certificación interna autenticada. |
 | [`architecture.md`](architecture.md) | Fronteras, dependencias y estructura del servicio. |
 | [`architecture-validation.md`](architecture-validation.md) | Guardrails PHPUnit, ratchet y retiro de deuda arquitectónica. |
 | [`api-conventions.md`](api-conventions.md) | Forma del envelope HTTP: `data` es el recurso o la colección. |

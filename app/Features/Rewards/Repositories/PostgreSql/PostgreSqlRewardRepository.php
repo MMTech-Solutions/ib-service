@@ -17,6 +17,7 @@ use App\Features\Rewards\Exceptions\RewardReconciliationBlockedException;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\CpaRewardCalculationStrategyFactory;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\Features\SharedKernel\ValueObjects\Currency;
 use App\Features\SharedKernel\ValueObjects\PositiveMoney;
 use Carbon\CarbonImmutable;
@@ -292,9 +293,11 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function claimNextSettlement(CarbonImmutable $now, CarbonImmutable $retryAt, CarbonImmutable $lockExpiresAt, array $excludedIds = []): ?object
     {
-        return $this->connection->transaction(function () use ($now, $retryAt, $lockExpiresAt, $excludedIds): ?object {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.settlement_enabled']);
+
+        return $this->connection->transaction(function () use ($settings, $now, $retryAt, $lockExpiresAt, $excludedIds): ?object {
             $reward = $this->connection->table('rewards')
-                ->when(! config('rewards.negative_pnl.settlement_enabled', true), fn ($query) => $query->where('rewards.commission_type', '!=', 'pnl'))
+                ->when(! $settings->get('rewards.negative_pnl.settlement_enabled'), fn ($query) => $query->where('rewards.commission_type', '!=', 'pnl'))
                 ->whereNotIn('rewards.id', $excludedIds)
                 ->whereNull('rewards.reconciliation_hold_at')
                 ->whereNotExists(function ($query): void {
@@ -356,7 +359,9 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
 
     public function beginFinancialOperation(string $rewardId, string $actorId, string $type, string $reasonCode, ?string $reasonLabel, ?int $amountMinor, ?string $customKey): array
     {
-        return $this->connection->transaction(function () use ($rewardId, $actorId, $type, $reasonCode, $reasonLabel, $amountMinor, $customKey): array {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.settlement_enabled', 'rewards.settlement.claim_lease_seconds']);
+
+        return $this->connection->transaction(function () use ($settings, $rewardId, $actorId, $type, $reasonCode, $reasonLabel, $amountMinor, $customKey): array {
             $reward = $this->connection->table('rewards')->where('id', $rewardId)->lockForUpdate()->first();
             if ($reward === null) {
                 throw RewardNotFoundException::forId($rewardId);
@@ -383,13 +388,13 @@ final class PostgreSqlRewardRepository implements RewardRepositoryInterface
                 'reversal' => in_array($reward->status, ['settled', 'reversal_failed', 'reversal_pending'], true),
                 'compensation' => $reward->status === 'reversed', default => false,
             };
-            if (! $allowed || ($type === 'compensation' && ($amountMinor === null || $amountMinor < 1)) || ($type === 'compensation' && $reward->commission_type === 'pnl' && ! config('rewards.negative_pnl.settlement_enabled', true))) {
+            if (! $allowed || ($type === 'compensation' && ($amountMinor === null || $amountMinor < 1)) || ($type === 'compensation' && $reward->commission_type === 'pnl' && ! $settings->get('rewards.negative_pnl.settlement_enabled'))) {
                 throw RewardFinancialOperationNotAllowedException::create();
             }
             $request = $this->financialRequests->settlement($reward);
             $reward->settlement_request_snapshot = json_encode(get_object_vars($request), JSON_THROW_ON_ERROR);
             $token = (string) Str::uuid7();
-            $expiresAt = $now->addSeconds(max((int) config('rewards.settlement.claim_lease_seconds', 60), 1));
+            $expiresAt = $now->addSeconds(max((int) $settings->get('rewards.settlement.claim_lease_seconds'), 1));
             $this->connection->table('rewards')->where('id', $rewardId)->update(['settlement_request_snapshot' => $reward->settlement_request_snapshot, 'settlement_idempotency_key' => $request->idempotency_key, 'settlement_lock_token' => $token, 'settlement_lock_expires_at' => $expiresAt]);
             $reward->settlement_lock_token = $token;
             $reward->settlement_lock_expires_at = $expiresAt;

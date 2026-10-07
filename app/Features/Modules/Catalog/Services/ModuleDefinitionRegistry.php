@@ -7,6 +7,7 @@ namespace App\Features\Modules\Catalog\Services;
 use App\Features\Modules\Catalog\DTOs\ModuleCapabilityDefinitionData;
 use App\Features\Modules\Catalog\DTOs\ModuleDefinitionData;
 use App\Features\Modules\Contracts\Data\V1\ModuleActivitySubscriptionData;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 
 final class ModuleDefinitionRegistry
 {
@@ -18,6 +19,11 @@ final class ModuleDefinitionRegistry
     /** @return list<ModuleDefinitionData> */
     public function definitions(): array
     {
+        if ($this->registeredDefinitions !== null) {
+            return $this->registeredDefinitions;
+        }
+        $settings = app(ResolveSettingsPort::class)->execute(['modules.sources.broker.topic', 'modules.sources.copy_trading.topic']);
+
         return $this->registeredDefinitions ?? [
             new ModuleDefinitionData(
                 code: 'broker',
@@ -33,7 +39,7 @@ final class ModuleDefinitionRegistry
                         code: 'closed_trading_volume',
                         name: 'Closed trading volume',
                         description: 'Closed trading volume attributable to Broker activity.',
-                        event_subscriptions: [new ModuleActivitySubscriptionData('broker', (string) config('modules.sources.broker.topic'), 'position_closed', 1, 'broker_closed_volume_v1')],
+                        event_subscriptions: [new ModuleActivitySubscriptionData('broker', (string) $settings->get('modules.sources.broker.topic'), 'position_closed', 1, 'broker_closed_volume_v1')],
                     ),
                 ],
             ),
@@ -46,7 +52,7 @@ final class ModuleDefinitionRegistry
                         code: 'closed_trading_volume',
                         name: 'Closed trading volume',
                         description: 'Closed trading volume attributable to Copy Trading.',
-                        event_subscriptions: [new ModuleActivitySubscriptionData('copy_trading', (string) config('modules.sources.copy_trading.topic'), 'position_closed', 1, 'copy_trading_closed_volume_v1')],
+                        event_subscriptions: [new ModuleActivitySubscriptionData('copy_trading', (string) $settings->get('modules.sources.copy_trading.topic'), 'position_closed', 1, 'copy_trading_closed_volume_v1')],
                     ),
                 ],
             ),

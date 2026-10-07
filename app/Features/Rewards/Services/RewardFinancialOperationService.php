@@ -17,6 +17,7 @@ use App\Features\Rewards\DTOs\RewardReversalRequestData;
 use App\Features\Rewards\DTOs\RewardSettlementRequestData;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 
 final class RewardFinancialOperationService
@@ -113,7 +114,8 @@ final class RewardFinancialOperationService
 
     private function assertPayable(object $reward): void
     {
-        if ($reward->commission_type === 'pnl' && ! config('rewards.negative_pnl.settlement_enabled', true)) {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.settlement_enabled']);
+        if ($reward->commission_type === 'pnl' && ! $settings->get('rewards.negative_pnl.settlement_enabled')) {
             throw new RewardSettlementException('pnl_settlement_disabled');
         }
         $module = $reward->commission_type === 'cpa' ? null : ($this->modules->findByIds([(string) $reward->module_id])[0] ?? null);

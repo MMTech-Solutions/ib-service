@@ -591,6 +591,12 @@ Son candidatos válidos clocks, serialización técnica, paginación, identifica
 
 ## Persistencia y auditoría
 
+Settings gobierna parámetros globales operativos mutables, agrupados por dominio,
+mediante catálogo cerrado y resolución explícita por puerto. No sustituye versiones
+publicadas inmutables ni altera snapshots históricos. Modules posee la certificación
+de proveedores, reutilizada por Settings mediante puerto público.
+Véase [Settings](settings.md).
+
 - Configuraciones publicadas y cálculos históricos son inmutables.
 - Cambios funcionales crean versiones explícitas.
 - Rewards y contribuciones guardan las referencias y entradas que justifican su resultado.

@@ -9,6 +9,7 @@ use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsResultData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 use Throwable;
 
@@ -18,8 +19,9 @@ final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnl
 
     public function resolve(ResolveNegativePnlPeriodsQueryData $query): ResolveNegativePnlPeriodsResultData
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.negative_pnl.subject_batch_size']);
         $expected = array_map(static fn ($subject): string => $subject->external_user_id, $query->subjects);
-        if ($expected === [] || count($expected) > max(1, (int) config('rewards.negative_pnl.subject_batch_size', 100))
+        if ($expected === [] || count($expected) > max(1, (int) $settings->get('rewards.negative_pnl.subject_batch_size'))
             || count(array_unique($expected)) !== count($expected)) {
             throw InvalidNegativePnlPeriodsResponseException::create();
         }

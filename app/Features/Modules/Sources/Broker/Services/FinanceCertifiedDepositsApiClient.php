@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Modules\Sources\Broker\Services;
 
 use App\Features\Modules\Contracts\Exceptions\FinanceCertifiedDepositsUnavailableException;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Support\Facades\Http;
 
 final class FinanceCertifiedDepositsApiClient
@@ -12,13 +13,14 @@ final class FinanceCertifiedDepositsApiClient
     /** @return list<array<string, mixed>> */
     public function list(string $externalUserId, string $from, string $until, string $currencyCode): array
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['finance.base_url', 'finance.timeout_seconds', 'finance.internal_token', 'finance.source_service']);
         $cursor = null;
         $items = [];
         do {
             try {
-                $response = Http::baseUrl((string) config('finance.base_url'))->acceptJson()->timeout((int) config('finance.timeout_seconds'))->connectTimeout(3)->withHeaders([
-                    'X-Internal-Token' => (string) config('finance.internal_token'),
-                    'X-Internal-Source' => (string) config('finance.source_service'),
+                $response = Http::baseUrl((string) $settings->get('finance.base_url'))->acceptJson()->timeout((int) $settings->get('finance.timeout_seconds'))->connectTimeout(3)->withHeaders([
+                    'X-Internal-Token' => (string) $settings->get('finance.internal_token'),
+                    'X-Internal-Source' => (string) $settings->get('finance.source_service'),
                 ])->get('/api/finance/v1/users/'.$externalUserId.'/settled-external-deposits', array_filter([
                     'from' => $from, 'until' => $until, 'limit' => 100, 'cursor' => $cursor,
                 ]));

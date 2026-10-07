@@ -7,6 +7,7 @@ namespace App\Features\Rewards\Listeners\Kafka;
 use App\Features\Rewards\Contracts\Ports\Input\CaptureCpaContextPort;
 use App\Features\Rewards\DTOs\CaptureCpaContextData;
 use App\Features\Rewards\Exceptions\CpaCaptureNotApplicableException;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use App\SharedFeatures\Clock\DomainClock;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,9 @@ final class AuthAccountRegisteredTopicHandler implements TopicMessageHandlerInte
 
     public function topic(): string
     {
-        return (string) $this->config->get('rewards.auth_account_registered.topic', 'auth.events.v1');
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.auth_account_registered.topic']);
+
+        return (string) $settings->get('rewards.auth_account_registered.topic');
     }
 
     public function handle(ConsumerMessage $message): void
@@ -39,13 +42,14 @@ final class AuthAccountRegisteredTopicHandler implements TopicMessageHandlerInte
 
     private function handleMessage(ConsumerMessage $message): void
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.auth_account_registered.allowed_sources']);
         $body = $message->getBody();
         if (! is_array($body) || ($body['event_name'] ?? null) !== 'auth.account.registered' || ($body['schema_version'] ?? null) !== '1.0') {
             return;
         }
 
         $source = $body['source'] ?? null;
-        $allowedSources = $this->config->get('rewards.auth_account_registered.allowed_sources', []);
+        $allowedSources = $settings->get('rewards.auth_account_registered.allowed_sources');
         if (! is_string($source) || ! is_array($allowedSources) || ! in_array($source, $allowedSources, true)) {
             Log::warning('Rejected auth.account.registered producer.', ['event_name' => 'auth.account.registered']);
 

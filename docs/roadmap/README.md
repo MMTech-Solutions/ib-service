@@ -12,6 +12,7 @@ roadmap contradice esas fuentes, debe corregirse el roadmap.
 
 | Feature | Estado | Etapa actual | Última revisión |
 | --- | --- | --- | --- |
+| [`Settings`](settings/README.md) | Implementación local completada | 70 pruebas aprobadas; limitación de regresión conjunta registrada; S2S/UI pendientes | 2026-10-07 |
 | [`Scheduling`](scheduling/README.md) | Implementado localmente | Validación operativa y política de retención pendientes | 2026-10-07 |
 | [`Modules`](modules/README.md) | M1-M5 implementados; validación S2S pendiente | M5: actividad Broker S2S y configuración instrumental de Programs | 2026-10-02 |
 | [`Plans`](plans/README.md) | P1 + P0.3 + P3 completados localmente | Validación integrada de vinculaciones con ib-labs | 2026-10-04 |

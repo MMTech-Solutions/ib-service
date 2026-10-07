@@ -12,6 +12,7 @@ use App\Features\Rewards\DTOs\RewardSettlementRequestData;
 use App\Features\Rewards\Exceptions\RewardSettlementException;
 use App\Features\Rewards\Factories\RewardRepositoryFactory;
 use App\Features\Rewards\Repositories\RewardRepositoryInterface;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 
 final class SettlePendingRewardsUseCase
@@ -80,9 +81,10 @@ final class SettlePendingRewardsUseCase
 
     private function claimNext(RewardRepositoryInterface $repository, array $excludedIds): ?object
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.settlement.retry_delay_seconds', 'rewards.settlement.claim_lease_seconds']);
         $now = CarbonImmutable::now('UTC');
-        $retryAt = $now->subSeconds((int) config('rewards.settlement.retry_delay_seconds', 300));
-        $lockExpiresAt = $now->addSeconds((int) config('rewards.settlement.claim_lease_seconds', 60));
+        $retryAt = $now->subSeconds((int) $settings->get('rewards.settlement.retry_delay_seconds'));
+        $lockExpiresAt = $now->addSeconds((int) $settings->get('rewards.settlement.claim_lease_seconds'));
 
         return $repository->claimNextSettlement($now, $retryAt, $lockExpiresAt, $excludedIds);
     }

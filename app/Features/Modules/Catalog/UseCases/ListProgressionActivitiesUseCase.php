@@ -17,6 +17,7 @@ use App\Features\Modules\Contracts\Exceptions\ModuleNotFoundException;
 use App\Features\Modules\Contracts\Exceptions\UnsupportedProgressionActivityCapabilityException;
 use App\Features\Modules\Contracts\Ports\Input\ListProgressionActivitiesPort;
 use App\Features\Modules\Sources\Contracts\ModuleActivitySourceInterface;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Carbon\CarbonImmutable;
 
 final class ListProgressionActivitiesUseCase implements ListProgressionActivitiesPort
@@ -114,6 +115,7 @@ final class ListProgressionActivitiesUseCase implements ListProgressionActivitie
      */
     private function validateQueryBounds(ListProgressionActivitiesQueryData $query): array
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['modules.activity.max_range_days', 'modules.activity.default_limit', 'modules.activity.max_limit']);
         try {
             $occurredFrom = CarbonImmutable::parse($query->occurred_from)->utc();
             $occurredUntil = CarbonImmutable::parse($query->occurred_until)->utc();
@@ -129,15 +131,15 @@ final class ListProgressionActivitiesUseCase implements ListProgressionActivitie
             );
         }
 
-        $maxRangeDays = (int) config('modules.activity.max_range_days', 31);
+        $maxRangeDays = (int) $settings->get('modules.activity.max_range_days');
         if ($occurredFrom->diffInDays($occurredUntil) > $maxRangeDays) {
             throw InvalidProgressionActivityQueryException::withMessage(
                 "The activity query range may not exceed {$maxRangeDays} days.",
             );
         }
 
-        $defaultLimit = (int) config('modules.activity.default_limit', 100);
-        $maxLimit = (int) config('modules.activity.max_limit', 200);
+        $defaultLimit = (int) $settings->get('modules.activity.default_limit');
+        $maxLimit = (int) $settings->get('modules.activity.max_limit');
         $limit = $query->limit ?? $defaultLimit;
         if ($limit < 1 || $limit > $maxLimit) {
             throw InvalidProgressionActivityQueryException::withMessage(

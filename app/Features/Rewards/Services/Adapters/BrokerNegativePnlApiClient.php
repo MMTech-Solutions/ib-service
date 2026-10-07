@@ -6,6 +6,7 @@ namespace App\Features\Rewards\Services\Adapters;
 
 use App\Features\Rewards\Exceptions\InvalidNegativePnlPeriodsResponseException;
 use App\Features\Rewards\Exceptions\NegativePnlPeriodsUnavailableException;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -17,17 +18,18 @@ final class BrokerNegativePnlApiClient
      */
     public function resolve(array $payload): array
     {
+        $settings = app(ResolveSettingsPort::class)->execute(['modules.sources.broker.base_url', 'rewards.negative_pnl.broker_timeout_seconds', 'modules.sources.broker.internal_token', 'modules.sources.broker.source_service', 'modules.sources.broker.internal_prefix']);
         try {
-            $response = Http::baseUrl((string) config('modules.sources.broker.base_url'))
+            $response = Http::baseUrl((string) $settings->get('modules.sources.broker.base_url'))
                 ->acceptJson()
                 ->asJson()
-                ->timeout((int) config('rewards.negative_pnl.broker_timeout_seconds', 15))
+                ->timeout((int) $settings->get('rewards.negative_pnl.broker_timeout_seconds'))
                 ->connectTimeout(3)
                 ->withHeaders([
-                    'X-Internal-Token' => (string) config('modules.sources.broker.internal_token'),
-                    'X-Internal-Source' => (string) config('modules.sources.broker.source_service'),
+                    'X-Internal-Token' => (string) $settings->get('modules.sources.broker.internal_token'),
+                    'X-Internal-Source' => (string) $settings->get('modules.sources.broker.source_service'),
                 ])
-                ->post((string) config('modules.sources.broker.internal_prefix').'/accounts/negative-pnl-periods/resolve', $payload);
+                ->post((string) $settings->get('modules.sources.broker.internal_prefix').'/accounts/negative-pnl-periods/resolve', $payload);
         } catch (Throwable) {
             throw NegativePnlPeriodsUnavailableException::create();
         }

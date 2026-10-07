@@ -53,7 +53,7 @@ final class ListModulesEndpointTest extends TestCase
     {
         $this->gatewayGet(self::AUTHORIZED_SUB, ['search' => 'missing'])->assertOk()->assertJsonCount(0, 'data');
         $this->gatewayGet(self::AUTHORIZED_SUB, ['is_active' => '0'])->assertOk()->assertJsonCount(0, 'data');
-        $this->gatewayGet(self::AUTHORIZED_SUB, ['processing_status' => 'running'])->assertOk()->assertJsonCount(1, 'data');
+        $this->gatewayGet(self::AUTHORIZED_SUB, ['processing_status' => 'running'])->assertOk()->assertJsonCount(2, 'data');
         $this->gatewayGet(self::AUTHORIZED_SUB, ['per_page' => 101])->assertUnprocessable();
     }
 

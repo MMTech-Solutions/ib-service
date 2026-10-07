@@ -17,7 +17,7 @@ PropFirm, Copy Trading o Broker Service.
 | 4. Tablas de la primera entrega | [`04-first-delivery-data-model.md`](04-first-delivery-data-model.md) | Completado para M1 |
 | 5. Implementación y contract tests | [`05-first-delivery-implementation.md`](05-first-delivery-implementation.md) | M1 completado |
 
-Última revisión: 2026-10-02.
+Última revisión: 2026-10-07.
 Última revisión de volumen: 2026-10-06. Broker y Copy Trading declaran suscripciones en la capacidad; catálogo/feed Copy Trading y normalización están implementados en IB. Véase [entrega de eventos de volumen](../rewards/14-volume-provider-events.md); aceptación integrada pendiente.
 
 ## Decisiones confirmadas
@@ -88,6 +88,12 @@ posterga hasta que esos contratos y el modelo base estén estables.
   en el futuro.
 
 ## Referencias canónicas
+
+Certificación de conexiones (2026-10-07): Modules incorpora una capacidad pública
+reutilizada por Settings y una acción administrativa propia sobre el módulo.
+Comprueba configuración efectiva sin cambiar disponibilidad ni procesamiento.
+[Entrega Settings](../settings/README.md) y [contrato](../../rules/settings.md).
+Endpoints autenticados en proveedores y botón UI pendientes fuera de este repositorio.
 
 - [`plans-and-subscriptions.bds.md`](../../bds/plans-and-subscriptions.bds.md)
 - [`progression.bds.md`](../../bds/progression.bds.md)

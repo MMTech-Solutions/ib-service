@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Console;
 
 use App\Features\Rewards\UseCases\ReconcileRewardSettlementsUseCase;
+use App\Features\Settings\Contracts\Ports\Input\ResolveSettingsPort;
 use Illuminate\Console\Command;
 
 final class ReconcileRewardSettlementsCommand extends Command
@@ -20,7 +21,8 @@ final class ReconcileRewardSettlementsCommand extends Command
 
     public function handle(): int
     {
-        $limit = $this->option('limit') === null ? (int) config('rewards.reconciliation.batch_size', 100) : (int) $this->option('limit');
+        $settings = app(ResolveSettingsPort::class)->execute(['rewards.reconciliation.batch_size']);
+        $limit = $this->option('limit') === null ? (int) $settings->get('rewards.reconciliation.batch_size') : (int) $this->option('limit');
         $this->table(['Metric', 'Count'], collect($this->useCase->execute(max($limit, 1)))->map(static fn (int $value, string $key): array => [$key, $value])->values()->all());
 
         return self::SUCCESS;
