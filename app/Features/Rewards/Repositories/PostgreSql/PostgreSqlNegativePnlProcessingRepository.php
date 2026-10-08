@@ -178,7 +178,7 @@ final class PostgreSqlNegativePnlProcessingRepository implements NegativePnlProc
                 return false;
             }
             foreach ($aggregate->contributions as $cut) {
-                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->trading_account_id), 'subject_external_user_id' => $cut->external_user_id, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
+                $this->connection->table('reward_evidence')->insert(['id' => (string) Str::uuid7(), 'reward_id' => $id, 'evidence_provider' => $period->inputs->provider_code === 'copy_trading' ? 'copy_trading_service' : 'broker_service', 'evidence_type' => 'negative_pnl_period', 'source_activity_id' => $period->id.':'.hash('sha256', $cut->trading_account_id), 'subject_external_user_id' => $cut->external_user_id, 'currency_code' => $cut->currency_code, 'occurred_at' => $cut->occurred_until, 'created_at' => $now, 'updated_at' => $now]);
             }
 
             return true;

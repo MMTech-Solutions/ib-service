@@ -6,6 +6,7 @@ namespace App\Features\Modules\Catalog\Factories;
 
 use App\Features\Modules\Sources\Broker\Services\Adapters\BrokerClosedTradingVolumeActivityAdapter;
 use App\Features\Modules\Sources\Contracts\ModuleActivitySourceInterface;
+use App\Features\Modules\Sources\CopyTrading\Services\Adapters\CopyTradingClosedTradingVolumeActivityAdapter;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 
@@ -22,9 +23,11 @@ final class ModuleActivitySourceFactory
 
     public function __construct(private readonly Container $container) {}
 
-    public function makeForCapability(string $capabilityCode): ModuleActivitySourceInterface
+    public function makeForCapability(string $capabilityCode, string $moduleCode = 'broker'): ModuleActivitySourceInterface
     {
-        $class = self::ALLOWLIST[$capabilityCode] ?? null;
+        $class = $moduleCode === 'copy_trading' && $capabilityCode === 'closed_trading_volume'
+            ? CopyTradingClosedTradingVolumeActivityAdapter::class
+            : ($moduleCode === 'broker' ? (self::ALLOWLIST[$capabilityCode] ?? null) : null);
         if ($class === null) {
             throw new InvalidArgumentException(
                 "Capability [{$capabilityCode}] is not registered for Progression activity queries.",

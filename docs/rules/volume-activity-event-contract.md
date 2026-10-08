@@ -102,3 +102,5 @@ productores, Kafka real, generación de Rewards y settlement verificables.
 El productor Copy Trading debe replicar el mecanismo de Broker; su equipo trabaja
 en el contrato y no tenemos acceso a su repositorio. Correcciones de hechos ya congelados
 no generan recálculo automático.
+
+CPA/Progression/PnL de Copy Trading se habilitan mediante consumidores HTTP separados; no consumen estos eventos. Copy Trading certifica solo cuentas creadas desde su plataforma. [Contrato completo](copy-trading-provider-contract.md).

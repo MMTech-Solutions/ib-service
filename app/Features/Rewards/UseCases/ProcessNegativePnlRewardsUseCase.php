@@ -48,7 +48,7 @@ final class ProcessNegativePnlRewardsUseCase
         private readonly ListNegativePnlSubscriptionsPort $subscriptions,
         private readonly ResolveNegativePnlSubscriptionContextPort $subscriptionContext,
         private readonly ResolveNegativePnlReferralsPort $referrals,
-        private readonly ResolveNegativePnlPeriodsPort $broker,
+        private readonly ResolveNegativePnlPeriodsPort $provider,
         private readonly ResolvePlanSubscriptionContextPort $plans,
         private readonly ResolveModulesPort $modules,
         private readonly CaptureNegativePnlCutService $capture,
@@ -162,7 +162,7 @@ final class ProcessNegativePnlRewardsUseCase
         $plan = $this->plans->resolve(new ResolvePlanSubscriptionContextQueryData($work->plan_id));
         $module = $this->modules->findByIds([$work->module_id])[0] ?? null;
 
-        return $plan->is_active && ! $plan->archived && $module !== null && $module->code === 'broker' && $module->is_active && $module->processing_status === 'running';
+        return $plan->is_active && ! $plan->archived && $module !== null && in_array($module->code, ['broker', 'copy_trading'], true) && $module->is_active && $module->processing_status === 'running';
     }
 
     private function inputs(NegativePnlWorkData $work): ?NegativePnlFrozenInputsData
@@ -185,7 +185,7 @@ final class ProcessNegativePnlRewardsUseCase
         $group = $configuration->modules[0];
         $depth = max(array_map(static fn ($level): int => $level->distribution_level, $group->levels));
 
-        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) $this->operationSettings->get('rewards.minimum_amount_major'), $this->referrals->resolve($work->beneficiary_id, $depth));
+        return new NegativePnlFrozenInputsData($subscription, $group, $configuration->id, (string) $this->operationSettings->get('rewards.minimum_amount_major'), $this->referrals->resolve($work->beneficiary_id, $depth), $this->modules->findByIds([$work->module_id])[0]->code);
     }
 
     private function evidence(NegativePnlProcessingRepositoryInterface $repository, NegativePnlWorkData $work, NegativePnlProcessingPeriodData $period): NegativePnlProcessingPeriodData
@@ -197,8 +197,8 @@ final class ProcessNegativePnlRewardsUseCase
             }
         }
         foreach (array_chunk($subjects, max(1, (int) $this->operationSettings->get('rewards.negative_pnl.subject_batch_size'))) as $batch) {
-            $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until, $period->occurred_from);
-            $response = $this->broker->resolve($query);
+            $query = new ResolveNegativePnlPeriodsQueryData($batch, $period->occurred_until, $period->occurred_from, $work->module_id);
+            $response = $this->provider->resolve($query);
             $expected = array_map(static fn ($subject): string => $subject->external_user_id, $batch);
             $completed = $response->completed_subjects;
             sort($expected);

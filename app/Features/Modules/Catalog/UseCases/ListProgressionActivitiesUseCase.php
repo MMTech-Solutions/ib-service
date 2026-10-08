@@ -53,9 +53,6 @@ final class ListProgressionActivitiesUseCase implements ListProgressionActivitie
             );
         }
 
-        if ($module->code === 'copy_trading') {
-            throw UnsupportedProgressionActivityCapabilityException::forModule($module->id);
-        }
         $sources = $this->resolveSources($module);
         if ($sources === []) {
             throw UnsupportedProgressionActivityCapabilityException::forModule($module->id);
@@ -163,7 +160,7 @@ final class ListProgressionActivitiesUseCase implements ListProgressionActivitie
             if (! $this->activitySourceFactory->supports($capability->code)) {
                 continue;
             }
-            $sources[] = $this->activitySourceFactory->makeForCapability($capability->code);
+            $sources[] = $this->activitySourceFactory->makeForCapability($capability->code, $module->code);
         }
 
         return $sources;

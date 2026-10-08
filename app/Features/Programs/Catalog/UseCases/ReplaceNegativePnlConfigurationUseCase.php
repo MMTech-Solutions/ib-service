@@ -36,8 +36,8 @@ final class ReplaceNegativePnlConfigurationUseCase
             $moduleIds = array_values(array_unique(array_column($command->modules, 'module_id')));
             $this->plans->assertEnabledModuleIds(new AssertEnabledModuleIdsQueryData($command->plan_id, $moduleIds));
             $modules = $this->modules->findByIds($moduleIds);
-            if (count($modules) !== count($moduleIds) || array_filter($modules, static fn ($module): bool => $module->code !== 'broker') !== []) {
-                throw InvalidNegativePnlConfigurationException::forReason('Only Broker modules enabled in the plan are allowed.');
+            if (count($modules) !== count($moduleIds) || array_filter($modules, static fn ($module): bool => ! in_array($module->code, ['broker', 'copy_trading'], true)) !== []) {
+                throw InvalidNegativePnlConfigurationException::forReason('Only supported PnL modules enabled in the plan are allowed.');
             }
             $seen = [];
             $modules = [];

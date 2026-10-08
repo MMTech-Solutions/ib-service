@@ -11,6 +11,8 @@ use App\Features\Modules\Catalog\Factories\CpaEvidenceProviderFactory;
 use App\Features\Modules\Catalog\Factories\VolumeRewardActivitiesProviderFactory;
 use App\Features\Modules\Sources\Broker\Services\Strategies\BrokerCpaEvidenceProviderStrategy;
 use App\Features\Modules\Sources\Broker\Services\Strategies\BrokerVolumeRewardActivitiesProviderStrategy;
+use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
+use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsResultData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Exceptions\UnsupportedNegativePnlPeriodsProviderException;
 use App\Features\Rewards\Factories\NegativePnlPeriodsProviderFactory;
@@ -50,6 +52,9 @@ final class RewardEvidenceProviderFactoriesTest extends TestCase
         app()->forgetInstance(ResolveNegativePnlPeriodsPort::class);
         $replacement = $this->createMock(ResolveNegativePnlPeriodsPort::class);
         app()->instance(BrokerResolveNegativePnlPeriodsAdapter::class, $replacement);
-        self::assertSame($replacement, app(ResolveNegativePnlPeriodsPort::class));
+        $query = new ResolveNegativePnlPeriodsQueryData([], '2026-10-02T00:00:00Z', '2026-10-01T00:00:00Z');
+        $result = new ResolveNegativePnlPeriodsResultData([], []);
+        $replacement->expects(self::once())->method('resolve')->with($query)->willReturn($result);
+        self::assertSame($result, app(ResolveNegativePnlPeriodsPort::class)->resolve($query));
     }
 }

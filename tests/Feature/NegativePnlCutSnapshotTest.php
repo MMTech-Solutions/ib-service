@@ -20,11 +20,12 @@ final class NegativePnlCutSnapshotTest extends TestCase
 
     public function test_it_freezes_a_cut_and_reuses_it_without_querying_broker_again(): void
     {
+        $this->artisan('modules:sync')->assertSuccessful();
         $fixture = json_decode(file_get_contents(base_path('tests/Fixtures/Rewards/broker-negative-pnl-periods-v1.json')), true, 512, JSON_THROW_ON_ERROR);
         $row = $fixture['data'][0];
         Http::fake(['*' => Http::response(['data' => [$row], 'meta' => ['completed_subjects' => [$row['external_user_id']]]])]);
         $input = new CaptureNegativePnlCutData(
-            (string) Str::uuid7(), (string) Str::uuid7(), $row['trading_account_id'], $row['server_group_id'], 'monthly',
+            DB::table('modules')->where('code', 'broker')->value('id'), (string) Str::uuid7(), $row['trading_account_id'], $row['server_group_id'], 'monthly',
             new ResolveNegativePnlPeriodsQueryData([new NegativePnlSubjectData($row['external_user_id'])], '2026-10-02T10:00:00Z', '2026-10-01T10:00:00Z'),
         );
         $useCase = app(CaptureNegativePnlCutUseCase::class);

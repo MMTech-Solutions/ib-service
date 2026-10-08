@@ -18,7 +18,6 @@ use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlReferralsPort;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveRewardUplinePort;
 use App\Features\Rewards\Contracts\Ports\Output\RewardFinancialGatewayInterface;
 use App\Features\Rewards\Contracts\Ports\Output\RewardSettlementGatewayInterface;
-use App\Features\Rewards\Factories\NegativePnlPeriodsProviderFactory;
 use App\Features\Rewards\Listeners\PublishCpaContextExpiredListener;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlCpaVerificationProgressRepository;
 use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlNegativePnlProcessingRepository;
@@ -28,6 +27,7 @@ use App\Features\Rewards\Repositories\PostgreSql\PostgreSqlVolumeRewardProcessin
 use App\Features\Rewards\Services\Adapters\FinanceRewardSettlementGateway;
 use App\Features\Rewards\Services\Adapters\IamResolveNegativePnlReferralsAdapter;
 use App\Features\Rewards\Services\Adapters\IamResolveRewardUplineAdapter;
+use App\Features\Rewards\Services\Adapters\ModuleResolveNegativePnlPeriodsAdapter;
 use App\Features\Rewards\Services\Pushers\Service\ServiceEventPusher;
 use App\Features\Rewards\UseCases\CaptureCpaContextUseCase;
 use App\Features\Rewards\UseCases\ProcessVolumeRewardsUseCase;
@@ -55,7 +55,7 @@ final class RewardsServiceProvider extends ServiceProvider
         $this->app->singleton(RewardSettlementGatewayInterface::class, FinanceRewardSettlementGateway::class);
         $this->app->singleton(RewardFinancialGatewayInterface::class, FinanceRewardSettlementGateway::class);
         $this->app->singleton(ResolveRewardUplinePort::class, IamResolveRewardUplineAdapter::class);
-        $this->app->singleton(ResolveNegativePnlPeriodsPort::class, fn (Application $app): ResolveNegativePnlPeriodsPort => $app->make(NegativePnlPeriodsProviderFactory::class)->make('broker'));
+        $this->app->singleton(ResolveNegativePnlPeriodsPort::class, fn (Application $app): ResolveNegativePnlPeriodsPort => $app->make(ModuleResolveNegativePnlPeriodsAdapter::class));
         $this->app->singleton(VerifyCpaContextsUseCase::class);
         $this->app->singleton(SettlePendingRewardsUseCase::class);
         $this->app->singleton(ReconcileRewardSettlementsUseCase::class);

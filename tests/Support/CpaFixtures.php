@@ -29,14 +29,14 @@ trait CpaFixtures
     }
 
     /** @return array<string,mixed> */
-    private function cpaFixture(?string $ib = null, bool $twoModules = true): array
+    private function cpaFixture(?string $ib = null, bool $twoModules = true, string $provider = 'broker'): array
     {
         $at = now('UTC')->subDays(2)->toISOString();
         $ib ??= (string) Str::uuid7();
         $referred = (string) Str::uuid7();
         $plan = PlanRecord::factory()->create(['is_active' => true]);
         $program = ProgramRecord::factory()->create(['plan_id' => $plan->id, 'position' => 1, 'entry_threshold' => 0]);
-        $broker = ModuleRecord::query()->where('code', 'broker')->first() ?? ModuleRecord::factory()->create(['code' => 'broker']);
+        $broker = ModuleRecord::query()->where('code', $provider)->first() ?? ModuleRecord::factory()->create(['code' => $provider]);
         $modules = [$broker];
         if ($twoModules) {
             $modules[] = ModuleRecord::factory()->create(['code' => 'cpa-test']);
@@ -50,8 +50,9 @@ trait CpaFixtures
         foreach ($modules as $module) {
             DB::table('plan_module_bindings')->insert(['id' => (string) Str::uuid7(), 'plan_id' => $plan->id, 'module_id' => $module->id, 'created_at' => $at]);
             DB::table('program_module_selections')->insert(['id' => (string) Str::uuid7(), 'program_id' => $program->id, 'module_id' => $module->id, 'created_at' => $at]);
-            $symbols[$module->id] = [new ProgramCpaSymbolData('symbol', 'group', 'USD')];
-            DB::table('program_symbol_configurations')->insert(['id' => (string) Str::uuid7(), 'program_id' => $program->id, 'module_id' => $module->id, 'symbol_reference' => 'symbol', 'server_group_reference' => 'group', 'currency_code' => 'USD', 'use_for_cpa' => true, 'starts_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
+            $symbolReference = $module->code === 'copy_trading' ? 'copy_trading:server_group:group:symbol:symbol' : 'symbol';
+            $symbols[$module->id] = [new ProgramCpaSymbolData($symbolReference, 'group', 'USD')];
+            DB::table('program_symbol_configurations')->insert(['id' => (string) Str::uuid7(), 'program_id' => $program->id, 'module_id' => $module->id, 'symbol_reference' => $symbolReference, 'server_group_reference' => 'group', 'currency_code' => 'USD', 'use_for_cpa' => true, 'starts_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
         }
         $data = new CaptureCpaContextData($referred, $ib, $at);
         $repository = app(RewardRepositoryFactory::class)->make();

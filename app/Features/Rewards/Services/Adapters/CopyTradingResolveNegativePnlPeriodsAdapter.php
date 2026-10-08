@@ -9,9 +9,9 @@ use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsResultData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Services\NegativePnlPeriodsResponseValidator;
 
-final class BrokerResolveNegativePnlPeriodsAdapter implements ResolveNegativePnlPeriodsPort
+final class CopyTradingResolveNegativePnlPeriodsAdapter implements ResolveNegativePnlPeriodsPort
 {
-    public function __construct(private readonly BrokerNegativePnlApiClient $client, private readonly NegativePnlPeriodsResponseValidator $validator) {}
+    public function __construct(private readonly CopyTradingNegativePnlApiClient $client, private readonly NegativePnlPeriodsResponseValidator $validator) {}
 
     public function resolve(ResolveNegativePnlPeriodsQueryData $query): ResolveNegativePnlPeriodsResultData
     {

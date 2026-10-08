@@ -1,6 +1,6 @@
 # Progresión multi-módulo por puntos — BDS
 
-- **Versión:** 0.11
+- **Versión:** 0.12
 - **Estado:** base ampliada; cierra ventanas, elegibilidad, evaluación, runs, red interna, distribución inmutable y catálogo inicial de motivos de exclusión para PG1/PG2
 
 **Propósito:** normalizar actividades heterogéneas para que todos los módulos habilitados puedan contribuir al crecimiento del IB.
@@ -111,6 +111,7 @@ flowchart LR
 | BR-POINTS-041 | Cada resultado conserva los puntos exactos, el programa objetivo y el instante de su decisión original antes de completarse. Preparar una decisión no equivale a completarla ni a aplicar placement. Las decisiones de recuperación se conservan separadamente sin sustituir la evidencia original. |
 | BR-POINTS-042 | Recuperar conserva las identidades del run y sus resultados y los puntos calculados del resultado o su contexto original. Decide nuevamente el programa objetivo de resultados o placements pendientes o fallidos con los umbrales vigentes. No recalcula puntos ni contribuciones ni incorpora participantes. Cada intento conserva configuración, decisión, instante y resultado, incluso si falla. Si faltan puntos conservados, el resultado permanece fallido y auditable; no se reconstruyen desde contribuciones actuales. |
 | BR-POINTS-043 | La aplicación de placement conserva su vínculo al resultado, outcome e instante. Los fallos de aplicación son auditables y recuperables sin repetir aplicaciones terminales. Un run completado puede recuperar un placement pendiente o fallido sin reabrirse ni cambiar su instante de finalización. |
+| BR-POINTS-044 | Copy Trading aporta lotes de cierres de cuentas creadas desde su plataforma, excluyendo externas asociadas. Su proveedor certifica la selección y atribuye la actividad al dueño. Las contribuciones son independientes del módulo Broker y reutilizan elegibilidad, red, ponderaciones y ventanas vigentes. |
 
 ## Ejemplos de conversión
 

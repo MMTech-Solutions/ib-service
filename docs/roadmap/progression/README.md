@@ -156,3 +156,5 @@ Implementación local: recuperación con ladder vigente, puntos conservados y au
 
 Validar en el entorno de despliegue el scheduler compartido, alertas sobre logs
 agregables y la recuperación operativa documentada en MMTECH-240.
+
+Copy Trading (2026-10-07): [CPA, Progression y PnL](../rewards/15-copy-trading-cpa-progression-pnl.md), consumidores IB locales y contrato proveedor/Postman. 128 pruebas / 2061 assertions aprobadas; S2S pendiente.

@@ -75,3 +75,9 @@ cambios. Validar instalación limpia únicamente en base de pruebas desechable.
 No ejecutar migrate:fresh sobre una base operativa como parte de la entrega.
 
 Pruebas locales no acreditan S2S ni aceptación con datos reales.
+
+## Extensión Copy Trading
+
+Copy Trading implementa el mismo contrato bajo /api/copy-trading/v1/internal/accounts/negative-pnl-periods/resolve. Su selección certificada incluye exclusivamente cuentas creadas desde su plataforma y excluye externas asociadas; IB no aplica el criterio Broker LIVE/B_BOOK al proveedor Copy Trading. Fórmula, completitud, snapshots y errores permanecen iguales. El runner y la captura seleccionan proveedor por módulo; los snapshots nuevos conservan provider_code y la evidencia conserva copy_trading_service. Snapshots anteriores sin provider_code se interpretan como Broker, sin reescribirlos. No hay compensación entre módulos.
+
+Véase [contrato proveedor Copy Trading](copy-trading-provider-contract.md). Implementación local; aceptación S2S pendiente.

@@ -35,7 +35,9 @@ use App\SharedFeatures\Clock\DomainClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\InteractsWithAdminGateway;
 use Tests\Support\InteractsWithCustomerGateway;
 use Tests\TestCase;
@@ -114,14 +116,37 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
         app(DomainClock::class)->end();
     }
 
-    public function test_local_activity_contribution_window_and_placement_flow_is_idempotent(): void
+    #[DataProvider('progressionProviders')]
+    public function test_local_activity_contribution_window_and_placement_flow_is_idempotent(string $provider): void
     {
-        $fixture = $this->createEvaluationFixture(unit: 'usd', weight: '0.1', period: 'daily');
+        $fixture = $this->createEvaluationFixture(unit: $provider === 'copy_trading' ? 'lot' : 'usd', weight: '0.1', period: 'daily', provider: $provider);
         $advanced = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/programs", [
             'code' => 'advanced', 'name' => 'Advanced', 'entry_threshold' => 10, 'module_ids' => [$fixture['module_id']],
         ])->assertCreated()->json('data');
-        $activity = $this->activity($fixture['module_id'], 'local-e2e-deposit', $this->customerSub, '100', 'usd', '2026-09-10T12:00:00Z');
-        $this->stubActivities([$activity]);
+        if ($provider === 'copy_trading') {
+            config()->set('modules.sources.copy_trading.base_url', 'http://copy.test');
+            $template = $this->gatewayJson('POST', '/api/ib/v1/admin/progression-templates', ['name' => 'Copy progression'])->assertCreated()->json('data.id');
+            $version = $this->gatewayJson('POST', "/api/ib/v1/admin/progression-templates/{$template}/versions", ['levels' => [['distribution_level' => 0, 'weight' => '1']]])->assertCreated()->json('data.versions.0');
+            $this->gatewayJson('POST', "/api/ib/v1/admin/progression-templates/{$template}/versions/{$version['id']}/publish", ['lock_version' => $version['lock_version']])->assertOk();
+            $binding = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/progression-template-version-bindings", ['template_version_id' => $version['id']])->assertCreated()->json('data.id');
+            Http::fake(['copy.test/*' => function ($request) {
+                if (str_contains($request->url(), '/instrument-catalog/')) {
+                    return Http::response(['success' => true, 'data' => [['type' => 'symbol', 'reference' => 'symbol', 'name' => 'EURUSD', 'parents' => ['server_group' => 'group'], 'currency_code' => 'USD']], 'meta' => ['pagination' => ['total' => 1, 'current_page' => 1, 'per_page' => 1]]]);
+                }
+
+                return Http::response(['success' => true, 'data' => $request['cursor'] ? [] : [[
+                    'source_activity_id' => 'copy_trading:position:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'subject_external_user_id' => $this->customerSub,
+                    'metric_code' => 'closed_trading_volume', 'unit_code' => 'lot', 'quantity' => '100', 'occurred_at' => '2026-09-10T12:00:00Z', 'server_group_id' => 'group', 'symbol_id' => 'symbol',
+                ]], 'meta' => ['next_cursor' => null]]);
+            }]);
+            $this->gatewayJson('PUT', "/api/ib/v1/admin/plans/{$fixture['plan_id']}/programs/{$fixture['program_id']}/symbol-configurations", ['symbols' => [[
+                'module_id' => $fixture['module_id'], 'instrument_reference' => 'copy_trading:server_group:group:symbol:symbol',
+                'use_for_progression' => true, 'plan_progression_template_version_binding_id' => $binding, 'use_for_volume_reward' => false, 'use_for_cpa' => true,
+            ]]])->assertOk();
+        } else {
+            $activity = $this->activity($fixture['module_id'], 'local-e2e-deposit', $this->customerSub, '100', 'usd', '2026-09-10T12:00:00Z');
+            $this->stubActivities([$activity]);
+        }
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T13:00:00Z'));
         app(DomainClock::class)->end();
         try {
@@ -146,6 +171,11 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
             CarbonImmutable::setTestNow();
             app(DomainClock::class)->end();
         }
+    }
+
+    public static function progressionProviders(): array
+    {
+        return [['broker'], ['copy_trading']];
     }
 
     public function test_it_creates_independent_evaluations_for_each_frozen_beneficiary(): void
@@ -667,9 +697,9 @@ final class EvaluateProgressionActivitiesUseCaseTest extends TestCase
      *     subscription_lock_version: int
      * }
      */
-    private function createEvaluationFixture(string $unit, string $weight, string $period = 'monthly'): array
+    private function createEvaluationFixture(string $unit, string $weight, string $period = 'monthly', string $provider = 'broker'): array
     {
-        $moduleId = $this->brokerId();
+        $moduleId = (string) ModuleRecord::query()->where('code', $provider)->value('id');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10T10:00:00.000000Z'));
         app(DomainClock::class)->end();
 

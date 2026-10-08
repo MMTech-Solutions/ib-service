@@ -639,6 +639,10 @@ o configuración requiere reiniciar el consumidor.
 
 La recepción guarda evidencia económica normalizada completa y el worker procesa ese
 snapshot. El barrido por proveedor utiliza el mismo contrato normalizado y runs/cursores
-independientes. Copy Trading incorpora catálogo y volumen; sus otras modalidades no se
-habilitan por compartir el nombre de una capacidad. Véase el
+independientes. Copy Trading incorpora catálogo y volumen; CPA, Progression y PnL se consumen por HTTP y no se
+habilitan por compartir el nombre de una capacidad sin adapter registrado. Véase el
 [contrato de actividad V1](volume-activity-event-contract.md).
+
+## Ampliación Copy Trading
+
+Copy Trading incorpora consumidores HTTP de CPA, Progression y PnL. Sources de Modules posee adapters de catálogo y actividad; Rewards posee el puerto y adapters PnL. Factories resuelven por módulo y capacidad; compartir closed_trading_volume no selecciona automáticamente Broker. Solo volumen usa Kafka. Véase [contrato proveedor](copy-trading-provider-contract.md).

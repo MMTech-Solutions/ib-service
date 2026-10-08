@@ -116,3 +116,5 @@ M2 y M4 están completadas: el catálogo Broker S2S es paginado y filtrable, con
 contrato se define en [`06-m3-progression-activity-contract.md`](06-m3-progression-activity-contract.md)
 y M5 sustituye el fixture por el feed S2S de `closed_trading_volume` de Broker.
 M2 permanece separada de `EvaluateActivity` y de la actividad normalizada.
+
+Copy Trading (2026-10-07): [CPA, Progression y PnL](../rewards/15-copy-trading-cpa-progression-pnl.md), consumidores IB locales y contrato proveedor/Postman. 128 pruebas / 2061 assertions aprobadas; S2S pendiente.

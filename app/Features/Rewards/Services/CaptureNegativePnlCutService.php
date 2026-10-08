@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Rewards\Services;
 
 use App\Features\Rewards\Contracts\Data\V1\NegativePnlPeriodData;
+use App\Features\Rewards\Contracts\Data\V1\ResolveNegativePnlPeriodsQueryData;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\DTOs\CaptureNegativePnlCutData;
 use App\Features\Rewards\DTOs\NegativePnlCutSnapshotData;
@@ -37,7 +38,7 @@ final class CaptureNegativePnlCutService
 
             return $existing;
         }
-        $period = $resolvedPeriod ?? collect($this->provider->resolve($data->query)->periods)->firstWhere('trading_account_id', $data->account_id);
+        $period = $resolvedPeriod ?? collect($this->provider->resolve(new ResolveNegativePnlPeriodsQueryData($data->query->subjects, $data->query->occurred_until, $data->query->occurred_from, $data->module_id))->periods)->firstWhere('trading_account_id', $data->account_id);
         if ($period === null || $period->server_group_id !== $data->server_group_id
             || ! collect($data->query->subjects)->contains('external_user_id', $period->external_user_id)
             || $period->trading_account_id !== $data->account_id

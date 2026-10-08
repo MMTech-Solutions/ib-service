@@ -1,10 +1,10 @@
 # API interna de Copy Trading como proveedor de actividad de IB Service
 
-**Revisión:** 2026-10-07. **Estado:** productor Broker y consumo IB implementados; productor Copy Trading y aceptación integrada pendientes.
+**Revisión:** 2026-10-08. **Estado:** consumidores IB de catálogo, volumen, CPA, Progression y PnL implementados y verificados localmente; endpoints/productor Copy Trading y aceptación integrada pendientes.
 
-La entrega actual en IB habilita exclusivamente volumen (evento y feed) y su
-catálogo instrumental. CPA, Progression y PnL de Copy Trading continúan fuera de
-esta entrega; las secciones correspondientes describen solicitudes futuras.
+La entrega IB incorpora catálogo y volumen, además de CPA, Progression y PnL mediante consultas HTTP periódicas. Kafka participa exclusivamente en recompensas por volumen tradeado. CPA y PnL generan Rewards pending cuando corresponde mediante sus procesos periódicos; Progression genera puntos y actualiza placement. Recibir un evento de volumen conserva evidencia y su evaluación económica crea la obligación.
+
+Copy Trading garantiza que solo entrega actividad de cuentas creadas desde su plataforma; las cuentas externas asociadas quedan excluidas. Atribuye cada hecho al dueño de la cuenta. IB valida y consume esa evidencia, sin reconstruir el origen ni imponer la clasificación LIVE/B-book propia de Broker. Broker y Copy Trading mantienen contribuciones y compensación independientes por módulo, aun si entregan una misma operación subyacente.
 
 ## Propósito
 
@@ -16,7 +16,7 @@ Referencias: [Rewards](docs/bds/rewards.bds.md), [progresión](docs/bds/progress
 
 ## Contrato HTTP común
 
-Prefijo propuesto, pendiente de confirmación con Copy Trading:
+Prefijo contractual configurado y consumido por IB (el proveedor debe implementarlo):
 
 ```text
 /api/copy-trading/v1/internal
@@ -26,7 +26,7 @@ Los paths siguientes son relativos a ese prefijo. Todas las operaciones requiere
 
 ```http
 Accept: application/json
-X-Internal-Token: {{INTERNAL_TOKEN}}
+X-Internal-Token: {{COPY_TRADING_INTERNAL_TOKEN}}
 X-Internal-Source: mmt-ib-service
 ```
 
@@ -82,7 +82,7 @@ Ejemplo de respuesta:
 
 `parents` contiene los niveles superiores aplicables al tipo consultado. Informar moneda donde corresponda. La selección instrumental se identifica por **grupo + símbolo**; `security` sirve como filtro de navegación. Las referencias deben ser estables y resolubles en el catálogo.
 
-Namespace propuesto para referencias utilizadas por IB:
+Namespace contractual para referencias normalizadas utilizadas por IB:
 
 ```text
 copy_trading:server_group:<group_uuid>:symbol:<symbol_uuid>
@@ -105,7 +105,7 @@ Entrega volumen efectivamente cerrado y persistido para progresión, evidencia C
 | `external_user_id` | Filtro opcional por usuario IAM |
 | `instrument_references[]` | Filtro opcional por referencias de grupo + símbolo |
 
-Los filtros se combinan. Sin filtro de usuario, IB puede recorrer la actividad del período autorizado. Reutilizar el cursor con el mismo intervalo y filtros; documentar su formato para implementar el adapter de IB.
+Los filtros se combinan. Sin filtro de usuario, IB puede recorrer la actividad del período autorizado. Reutilizar el cursor con el mismo intervalo y filtros. Progression usa base64 de JSON {"closed_at": <milisegundos Unix>, "id": "<ID nativo posición>"} y selección estrictamente posterior al par cierre/ID. El proveedor debe emitir y aceptar ese formato, respetar limit y no repetir cursores ni identidades entre páginas. meta.next_cursor es obligatorio: string no vacío para continuar y null al finalizar.
 
 ```json
 {
@@ -142,7 +142,7 @@ Los filtros se combinan. Sin filtro de usuario, IB puede recorrer la actividad d
 
 Las capacidades económicas habilitadas deben disponer de evidencia suficiente; no completar moneda, precisión o comisión ausentes con valores supuestos. El orden es determinista por fecha de cierre e ID de posición. La continuación evita saltos y duplicaciones de los hechos consultados; `meta.next_cursor` vale `null` al finalizar.
 
-CPA requiere confirmar un intervalo completo, incluso vacío. Debe acordarse cómo se certifica el corte y la garantía de que no se publicarán, corregirán ni retirarán hechos anteriores al corte confirmado. La paginación no acredita por sí sola esa garantía.
+CPA requiere confirmar un intervalo completo, incluso vacío: IB agota todas las páginas y persiste los aportes antes de avanzar su corte por fuente. Copy Trading garantiza que no publicará, corregirá ni retirará hechos anteriores a ese corte confirmado. Una contradicción es error de contrato y no reescribe aportes aceptados. CPA y Progression admiten lotes hasta ocho decimales; volumen admite hasta diez conforme a su contrato. No redondear silenciosamente para adaptar la evidencia. Los depósitos CPA son comunes y certificados directamente por Finance; Copy Trading no aporta depósitos a Progression.
 
 ## 3. Evento completo de cierre
 
@@ -309,14 +309,14 @@ IB obtiene de IAM los usuarios de la red y solicita el resultado de sus cuentas 
 
 | Campo | Requisito |
 | --- | --- |
-| `subjects` | Obligatorio; entre 1 y 100 usuarios únicos |
+| `subjects` | Obligatorio; entre 1 y el límite común configurado en IB/proveedor (100 por defecto), usuarios únicos |
 | `subjects[].external_user_id` | UUID de usuario IAM |
 | `occurred_from` | Inicio inclusivo, obligatorio |
 | `occurred_until` | Fin exclusivo, obligatorio; posterior al inicio y no futuro |
 
 ### Selección y cálculo
 
-El universo requerido comprende cuentas LIVE B-book de los usuarios solicitados, existentes al corte, incluidas cuentas archivadas o inactivas con actividad aplicable. La autoridad de clasificación B-book y el tratamiento temporal de sus cambios requieren acuerdo antes de habilitar la integración.
+Copy Trading certifica el universo elegible de cuentas creadas desde su plataforma, pertenecientes a los usuarios solicitados y existentes al corte, incluidas archivadas o inactivas con actividad aplicable. Excluye cuentas externas asociadas. La selección y obtención de los datos pertenecen al proveedor; IB no exige clasificación LIVE/B-book de Broker ni un campo adicional de origen.
 
 Seleccionar posiciones cerradas por cuenta mediante `unix_closed_at`, expresado en epoch milliseconds, en `[occurred_from, occurred_until)`. Si el proveedor utiliza otro campo, documentar su equivalencia autoritativa conservando esa semántica temporal.
 
@@ -324,7 +324,7 @@ Seleccionar posiciones cerradas por cuenta mediante `unix_closed_at`, expresado 
 npnl(cuenta, intervalo) = suma de profit de todas sus posiciones cerradas en el intervalo
 ```
 
-La única magnitud utilizada es `profit`; no incorporar swap, comisiones ni otros cargos. Incluir posiciones negativas, positivas y de profit cero. Sumar con aritmética decimal exacta a escala 10, sin redondear cada posición a la precisión monetaria.
+La única magnitud utilizada es `profit`; no incorporar swap, comisiones, fees de copia ni otros cargos. Incluir posiciones negativas, positivas y de profit cero. Sumar con aritmética decimal exacta a escala 10, sin redondear cada posición a la precisión monetaria.
 
 `npnl` conserva el signo: puede ser negativo, positivo o cero. No filtrar cuentas ganadoras ni transformar pérdidas en valores absolutos.
 
@@ -410,30 +410,34 @@ Los IDs persistidos permiten comparar las posiciones incluidas en un run con las
 | HTTP | Situación |
 | --- | --- |
 | `401` / `403` | Consumidor no autenticado o sin autorización |
-| `404` | Recurso individual inexistente |
-| `409` | Evidencia temporalmente no disponible; cierre individual: `CLOSED_POSITION_NOT_READY` |
+| `409` | Evidencia temporalmente no disponible; sin confirmar un lote parcial |
 | `422` | Parámetros, intervalo o referencias inválidos |
 | `429` | Límite de solicitudes excedido |
 | `5xx` | Fallo técnico del proveedor |
 
-Los errores incluyen código de máquina y mensaje sin datos sensibles. Publicar envelope de error, timeouts, límites y política de reintento en OpenAPI. Las consultas pueden repetirse sin efectos financieros. Una nueva lectura puede revelar cambios autoritativos; no autoriza por sí sola modificar un run aceptado.
+Los errores incluyen código de máquina y mensaje sin datos sensibles. Documentar envelope de error, timeouts, límites y política de reintento del proveedor de forma consistente con el contrato y los ejemplos Postman. Las consultas pueden repetirse sin efectos financieros. Una nueva lectura puede revelar cambios autoritativos; no autoriza por sí sola modificar un run aceptado.
 
-## Definiciones necesarias para integrar
+## Contratos entregables y estado de IB
 
-- Confirmar prefijo HTTP, namespaces, formato de cursor y límites operativos.
-- Definir atribución de posiciones a usuarios IAM y cuentas de Copy Trading.
-- Confirmar autoridad LIVE/B-book, criterio temporal y cambios de clasificación.
-- Establecer separación económica cuando varios proveedores compartan cuentas o posiciones subyacentes: un namespace distinto no evita pagar dos veces la misma actividad.
-- Certificar completitud CPA y acordar consumo de eventos cuando se habilite.
-- Implementar adapters, configuración de capacidades y habilitación del módulo en IB, con BDS y pruebas correspondientes. Este documento no acredita una integración desplegada.
+- [Contrato canónico Copy Trading V1](docs/rules/copy-trading-provider-contract.md): catálogo, feed, cursor, cortes CPA, PnL y responsabilidades.
+- [Colección Postman](ib-service.postman_collection.json): carpeta Provider Contracts / Copy Trading con siete requests (cinco catálogos, feed y resolución PnL), ejemplos de éxito/vacío/error, headers y variables sin secretos. Kafka se documenta en la descripción, no como endpoint HTTP. Administration conserva ejemplos de configuración Copy Trading.
+- [Entrega y evidencia local](docs/roadmap/rewards/15-copy-trading-cpa-progression-pnl.md): 128 pruebas / 2061 assertions aprobadas, Pint y Graphify completados. Incluye CPA con Finance, Progression hasta placement y PnL hasta settlement con proveedores simulados.
+- URL, prefijo, token, source y timeout se resuelven mediante Settings bajo modules.sources.copy_trading.*. No se reutilizan credenciales Broker. La habilitación económica requiere configuración administrativa explícita.
 
+## Pendientes externos para integrar
+
+- Implementar y acreditar endpoints Copy Trading y selección de cuentas conforme al contrato.
+- Proporcionar URL, credenciales S2S, topic físico real y límites operativos compatibles. No publicar en el topic Broker.
+- Acreditar paginación, completitud y garantía de hechos anteriores a cortes CPA confirmados.
+- Demostrar flujos reales con IAM/Finance, eventos Kafka exclusivamente para volumen y settlement. Las pruebas locales no acreditan despliegue ni S2S.
+- Correcciones de profit o posiciones después de congelar un período siguen pendientes de decisión de negocio; no se implementa recálculo automático.
 ## Criterios de aceptación
 
 - [ ] Catálogo con jerarquía, filtros, paginación y referencias estables.
 - [ ] Feed con filtros combinados, intervalo semiabierto y continuación determinista, incluidos cierres simultáneos.
-- [ ] Feed y resolución individual coinciden; `409 CLOSED_POSITION_NOT_READY` probado.
+- [ ] Evento y feed coinciden; evidencia incompleta no se publica y lotes PnL incompletos no confirman usuarios.
 - [ ] Evidencia económica suficiente para capacidades habilitadas y certificación de completitud CPA.
-- [ ] Lotes de usuarios con múltiples cuentas y universo LIVE B-book verificado.
+- [ ] Lotes de usuarios con múltiples cuentas creadas desde Copy Trading; exclusión de externas asociadas verificada por el proveedor.
 - [ ] Cierre en el inicio incluido y cierre en el fin excluido; timestamps comprobados.
 - [ ] Suma exacta de profit negativo, positivo y cero; todos los IDs incluidos.
 - [ ] Cuentas sin cierres entregan cero; usuarios sin cuentas quedan confirmados.
@@ -441,5 +445,6 @@ Los errores incluyen código de máquina y mensaje sin datos sensibles. Publicar
 - [ ] IB conserva resultados e IDs; agregados cero o positivos no generan Rewards.
 - [ ] Compensación por nivel y moneda validada con el ejemplo de `60 USD`; reintentos sin pagos duplicados.
 - [ ] S2S, autorización y separación económica de origen verificadas.
-- [ ] OpenAPI y Postman con entradas, salidas, errores y variables sin secretos; prueba integrada de capacidades habilitadas.
+- [x] Contrato y Postman de IB actualizados con entradas, salidas, errores y variables sin secretos; pruebas locales de capacidades aprobadas.
+- [ ] Implementación del proveedor y aceptación integrada S2S de las capacidades habilitadas.
 

@@ -60,13 +60,10 @@ final class ReplaceProgramSymbolConfigurationsUseCase
         if (count($parts) !== 5 || ! in_array($parts[0], ['broker', 'copy_trading'], true) || $parts[1] !== 'server_group' || $parts[3] !== 'symbol') {
             throw new \InvalidArgumentException('Instrument reference must be a canonical provider symbol reference.');
         }
-        if ($parts[0] === 'copy_trading' && ((bool) $symbol['use_for_progression'] || (bool) $symbol['use_for_cpa'])) {
-            throw new \InvalidArgumentException('Copy Trading currently supports only volume rewards.');
-        }
         $groupReference = $parts[0].':server_group:'.$parts[2];
         $page = $this->catalog->execute(new ListInstrumentCatalogQueryData((string) $symbol['module_id'], 'symbol', ['server_group' => $groupReference, 'symbol' => $reference], 1, 1));
         if ($page->items === [] || $page->items[0]->reference !== $reference || $page->items[0]->currency_code === null) {
-            throw new \InvalidArgumentException('Instrument reference is not available in the Broker catalogue.');
+            throw new \InvalidArgumentException('Instrument reference is not available in the provider catalogue.');
         }
         $this->assertTemplateBindingsBelongToPlan($planId, $symbol);
 

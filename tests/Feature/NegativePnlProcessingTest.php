@@ -139,15 +139,19 @@ final class NegativePnlProcessingTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_local_configuration_interval_start_period_reward_and_finance_settlement_flow(): void
+    #[DataProvider('pnlProviders')]
+    public function test_local_configuration_interval_start_period_reward_and_finance_settlement_flow(string $provider): void
     {
-        $fixture = $this->activeFixture();
+        $fixture = $this->activeFixture($provider);
         $this->process();
         $this->travelTo(CarbonImmutable::parse('2026-10-02T00:00:00Z'));
         self::assertSame(1, $this->process()['rewards']);
         $reward = DB::table('rewards')->first();
         self::assertSame(0, $reward->network_level);
         self::assertSame('pending', $reward->status);
+        self::assertSame($fixture['module_id'], $this->broker->queries[0]->module_id);
+        self::assertSame($provider, json_decode($reward->summary_snapshot, true)['inputs']['provider_code']);
+        self::assertSame($provider === 'copy_trading' ? 'copy_trading_service' : 'broker_service', DB::table('reward_evidence')->value('evidence_provider'));
         Http::fake(fn ($request) => Http::response(['data' => [
             'status' => 'created', 'currency_code' => 'USD', 'minor_units' => 2, 'system_wallet_slug' => 'usd-main',
             'event' => ['id' => 991, 'status' => 'posted', 'idempotency_key' => $request['idempotency_key'],
@@ -166,6 +170,11 @@ final class NegativePnlProcessingTest extends TestCase
         self::assertSame(1, json_decode($settled->settlement_request_snapshot, true)['network_level']);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['commission_type'] === 'pnl' && $request['network_level'] === 1 && $request['amount_minor'] === 1000);
+    }
+
+    public static function pnlProviders(): array
+    {
+        return [['broker'], ['copy_trading']];
     }
 
     public function test_context_final_rates_and_frozen_inputs_survive_partial_reward_creation(): void
@@ -580,9 +589,9 @@ final class NegativePnlProcessingTest extends TestCase
         return $f;
     }
 
-    private function activeFixture(): array
+    private function activeFixture(string $provider = 'broker'): array
     {
-        $f = $this->fixture();
+        $f = $this->fixture('pnl', $provider);
         $f['payload']['cadence'] = 'daily';
         $this->gatewayJson('PUT', $f['url'], $f['payload'])->assertOk();
         $plan = $this->gatewayJson('GET', "/api/ib/v1/admin/plans/{$f['plan_id']}")->assertOk()->json('data');
@@ -593,9 +602,9 @@ final class NegativePnlProcessingTest extends TestCase
     }
 
     /** @return array<string,mixed> */
-    private function fixture(string $code = 'pnl'): array
+    private function fixture(string $code = 'pnl', string $provider = 'broker'): array
     {
-        $module = (string) ModuleRecord::query()->where('code', 'broker')->value('id');
+        $module = (string) ModuleRecord::query()->where('code', $provider)->value('id');
         $plan = $this->gatewayJson('POST', '/api/ib/v1/admin/plans', ['code' => $code, 'name' => 'PnL '.$code, 'module_ids' => [$module], 'progression_period' => 'monthly', 'requires_approval' => false])->assertCreated()->json('data.id');
         $program = $this->gatewayJson('POST', "/api/ib/v1/admin/plans/{$plan}/programs", ['code' => 'entry', 'name' => 'Entry', 'entry_threshold' => 0, 'module_ids' => [$module]])->assertCreated()->json('data.id');
         $template = $this->gatewayJson('POST', '/api/ib/v1/admin/payment-templates', ['name' => 'PnL rates '.$code])->assertCreated()->json('data.id');

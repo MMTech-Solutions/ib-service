@@ -21,3 +21,5 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 | [`scheduling.md`](scheduling.md) | Cron UTC, admisión atómica, ejecución aislada, auditoría y despliegue. |
 
 Toda regla nueva debe indicar si es obligatoria, recomendada o una decisión todavía pendiente.
+
+- [Contrato proveedor Copy Trading V1](copy-trading-provider-contract.md): catálogo, feed CPA/Progression/volumen y resolución PnL; soporte local, S2S pendiente.

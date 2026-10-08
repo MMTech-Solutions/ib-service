@@ -7,6 +7,7 @@ namespace App\Features\Rewards\Factories;
 use App\Features\Rewards\Contracts\Ports\Output\ResolveNegativePnlPeriodsPort;
 use App\Features\Rewards\Exceptions\UnsupportedNegativePnlPeriodsProviderException;
 use App\Features\Rewards\Services\Adapters\BrokerResolveNegativePnlPeriodsAdapter;
+use App\Features\Rewards\Services\Adapters\CopyTradingResolveNegativePnlPeriodsAdapter;
 use Illuminate\Contracts\Container\Container;
 
 final class NegativePnlPeriodsProviderFactory
@@ -16,6 +17,7 @@ final class NegativePnlPeriodsProviderFactory
     public function make(string $providerCode): ResolveNegativePnlPeriodsPort
     {
         return match ($providerCode) {
+            'copy_trading' => $this->container->make(CopyTradingResolveNegativePnlPeriodsAdapter::class),
             'broker' => $this->container->make(BrokerResolveNegativePnlPeriodsAdapter::class),
             default => throw new UnsupportedNegativePnlPeriodsProviderException($providerCode),
         };

@@ -9,5 +9,5 @@ use Spatie\LaravelData\Data;
 final class ResolveNegativePnlPeriodsQueryData extends Data
 {
     /** @param list<NegativePnlSubjectData> $subjects */
-    public function __construct(public readonly array $subjects, public readonly string $occurred_until, public readonly string $occurred_from) {}
+    public function __construct(public readonly array $subjects, public readonly string $occurred_until, public readonly string $occurred_from, public readonly ?string $module_id = null) {}
 }
