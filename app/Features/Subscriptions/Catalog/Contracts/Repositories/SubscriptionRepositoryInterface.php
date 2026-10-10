@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Features\Subscriptions\Catalog\Contracts\Repositories;
 
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionChangesQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionHistoryPageData;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionPlacementsQueryData;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
 use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
@@ -13,6 +16,10 @@ use Closure;
 
 interface SubscriptionRepositoryInterface
 {
+    public function paginateChanges(SubscriptionChangesQueryData $query): SubscriptionHistoryPageData;
+
+    public function paginatePlacements(SubscriptionPlacementsQueryData $query): SubscriptionHistoryPageData;
+
     public function transaction(Closure $callback): mixed;
 
     public function findById(string $id): ?Subscription;

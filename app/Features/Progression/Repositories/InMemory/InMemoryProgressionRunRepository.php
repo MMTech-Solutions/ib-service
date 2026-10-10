@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Repositories\InMemory;
 
+use App\Features\Progression\Contracts\Data\V1\ProgressionResultReferenceData;
+use App\Features\Progression\Contracts\Data\V1\ResolveProgressionResultReferencesQueryData;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
 use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
@@ -21,6 +23,19 @@ use Illuminate\Support\Str;
 
 final class InMemoryProgressionRunRepository implements ProgressionRunRepositoryInterface
 {
+    public function resultReferences(ResolveProgressionResultReferencesQueryData $query): array
+    {
+        $references = [];
+        foreach ($this->results as $result) {
+            if ($result->subscriptionId === $query->subscriptionId && in_array($result->id, $query->operationIds, true)) {
+                $references[] = new ProgressionResultReferenceData($result->id, $result->runId);
+            }
+        }
+        usort($references, static fn (ProgressionResultReferenceData $left, ProgressionResultReferenceData $right): int => strcmp($left->run_result_id, $right->run_result_id));
+
+        return $references;
+    }
+
     public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool
     {
         foreach ($this->runs as $run) {

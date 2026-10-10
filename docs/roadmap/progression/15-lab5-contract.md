@@ -81,6 +81,13 @@ anidada. Sin --json se conserva salida legible para operación manual.
 
 ## Lecturas administrativas V1
 
+Extensión de observación (2026-10-10): Subscriptions añade lecturas exclusivamente
+administrativas de changes y placements con `ib.subscriptions.manage` en
+`admin_panel`. Véase el [contrato](../../rules/subscription-history-api.md) y la
+[entrega](../subscriptions/06-administrative-history.md). Los movimientos de
+Progression resuelven referencias por resultado persistido de la misma suscripción;
+no se correlacionan fechas. No cierra LAB5 ni el pendiente de elegibilidad fixed.
+
 Todas requieren gateway, ADMIN_USERINFO, admin_panel e ib.progression.read.
 Prefijo /api/ib/v1/admin/. data es el objeto o array directo; filtros y
 paginación viven en meta. page >= 1, per_page 1..100 (default 100).

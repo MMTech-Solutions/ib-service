@@ -77,7 +77,7 @@ final class PresentSubscriptionAction
         );
     }
 
-    private function changeData(SubscriptionChange $change): SubscriptionChangeData
+    public function changeData(SubscriptionChange $change): SubscriptionChangeData
     {
         return new SubscriptionChangeData(
             id: $change->id,

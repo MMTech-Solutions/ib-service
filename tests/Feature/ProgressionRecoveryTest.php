@@ -132,6 +132,15 @@ final class ProgressionRecoveryTest extends TestCase
         self::assertSame('50', $this->attempts()[1]['ladder']['programs'][1]['entry_threshold']);
         self::assertSame('completed', DB::table('progression_runs')->where('id', $this->run->id)->value('status'));
         self::assertSame($completedAt, DB::table('progression_runs')->where('id', $this->run->id)->value('completed_at'));
+        $changes = DB::table('subscription_changes')->where('subscription_id', $this->result->subscriptionId)->get()->toArray();
+        $placements = DB::table('subscription_placements')->where('subscription_id', $this->result->subscriptionId)->get()->toArray();
+        self::assertCount(1, $changes);
+        self::assertCount(2, $placements);
+        self::assertSame($this->result->id, $changes[0]->operation_id);
+        app(RecoverProgressionRunsUseCase::class)->execute($this->run->id, $this->now->addMinutes(3));
+        self::assertEquals($changes, DB::table('subscription_changes')->where('subscription_id', $this->result->subscriptionId)->get()->toArray());
+        self::assertEquals($placements, DB::table('subscription_placements')->where('subscription_id', $this->result->subscriptionId)->get()->toArray());
+
     }
 
     public function test_missing_historical_points_remain_failed_without_ledger_queries(): void

@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Features\Subscriptions\Catalog\Http\V1\Requests;
+
+use App\Features\Subscriptions\Catalog\Enums\AdminSubscriptionPermission;
+use App\SharedFeatures\Clock\DomainClock;
+use App\SharedFeatures\User\Context\UserContext;
+use App\SharedFeatures\User\Context\UserSurface;
+use Illuminate\Foundation\Http\FormRequest;
+
+final class ListSubscriptionPlacementsRequest extends FormRequest
+{
+    public function authorize(UserContext $userContext): bool
+    {
+        return $userContext->can(AdminSubscriptionPermission::Manage, UserSurface::AdminPanel);
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['subscription' => $this->route('subscription')]);
+    }
+
+    /** @return array<string, mixed> */
+    public function rules(): array
+    {
+        $utc = static function (string $attribute, mixed $value, \Closure $fail): void {
+            if (! DomainClock::validUtc($value)) {
+                $fail('A real UTC timestamp ending in Z is required.');
+            }
+        };
+
+        return [
+            'subscription' => ['required', 'uuid'],
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'between:1,100'],
+            'program_id' => ['sometimes', 'uuid'],
+            'is_fixed' => ['sometimes', 'boolean'],
+            'overlap_from' => ['required_with:overlap_until', $utc],
+            'overlap_until' => ['required_with:overlap_from', $utc, 'after:overlap_from'],
+        ];
+    }
+}

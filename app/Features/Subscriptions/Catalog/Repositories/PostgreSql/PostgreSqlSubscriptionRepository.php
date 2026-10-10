@@ -6,7 +6,10 @@ namespace App\Features\Subscriptions\Catalog\Repositories\PostgreSql;
 
 use App\Features\Subscriptions\Catalog\Contracts\Repositories\SubscriptionRepositoryInterface;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionChangesQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionHistoryPageData;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionPlacementsQueryData;
 use App\Features\Subscriptions\Catalog\Enums\PlacementCondition;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionActorKind;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionChangeAction;
@@ -16,6 +19,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\DuplicateOpenSubscriptionExcep
 use App\Features\Subscriptions\Catalog\Exceptions\DuplicateSubscriptionReplacementException;
 use App\Features\Subscriptions\Catalog\Exceptions\ProgramNotOnSubscriptionPlanException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionConcurrencyException;
+use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionChange;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
@@ -26,12 +30,61 @@ use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionDa
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 
 final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryInterface
 {
     public function __construct(private readonly ConnectionInterface $connection) {}
+
+    public function paginateChanges(SubscriptionChangesQueryData $query): SubscriptionHistoryPageData
+    {
+        $this->assertHistorySubscriptionExists($query->subscriptionId);
+        $builder = SubscriptionChangeRecord::query()->where('subscription_id', $query->subscriptionId);
+        if ($query->action !== null) {
+            $builder->where('action', $query->action);
+        }
+        if ($query->actorKind !== null) {
+            $builder->where('actor_kind', $query->actorKind);
+        }
+        if ($query->occurredAtFrom !== null) {
+            $builder->where('occurred_at', '>=', CarbonImmutable::parse($query->occurredAtFrom)->utc()->toISOString());
+        }
+        if ($query->occurredAtTo !== null) {
+            $builder->where('occurred_at', '<', CarbonImmutable::parse($query->occurredAtTo)->utc()->toISOString());
+        }
+        $total = (clone $builder)->count();
+        $entries = $builder->orderBy('occurred_at')->orderBy('id')->offset(($query->page - 1) * $query->perPage)->limit($query->perPage)->get()
+            ->map(fn (SubscriptionChangeRecord $record): SubscriptionChange => $this->hydrateSubscriptionChange($record))->all();
+
+        return new SubscriptionHistoryPageData($entries, $total);
+    }
+
+    public function paginatePlacements(SubscriptionPlacementsQueryData $query): SubscriptionHistoryPageData
+    {
+        $this->assertHistorySubscriptionExists($query->subscriptionId);
+        $builder = SubscriptionPlacementRecord::query()->where('subscription_id', $query->subscriptionId);
+        if ($query->programId !== null) {
+            $builder->where('program_id', $query->programId);
+        }
+        if ($query->isFixed !== null) {
+            $builder->where('is_fixed', $query->isFixed);
+        }
+        if ($query->overlapFrom !== null && $query->overlapUntil !== null) {
+            $builder->where('effective_from', '<', CarbonImmutable::parse($query->overlapUntil)->utc()->toISOString())
+                ->where(function (Builder $interval) use ($query): void {
+                    $interval->whereNull('effective_until')->orWhere(function (Builder $closed) use ($query): void {
+                        $closed->whereColumn('effective_until', '>', 'effective_from')->where('effective_until', '>', CarbonImmutable::parse($query->overlapFrom)->utc()->toISOString());
+                    });
+                });
+        }
+        $total = (clone $builder)->count();
+        $entries = $builder->orderBy('effective_from')->orderBy('id')->offset(($query->page - 1) * $query->perPage)->limit($query->perPage)->get()
+            ->map(fn (SubscriptionPlacementRecord $record): SubscriptionPlacement => $this->hydrateSubscriptionPlacement($record))->all();
+
+        return new SubscriptionHistoryPageData($entries, $total);
+    }
 
     public function transaction(Closure $callback): mixed
     {
@@ -364,6 +417,13 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
         return $exception;
     }
 
+    private function assertHistorySubscriptionExists(string $subscriptionId): void
+    {
+        if (! SubscriptionRecord::query()->whereKey($subscriptionId)->exists()) {
+            throw SubscriptionNotFoundException::forId($subscriptionId);
+        }
+    }
+
     private function hydrate(SubscriptionRecord $record): Subscription
     {
         $placements = SubscriptionPlacementRecord::query()
@@ -371,16 +431,7 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             ->orderBy('effective_from')
             ->orderBy('id')
             ->get()
-            ->map(fn (SubscriptionPlacementRecord $placement): SubscriptionPlacement => new SubscriptionPlacement(
-                id: (string) $placement->id,
-                subscriptionId: (string) $placement->subscription_id,
-                programId: (string) $placement->program_id,
-                condition: PlacementCondition::fromBoolean((bool) $placement->is_fixed),
-                effectiveFrom: $placement->effective_from->utc()->toISOString(),
-                effectiveUntil: $placement->effective_until?->utc()->toISOString(),
-                createdAt: $placement->created_at->utc()->toISOString(),
-                updatedAt: $placement->updated_at->utc()->toISOString(),
-            ))
+            ->map(fn (SubscriptionPlacementRecord $placement): SubscriptionPlacement => $this->hydrateSubscriptionPlacement($placement))
             ->all();
 
         $changes = SubscriptionChangeRecord::query()
@@ -388,42 +439,7 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             ->orderBy('occurred_at')
             ->orderBy('id')
             ->get()
-            ->map(fn (SubscriptionChangeRecord $change): SubscriptionChange => new SubscriptionChange(
-                id: (string) $change->id,
-                operationId: (string) $change->operation_id,
-                subscriptionId: (string) $change->subscription_id,
-                action: SubscriptionChangeAction::from((string) $change->action),
-                actorKind: SubscriptionActorKind::from((string) $change->actor_kind),
-                actorExternalUserId: $change->actor_external_user_id === null
-                    ? null
-                    : (string) $change->actor_external_user_id,
-                reason: $change->reason === null ? null : (string) $change->reason,
-                previousStatus: $change->previous_status === null
-                    ? null
-                    : SubscriptionStatus::from((string) $change->previous_status),
-                nextStatus: $change->next_status === null
-                    ? null
-                    : SubscriptionStatus::from((string) $change->next_status),
-                previousProgramId: $change->previous_program_id === null
-                    ? null
-                    : (string) $change->previous_program_id,
-                nextProgramId: $change->next_program_id === null
-                    ? null
-                    : (string) $change->next_program_id,
-                previousIsFixed: $change->previous_is_fixed === null
-                    ? null
-                    : (bool) $change->previous_is_fixed,
-                nextIsFixed: $change->next_is_fixed === null
-                    ? null
-                    : (bool) $change->next_is_fixed,
-                occurredAt: $change->occurred_at->utc()->toISOString(),
-                previousPersonalRate: $change->previous_personal_rate === null ? null : (string) $change->previous_personal_rate,
-                previousIsMaster: $change->previous_is_master === null ? null : (bool) $change->previous_is_master,
-                previousMasterRate: $change->previous_master_rate === null ? null : (string) $change->previous_master_rate,
-                nextPersonalRate: $change->next_personal_rate === null ? null : (string) $change->next_personal_rate,
-                nextIsMaster: $change->next_is_master === null ? null : (bool) $change->next_is_master,
-                nextMasterRate: $change->next_master_rate === null ? null : (string) $change->next_master_rate,
-            ))
+            ->map(fn (SubscriptionChangeRecord $change): SubscriptionChange => $this->hydrateSubscriptionChange($change))
             ->all();
 
         return new Subscription(
@@ -513,5 +529,59 @@ final class PostgreSqlSubscriptionRepository implements SubscriptionRepositoryIn
             'next_is_master' => $change->nextIsMaster,
             'next_master_rate' => $change->nextMasterRate,
         ];
+    }
+
+    private function hydrateSubscriptionPlacement(SubscriptionPlacementRecord $placement): SubscriptionPlacement
+    {
+        return new SubscriptionPlacement(
+            id: (string) $placement->id,
+            subscriptionId: (string) $placement->subscription_id,
+            programId: (string) $placement->program_id,
+            condition: PlacementCondition::fromBoolean((bool) $placement->is_fixed),
+            effectiveFrom: $placement->effective_from->utc()->toISOString(),
+            effectiveUntil: $placement->effective_until?->utc()->toISOString(),
+            createdAt: $placement->created_at->utc()->toISOString(),
+            updatedAt: $placement->updated_at->utc()->toISOString(),
+        );
+    }
+
+    private function hydrateSubscriptionChange(SubscriptionChangeRecord $change): SubscriptionChange
+    {
+        return new SubscriptionChange(
+            id: (string) $change->id,
+            operationId: (string) $change->operation_id,
+            subscriptionId: (string) $change->subscription_id,
+            action: SubscriptionChangeAction::from((string) $change->action),
+            actorKind: SubscriptionActorKind::from((string) $change->actor_kind),
+            actorExternalUserId: $change->actor_external_user_id === null
+                ? null
+                : (string) $change->actor_external_user_id,
+            reason: $change->reason === null ? null : (string) $change->reason,
+            previousStatus: $change->previous_status === null
+                ? null
+                : SubscriptionStatus::from((string) $change->previous_status),
+            nextStatus: $change->next_status === null
+                ? null
+                : SubscriptionStatus::from((string) $change->next_status),
+            previousProgramId: $change->previous_program_id === null
+                ? null
+                : (string) $change->previous_program_id,
+            nextProgramId: $change->next_program_id === null
+                ? null
+                : (string) $change->next_program_id,
+            previousIsFixed: $change->previous_is_fixed === null
+                ? null
+                : (bool) $change->previous_is_fixed,
+            nextIsFixed: $change->next_is_fixed === null
+                ? null
+                : (bool) $change->next_is_fixed,
+            occurredAt: $change->occurred_at->utc()->toISOString(),
+            previousPersonalRate: $change->previous_personal_rate === null ? null : (string) $change->previous_personal_rate,
+            previousIsMaster: $change->previous_is_master === null ? null : (bool) $change->previous_is_master,
+            previousMasterRate: $change->previous_master_rate === null ? null : (string) $change->previous_master_rate,
+            nextPersonalRate: $change->next_personal_rate === null ? null : (string) $change->next_personal_rate,
+            nextIsMaster: $change->next_is_master === null ? null : (bool) $change->next_is_master,
+            nextMasterRate: $change->next_master_rate === null ? null : (string) $change->next_master_rate,
+        );
     }
 }

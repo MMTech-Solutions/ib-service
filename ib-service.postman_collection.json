@@ -39188,6 +39188,1044 @@
                             ]
                         },
                         {
+                            "name": "List subscription changes",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=100",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "subscriptions",
+                                        "{{SUBSCRIPTION_ID}}",
+                                        "changes"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Integer >= 1; default 1."
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Integer 1..100; default 100."
+                                        },
+                                        {
+                                            "key": "action",
+                                            "value": "fix_placement",
+                                            "description": "Existing subscription action enum.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "actor_kind",
+                                            "value": "iam",
+                                            "description": "iam or system.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "occurred_at_from",
+                                            "value": "2026-10-01T00:00:00Z",
+                                            "description": "Inclusive UTC Z lower bound.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "occurred_at_to",
+                                            "value": "2026-10-02T00:00:00Z",
+                                            "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "name": "200 - Administrative history",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "changes"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "action",
+                                                    "value": "fix_placement",
+                                                    "description": "Existing subscription action enum.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "actor_kind",
+                                                    "value": "iam",
+                                                    "description": "iam or system.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "Inclusive UTC Z lower bound.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_to",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "OK",
+                                    "code": 200,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"30000000-0000-4000-8000-000000000001\",\n            \"operation_id\": \"40000000-0000-4000-8000-000000000001\",\n            \"action\": \"fix_placement\",\n            \"actor_kind\": \"iam\",\n            \"actor_external_user_id\": \"50000000-0000-4000-8000-000000000001\",\n            \"reason\": \"Hold placement for review\",\n            \"previous_status\": \"active\",\n            \"next_status\": \"active\",\n            \"previous_program_id\": \"20000000-0000-4000-8000-000000000001\",\n            \"next_program_id\": \"20000000-0000-4000-8000-000000000001\",\n            \"previous_is_fixed\": false,\n            \"next_is_fixed\": true,\n            \"occurred_at\": \"2026-10-01T01:00:00.000000Z\",\n            \"previous_personal_rate\": null,\n            \"previous_is_master\": null,\n            \"previous_master_rate\": null,\n            \"next_personal_rate\": null,\n            \"next_is_master\": null,\n            \"next_master_rate\": null,\n            \"run_result_id\": null,\n            \"run_id\": null\n        }\n    ],\n    \"meta\": {\n        \"message\": \"Subscription changes retrieved successfully.\",\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 100,\n            \"total\": 1,\n            \"last_page\": 1\n        },\n        \"filters\": {}\n    }\n}"
+                                },
+                                {
+                                    "name": "401 - Gateway identity required",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "changes"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "action",
+                                                    "value": "fix_placement",
+                                                    "description": "Existing subscription action enum.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "actor_kind",
+                                                    "value": "iam",
+                                                    "description": "iam or system.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "Inclusive UTC Z lower bound.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_to",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Unauthorized",
+                                    "code": 401,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+                                },
+                                {
+                                    "name": "403 - Admin permission required",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "changes"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "action",
+                                                    "value": "fix_placement",
+                                                    "description": "Existing subscription action enum.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "actor_kind",
+                                                    "value": "iam",
+                                                    "description": "iam or system.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "Inclusive UTC Z lower bound.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_to",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Forbidden",
+                                    "code": 403,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+                                },
+                                {
+                                    "name": "404 - Subscription not found",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "changes"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "action",
+                                                    "value": "fix_placement",
+                                                    "description": "Existing subscription action enum.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "actor_kind",
+                                                    "value": "iam",
+                                                    "description": "iam or system.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "Inclusive UTC Z lower bound.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_to",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Not Found",
+                                    "code": 404,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"success\": false,\n    \"message\": \"Subscription [10000000-0000-4000-8000-000000000001] was not found.\",\n    \"error\": {\n        \"code\": \"SUBSCRIPTION_NOT_FOUND\",\n        \"details\": []\n    }\n}"
+                                },
+                                {
+                                    "name": "422 - Invalid pagination",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/changes?page=1&per_page=101",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "changes"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "101",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "action",
+                                                    "value": "fix_placement",
+                                                    "description": "Existing subscription action enum.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "actor_kind",
+                                                    "value": "iam",
+                                                    "description": "iam or system.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "Inclusive UTC Z lower bound.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "occurred_at_to",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "Exclusive UTC Z upper bound; must be after from when both are supplied.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription changes history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by occurred_at, id. Changes expose existing snapshots and optional run_result_id/run_id only when operation_id resolves to a persisted result of the same subscription. No actor profile lookup. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Unprocessable Content",
+                                    "code": 422,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"The per page field must be between 1 and 100.\",\n    \"errors\": {\n        \"per_page\": [\n            \"The per page field must be between 1 and 100.\"\n        ]\n    }\n}"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "List subscription placements",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "X-Internal-Gateway",
+                                        "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Userinfo",
+                                        "value": "{{ADMIN_USERINFO}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=100",
+                                    "host": [
+                                        "{{BASE_URL}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "ib",
+                                        "v1",
+                                        "admin",
+                                        "subscriptions",
+                                        "{{SUBSCRIPTION_ID}}",
+                                        "placements"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "Integer >= 1; default 1."
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "100",
+                                            "description": "Integer 1..100; default 100."
+                                        },
+                                        {
+                                            "key": "program_id",
+                                            "value": "{{PROGRAM_ID}}",
+                                            "description": "UUID; unmatched program yields an empty list.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "is_fixed",
+                                            "value": "1",
+                                            "description": "Boolean 0/1; true/false allowed in JSON.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "overlap_from",
+                                            "value": "2026-10-01T00:00:00Z",
+                                            "description": "UTC Z; requires overlap_until.",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "overlap_until",
+                                            "value": "2026-10-02T00:00:00Z",
+                                            "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "name": "200 - Administrative history",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "placements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "program_id",
+                                                    "value": "{{PROGRAM_ID}}",
+                                                    "description": "UUID; unmatched program yields an empty list.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "is_fixed",
+                                                    "value": "1",
+                                                    "description": "Boolean 0/1; true/false allowed in JSON.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_until.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_until",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "OK",
+                                    "code": 200,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"60000000-0000-4000-8000-000000000001\",\n            \"subscription_id\": \"10000000-0000-4000-8000-000000000001\",\n            \"program_id\": \"20000000-0000-4000-8000-000000000001\",\n            \"is_fixed\": true,\n            \"effective_from\": \"2026-10-01T01:00:00.000000Z\",\n            \"effective_until\": null\n        }\n    ],\n    \"meta\": {\n        \"message\": \"Subscription placements retrieved successfully.\",\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 100,\n            \"total\": 1,\n            \"last_page\": 1\n        },\n        \"filters\": {}\n    }\n}"
+                                },
+                                {
+                                    "name": "401 - Gateway identity required",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "placements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "program_id",
+                                                    "value": "{{PROGRAM_ID}}",
+                                                    "description": "UUID; unmatched program yields an empty list.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "is_fixed",
+                                                    "value": "1",
+                                                    "description": "Boolean 0/1; true/false allowed in JSON.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_until.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_until",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Unauthorized",
+                                    "code": 401,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+                                },
+                                {
+                                    "name": "403 - Admin permission required",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "placements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "program_id",
+                                                    "value": "{{PROGRAM_ID}}",
+                                                    "description": "UUID; unmatched program yields an empty list.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "is_fixed",
+                                                    "value": "1",
+                                                    "description": "Boolean 0/1; true/false allowed in JSON.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_until.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_until",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Forbidden",
+                                    "code": 403,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+                                },
+                                {
+                                    "name": "404 - Subscription not found",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=100",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "placements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "100",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "program_id",
+                                                    "value": "{{PROGRAM_ID}}",
+                                                    "description": "UUID; unmatched program yields an empty list.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "is_fixed",
+                                                    "value": "1",
+                                                    "description": "Boolean 0/1; true/false allowed in JSON.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_until.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_until",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Not Found",
+                                    "code": 404,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"success\": false,\n    \"message\": \"Subscription [10000000-0000-4000-8000-000000000001] was not found.\",\n    \"error\": {\n        \"code\": \"SUBSCRIPTION_NOT_FOUND\",\n        \"details\": []\n    }\n}"
+                                },
+                                {
+                                    "name": "422 - Invalid pagination",
+                                    "originalRequest": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "X-Internal-Gateway",
+                                                "value": "{{GATEWAY_INTERNAL_SECRET}}",
+                                                "type": "text"
+                                            },
+                                            {
+                                                "key": "X-Userinfo",
+                                                "value": "{{ADMIN_USERINFO}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{BASE_URL}}/api/ib/v1/admin/subscriptions/{{SUBSCRIPTION_ID}}/placements?page=1&per_page=101",
+                                            "host": [
+                                                "{{BASE_URL}}"
+                                            ],
+                                            "path": [
+                                                "api",
+                                                "ib",
+                                                "v1",
+                                                "admin",
+                                                "subscriptions",
+                                                "{{SUBSCRIPTION_ID}}",
+                                                "placements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1",
+                                                    "description": "Integer >= 1; default 1."
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "101",
+                                                    "description": "Integer 1..100; default 100."
+                                                },
+                                                {
+                                                    "key": "program_id",
+                                                    "value": "{{PROGRAM_ID}}",
+                                                    "description": "UUID; unmatched program yields an empty list.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "is_fixed",
+                                                    "value": "1",
+                                                    "description": "Boolean 0/1; true/false allowed in JSON.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_from",
+                                                    "value": "2026-10-01T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_until.",
+                                                    "disabled": true
+                                                },
+                                                {
+                                                    "key": "overlap_until",
+                                                    "value": "2026-10-02T00:00:00Z",
+                                                    "description": "UTC Z; requires overlap_from and must be strictly later.",
+                                                    "disabled": true
+                                                }
+                                            ]
+                                        },
+                                        "description": "Administrative subscription placements history. Requires X-Internal-Gateway and X-Userinfo={{ADMIN_USERINFO}}, admin_panel and ib.subscriptions.manage. subscription is a UUID from SUBSCRIPTION_ID. No customer history endpoint exists. All subscription states are readable. data is an array; pagination and applied filters are in meta. Ordered ascending by effective_from, id. Placement intervals are [effective_from, effective_until); null is open. Zero-duration intervals remain in unfiltered history and never overlap a requested window. No inferred Progression references. Dates must be real UTC timestamps ending in Z. Invalid input: 422; insufficient permission or customer identity: 403; missing subscription: 404. Examples are synthetic and contain no secrets.",
+                                        "auth": {
+                                            "type": "noauth"
+                                        }
+                                    },
+                                    "status": "Unprocessable Content",
+                                    "code": 422,
+                                    "_postman_previewlanguage": "json",
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "cookie": [],
+                                    "body": "{\n    \"message\": \"The per page field must be between 1 and 100.\",\n    \"errors\": {\n        \"per_page\": [\n            \"The per page field must be between 1 and 100.\"\n        ]\n    }\n}"
+                                }
+                            ]
+                        },
+                        {
                             "name": "Show subscription",
                             "request": {
                                 "method": "GET",

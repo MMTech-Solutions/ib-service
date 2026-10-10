@@ -6,17 +6,22 @@ namespace App\Features\Subscriptions\Catalog\Repositories\InMemory;
 
 use App\Features\Subscriptions\Catalog\Contracts\Repositories\SubscriptionRepositoryInterface;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionAggregatePageData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionChangesQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionHistoryPageData;
 use App\Features\Subscriptions\Catalog\DTOs\SubscriptionListQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionPlacementsQueryData;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionStatus;
 use App\Features\Subscriptions\Catalog\Exceptions\DuplicateOpenSubscriptionException;
 use App\Features\Subscriptions\Catalog\Exceptions\DuplicateSubscriptionReplacementException;
 use App\Features\Subscriptions\Catalog\Exceptions\ProgramNotOnSubscriptionPlanException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionConcurrencyException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionInvariantException;
+use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionChange;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionPlacement;
 use App\Features\Subscriptions\Contracts\Data\V1\ProgressionWindowSubscriptionData;
+use Carbon\CarbonImmutable;
 use Closure;
 use Throwable;
 
@@ -27,6 +32,49 @@ final class InMemorySubscriptionRepository implements SubscriptionRepositoryInte
 
     /** @var array<string, string> */
     private array $programPlanIds = [];
+
+    public function paginateChanges(SubscriptionChangesQueryData $query): SubscriptionHistoryPageData
+    {
+        $subscription = $this->findById($query->subscriptionId);
+        if ($subscription === null) {
+            throw SubscriptionNotFoundException::forId($query->subscriptionId);
+        }
+        $entries = array_values(array_filter($subscription->changes, static function (SubscriptionChange $change) use ($query): bool {
+            $instant = CarbonImmutable::parse($change->occurredAt);
+
+            return ($query->action === null || $change->action->value === $query->action)
+                && ($query->actorKind === null || $change->actorKind->value === $query->actorKind)
+                && ($query->occurredAtFrom === null || $instant->gte(CarbonImmutable::parse($query->occurredAtFrom)))
+                && ($query->occurredAtTo === null || $instant->lt(CarbonImmutable::parse($query->occurredAtTo)));
+        }));
+        usort($entries, static fn (SubscriptionChange $left, SubscriptionChange $right): int => (CarbonImmutable::parse($left->occurredAt) <=> CarbonImmutable::parse($right->occurredAt)) ?: strcmp($left->id, $right->id));
+
+        return new SubscriptionHistoryPageData(array_slice($entries, ($query->page - 1) * $query->perPage, $query->perPage), count($entries));
+    }
+
+    public function paginatePlacements(SubscriptionPlacementsQueryData $query): SubscriptionHistoryPageData
+    {
+        $subscription = $this->findById($query->subscriptionId);
+        if ($subscription === null) {
+            throw SubscriptionNotFoundException::forId($query->subscriptionId);
+        }
+        $entries = array_values(array_filter($subscription->placements, static function (SubscriptionPlacement $placement) use ($query): bool {
+            if (($query->programId !== null && $placement->programId !== $query->programId) || ($query->isFixed !== null && $placement->isFixed() !== $query->isFixed)) {
+                return false;
+            }
+            if ($query->overlapFrom === null || $query->overlapUntil === null) {
+                return true;
+            }
+            $from = CarbonImmutable::parse($placement->effectiveFrom);
+            $until = $placement->effectiveUntil === null ? null : CarbonImmutable::parse($placement->effectiveUntil);
+
+            return $from->lt(CarbonImmutable::parse($query->overlapUntil))
+                && ($until === null || ($until->gt($from) && $until->gt(CarbonImmutable::parse($query->overlapFrom))));
+        }));
+        usort($entries, static fn (SubscriptionPlacement $left, SubscriptionPlacement $right): int => (CarbonImmutable::parse($left->effectiveFrom) <=> CarbonImmutable::parse($right->effectiveFrom)) ?: strcmp($left->id, $right->id));
+
+        return new SubscriptionHistoryPageData(array_slice($entries, ($query->page - 1) * $query->perPage, $query->perPage), count($entries));
+    }
 
     public function registerProgram(string $programId, string $planId): void
     {

@@ -1,6 +1,6 @@
 # Planes, programas y suscripciones IB — BDS
 
-- **Versión:** 0.16
+- **Versión:** 0.17
 - **Estado:** base inicial; P1 cierra el ciclo de vida administrativo del plan; PR1 cierra identidad y selección administrativa del programa; P2 cierra el umbral de entrada vivo y el ladder del plan; S1 cierra las reglas de solicitud, aprobación, suscripción, placement y fijación administrativa; Progression cierra el período obligatorio del plan, el umbral cero del primer programa y el retiro inmediato de módulos
 
 **Propósito:** definir la jerarquía comercial y de progresión del dominio IB.
@@ -255,6 +255,25 @@ Los siguientes nombres ilustran configuraciones posibles y no fijan el catálogo
 - Placement fijado administrativamente.
 - Programa fijado modificado administrativamente.
 - Fijación administrativa de placement retirada.
+
+## Consulta administrativa de historia
+
+Administración puede verificar la sucesión histórica de programas, condiciones
+de fijación y estados de una suscripción, incluidos sus estados terminales.
+Los cambios conservan la acción, el actor, el instante, el motivo disponible y
+los estados anterior y posterior. Los clientes no acceden a estos historiales;
+su consulta continúa limitada a su suscripción abierta (BR-SUBSCRIPTION-021).
+
+Los períodos históricos de placement se interpretan como intervalos semiabiertos:
+incluyen el inicio y excluyen el final; un período sin final permanece abierto.
+Un período de duración cero conserva evidencia de transiciones simultáneas,
+pero no representa actividad vigente ni solapa un período de consulta.
+La historia se conserva como evidencia propia; no se reconstruye a partir del
+placement actual. Una referencia a una decisión de progresión solo se presenta
+cuando existe una asociación verificable, nunca por coincidencia temporal.
+
+Esta observación no cambia las reglas de fijación, elegibilidad, progresión o
+recompensas y no resuelve decisiones pendientes sobre elegibilidad fixed.
 
 ## Vinculación de versiones de plantillas
 

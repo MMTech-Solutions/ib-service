@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Contracts;
 
 use App\Features\Subscriptions\Catalog\Contracts\Repositories\SubscriptionRepositoryInterface;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionChangesQueryData;
+use App\Features\Subscriptions\Catalog\DTOs\SubscriptionPlacementsQueryData;
 use App\Features\Subscriptions\Catalog\Enums\PlacementCondition;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionActorKind;
 use App\Features\Subscriptions\Catalog\Enums\SubscriptionChangeAction;
@@ -14,6 +16,7 @@ use App\Features\Subscriptions\Catalog\Exceptions\DuplicateSubscriptionReplaceme
 use App\Features\Subscriptions\Catalog\Exceptions\ProgramNotOnSubscriptionPlanException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionConcurrencyException;
 use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionInvariantException;
+use App\Features\Subscriptions\Catalog\Exceptions\SubscriptionNotFoundException;
 use App\Features\Subscriptions\Catalog\Models\Subscription;
 use App\Features\Subscriptions\Catalog\Models\SubscriptionChange;
 use Carbon\CarbonImmutable;
@@ -35,6 +38,71 @@ abstract class SubscriptionRepositoryContract extends TestCase
     abstract protected function alternateProgramId(): string;
 
     abstract protected function foreignProgramId(): string;
+
+    public function test_history_queries_paginate_filter_and_preserve_empty_intervals(): void
+    {
+        $repository = $this->repository();
+        $subscription = $this->activeSubscription(now: '2026-10-01T00:00:00.000000Z');
+        $start = $subscription->createdAt;
+        $boundary = CarbonImmutable::parse($start)->addHour()->toISOString();
+        $end = CarbonImmutable::parse($start)->addHours(2)->toISOString();
+        $id = static fn (): string => (string) Str::uuid7();
+        $subscription->fixPlacement($this->programId(), $id(), $id(), SubscriptionActorKind::Iam, $this->actorId(), 'Hold', $id, $start);
+        $subscription->changeProgram($this->alternateProgramId(), $id(), $id(), SubscriptionActorKind::Iam, $this->actorId(), 'Move', $id, $boundary);
+        $subscription->releasePlacement($id(), $id(), SubscriptionActorKind::Iam, $this->actorId(), 'Release', $id, $boundary);
+        $subscription->changes = array_reverse($subscription->changes);
+        $repository->create($subscription);
+        $other = $this->activeSubscription();
+        $repository->create($other);
+
+        $changes = $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, perPage: 2));
+        self::assertSame(4, $changes->total);
+        self::assertCount(2, $changes->entries);
+        $next = $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, page: 2, perPage: 2));
+        self::assertCount(2, $next->entries);
+        self::assertLessThan($next->entries[1]->id, $next->entries[0]->id);
+        $filtered = $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, action: 'release_placement', actorKind: 'iam', occurredAtFrom: $boundary, occurredAtTo: $end));
+        self::assertSame(1, $filtered->total);
+        self::assertSame('Release', $filtered->entries[0]->reason);
+        self::assertSame(0, $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, actorKind: 'system'))->total);
+        self::assertSame(2, $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, occurredAtTo: $boundary))->total);
+        self::assertSame([], $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id, page: 3, perPage: 2))->entries);
+
+        $all = $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id));
+        self::assertSame(4, $all->total);
+        self::assertSame($all->entries[0]->effectiveFrom, $all->entries[0]->effectiveUntil);
+        self::assertSame($all->entries[2]->effectiveFrom, $all->entries[2]->effectiveUntil);
+        $page = $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, page: 2, perPage: 2));
+        self::assertSame([$all->entries[2]->id, $all->entries[3]->id], array_column($page->entries, 'id'));
+        self::assertSame(2, $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, isFixed: true))->total);
+        self::assertSame(0, $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, programId: $this->foreignProgramId()))->total);
+        $window = $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, programId: $this->alternateProgramId(), isFixed: false, overlapFrom: $boundary, overlapUntil: $end));
+        self::assertSame(1, $window->total);
+        self::assertNull($window->entries[0]->effectiveUntil);
+        $before = $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, overlapFrom: $start, overlapUntil: $boundary));
+        self::assertSame(1, $before->total);
+        self::assertTrue($before->entries[0]->isFixed());
+        self::assertSame(1, $repository->paginateChanges(new SubscriptionChangesQueryData($other->id))->total);
+
+        $stored = $repository->findById($subscription->id);
+        $stored->cancel($id(), SubscriptionActorKind::Iam, $this->actorId(), null, $id, $end);
+        $repository->save($stored, $stored->lockVersion);
+        self::assertSame(5, $repository->paginateChanges(new SubscriptionChangesQueryData($subscription->id))->total);
+        self::assertSame(4, $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id))->total);
+        self::assertSame(0, $repository->paginatePlacements(new SubscriptionPlacementsQueryData($subscription->id, overlapFrom: $end, overlapUntil: CarbonImmutable::parse($end)->addHour()->toISOString()))->total);
+    }
+
+    public function test_history_queries_reject_missing_subscription(): void
+    {
+        $this->expectException(SubscriptionNotFoundException::class);
+        $this->repository()->paginateChanges(new SubscriptionChangesQueryData((string) Str::uuid7()));
+    }
+
+    public function test_placement_history_queries_reject_missing_subscription(): void
+    {
+        $this->expectException(SubscriptionNotFoundException::class);
+        $this->repository()->paginatePlacements(new SubscriptionPlacementsQueryData((string) Str::uuid7()));
+    }
 
     public function test_it_creates_pending_and_active_subscriptions_with_history(): void
     {
@@ -516,6 +584,7 @@ abstract class SubscriptionRepositoryContract extends TestCase
     protected function activeSubscription(
         ?string $externalUserId = null,
         ?string $programId = null,
+        ?string $now = null,
     ): Subscription {
         return Subscription::requestActive(
             id: (string) Str::uuid7(),
@@ -528,7 +597,7 @@ abstract class SubscriptionRepositoryContract extends TestCase
             actorExternalUserId: $this->actorId(),
             reason: null,
             generateId: static fn (): string => (string) Str::uuid7(),
-            now: $this->now(),
+            now: $now ?? $this->now(),
         );
     }
 

@@ -23,6 +23,7 @@ Reglas de construcción y operación del software. Traducen las necesidades del 
 - [`architecture.md`](rules/architecture.md): estructura, fronteras y dependencias.
 - [`architecture-validation.md`](rules/architecture-validation.md): guardrails PHPUnit y ratchet de deuda arquitectónica.
 - [`api-conventions.md`](rules/api-conventions.md): forma del envelope HTTP; `data` es el recurso o la colección.
+- [`subscription-history-api.md`](rules/subscription-history-api.md): consultas administrativas de movimientos e intervalos de suscripción, sin exposición customer.
 - [`integrations.md`](rules/integrations.md): Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia.
 - [`volume-activity-event-contract.md`](rules/volume-activity-event-contract.md): evidencia completa de proveedores y suscripciones declaradas en capacidades.
 - [`negative-pnl-contract.md`](rules/negative-pnl-contract.md): contrato PnL por lotes y agregado por nivel/moneda.
@@ -57,6 +58,8 @@ sustituir los BDS ni las reglas técnicas.
   `points_per_quantity_unit` + `BR-RULE-016`).
 - [`subscriptions/`](roadmap/subscriptions/README.md): S1 completada
   (suscripciones, placement, fijación y salvaguarda de archivo); P0.2 publicado.
+  [Historial administrativo](roadmap/subscriptions/06-administrative-history.md)
+  completado localmente; no cierra la aceptación integrada LAB5.
 - [`progression/`](roadmap/progression/README.md): PG1 y PG2 completadas;
   runs y placement operativos; [contrato LAB5](roadmap/progression/15-lab5-contract.md) implementado localmente con recuperación por umbrales vigentes y auditoría por intento, pendiente de adaptación y aceptación integrada de ib-labs.
 - [`rewards/`](roadmap/rewards/README.md): RWD2, RWD3 y RWD4.1 implementados;

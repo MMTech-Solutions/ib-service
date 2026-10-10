@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Progression\Contracts\Repositories;
 
+use App\Features\Progression\Contracts\Data\V1\ProgressionResultReferenceData;
+use App\Features\Progression\Contracts\Data\V1\ResolveProgressionResultReferencesQueryData;
 use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
 use App\Features\Progression\Models\ProgressionRun;
@@ -17,6 +19,9 @@ use Closure;
 
 interface ProgressionRunRepositoryInterface
 {
+    /** @return list<ProgressionResultReferenceData> */
+    public function resultReferences(ResolveProgressionResultReferencesQueryData $query): array;
+
     /** @return list<ProgressionRun> */
     public function incompleteRuns(?string $runId = null): array;
 

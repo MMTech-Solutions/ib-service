@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Features\Progression\Repositories\PostgreSql;
 
 use App\Features\Programs\Contracts\Data\V1\ProgressionLadderData;
+use App\Features\Progression\Contracts\Data\V1\ProgressionResultReferenceData;
+use App\Features\Progression\Contracts\Data\V1\ResolveProgressionResultReferencesQueryData;
 use App\Features\Progression\Contracts\Repositories\ProgressionRunRepositoryInterface;
 use App\Features\Progression\DTOs\ProgressionRecoveryAttemptData;
 use App\Features\Progression\DTOs\ProgressionRunSnapshotData;
@@ -26,6 +28,16 @@ use Illuminate\Support\Str;
 
 final class PostgreSqlProgressionRunRepository implements ProgressionRunRepositoryInterface
 {
+    public function resultReferences(ResolveProgressionResultReferencesQueryData $query): array
+    {
+        if ($query->operationIds === []) {
+            return [];
+        }
+
+        return $this->connection->table('progression_run_results')->where('subscription_id', $query->subscriptionId)->whereIn('id', $query->operationIds)->orderBy('id')->get(['id', 'run_id'])
+            ->map(static fn (object $row): ProgressionResultReferenceData => new ProgressionResultReferenceData($row->id, $row->run_id))->all();
+    }
+
     public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool
     {
         return $this->connection->table('progression_runs')->where('plan_id', $planId)->where('window_starts_at', $window->startsAt)->where('window_ends_at', $window->endsAt)

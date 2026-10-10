@@ -14,6 +14,7 @@ use App\Features\Programs\Contracts\Ports\Input\CaptureProgressionLadderPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgramSubscriptionContextPort;
 use App\Features\Programs\Contracts\Ports\Input\ResolveProgressionTargetProgramPort;
+use App\Features\Progression\Contracts\Data\V1\ResolveProgressionResultReferencesQueryData;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ProgressionFailurePort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
@@ -59,6 +60,11 @@ final class ProgressionWindowClosingUseCaseTest extends TestCase
     {
         $repository = new class implements ProgressionRunRepositoryInterface
         {
+            public function resultReferences(ResolveProgressionResultReferencesQueryData $query): array
+            {
+                return [];
+            }
+
             public function hasCapturedWindow(string $planId, ProgressionWindow $window): bool
             {
                 return false;

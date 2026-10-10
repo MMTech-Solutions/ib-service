@@ -8,6 +8,7 @@ use App\Features\Progression\Console\ArmProgressionLabFailureCommand;
 use App\Features\Progression\Console\CloseProgressionWindowsCommand;
 use App\Features\Progression\Console\EvaluateProgressionActivitiesCommand;
 use App\Features\Progression\Console\RecoverProgressionRunsCommand;
+use App\Features\Progression\Contracts\Ports\Input\ResolveProgressionResultReferencesPort;
 use App\Features\Progression\Contracts\Ports\Output\FetchProgressionActivitiesPort;
 use App\Features\Progression\Contracts\Ports\Output\ProgressionFailurePort;
 use App\Features\Progression\Contracts\Ports\Output\ResolveReferralUplinePort;
@@ -23,6 +24,7 @@ use App\Features\Progression\Services\Adapters\IamResolveReferralUplineAdapter;
 use App\Features\Progression\Services\Adapters\LabProgressionFailureAdapter;
 use App\Features\Progression\Services\Adapters\ModulesFetchProgressionActivitiesAdapter;
 use App\Features\Progression\Services\ProgressionExecutionEvidence;
+use App\Features\Progression\UseCases\ResolveProgressionResultReferencesUseCase;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +33,7 @@ final class ProgressionServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(ResolveProgressionResultReferencesPort::class, ResolveProgressionResultReferencesUseCase::class);
         $this->app->singleton('progression.read.repository', fn () => new PostgreSqlProgressionReadRepository(DB::connection()));
         $this->app->singleton(ProgressionExecutionEvidence::class);
         $this->app->singleton('progression.lab-failures.repository', fn () => new PostgreSqlLabFailureRepository(DB::connection()));

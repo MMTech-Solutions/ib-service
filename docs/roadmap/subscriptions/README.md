@@ -1,9 +1,9 @@
 # Roadmap del feature Subscriptions
 
-Estado: **S1 completada; extensiones P0.2 de Progression y rates de Rewards completadas**
+Estado: **S1 completada; extensiones P0.2, rates y consultas de historial administrativo completadas localmente**
 Dependencias satisfechas: `Programs P2` y `Rules R2` completados
 Dependencia de implementación: extensión de Plans para `BR-PLAN-017` (sesión 1)
-Última revisión: 2026-10-02
+Última revisión: 2026-10-10
 
 ## Objetivo
 
@@ -35,6 +35,7 @@ flowchart LR
 | 3. Entregas verticales | [`03-vertical-deliveries.md`](03-vertical-deliveries.md) | Completado para S1 |
 | 4. Modelo de datos | [`04-data-model.md`](04-data-model.md) | Completado para S1 |
 | 5. Implementación y contract tests | [`05-s1-implementation.md`](05-s1-implementation.md) | Completada (sesiones 1–5) |
+| 6. Lectura administrativa de movimientos e intervalos | [`06-administrative-history.md`](06-administrative-history.md) | Completada localmente; aceptación integrada LAB5 pendiente |
 
 ## Decisiones confirmadas
 

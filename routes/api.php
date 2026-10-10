@@ -89,6 +89,8 @@ use App\Features\Subscriptions\Catalog\Http\V1\Controllers\CancelSubscriptionCon
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionPlanController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ChangeSubscriptionProgramController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\FixSubscriptionPlacementController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionChangesController;
+use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionPlacementsController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ListSubscriptionsController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\RejectSubscriptionController;
 use App\Features\Subscriptions\Catalog\Http\V1\Controllers\ReleaseSubscriptionPlacementController;
@@ -198,6 +200,8 @@ Route::prefix('ib/v1')
                     ->name('ib.v1.admin.plans.rules.assignments.withdraw');
                 Route::get('subscriptions', ListSubscriptionsController::class)->name('ib.v1.admin.subscriptions.index');
                 Route::get('subscriptions/{subscription}', ShowSubscriptionController::class)->name('ib.v1.admin.subscriptions.show');
+                Route::get('subscriptions/{subscription}/changes', ListSubscriptionChangesController::class)->name('ib.v1.admin.subscriptions.changes.index');
+                Route::get('subscriptions/{subscription}/placements', ListSubscriptionPlacementsController::class)->name('ib.v1.admin.subscriptions.placements.index');
                 Route::post('subscriptions/{subscription}/approve', ApproveSubscriptionController::class)
                     ->name('ib.v1.admin.subscriptions.approve');
                 Route::post('subscriptions/{subscription}/reject', RejectSubscriptionController::class)

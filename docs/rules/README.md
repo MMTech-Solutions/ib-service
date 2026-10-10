@@ -8,6 +8,7 @@ Esta sección documenta decisiones técnicas transversales. Sus archivos orienta
 | [`architecture.md`](architecture.md) | Fronteras, dependencias y estructura del servicio. |
 | [`architecture-validation.md`](architecture-validation.md) | Guardrails PHPUnit, ratchet y retiro de deuda arquitectónica. |
 | [`api-conventions.md`](api-conventions.md) | Forma del envelope HTTP: `data` es el recurso o la colección. |
+| [`subscription-history-api.md`](subscription-history-api.md) | Historial exclusivo de administración, filtros temporales y referencias verificables de Progression. |
 | [`integrations.md`](integrations.md) | Kafka, eventos, IAM, SDKs, clientes HTTP y contratos por audiencia. |
 | [`volume-activity-event-contract.md`](volume-activity-event-contract.md) | Evidencia cerrada V1 y descubrimiento Kafka desde capacidades. |
 | [`negative-pnl-contract.md`](negative-pnl-contract.md) | Contrato por lotes, agregación por nivel/moneda y actualización sin compatibilidad. |
